@@ -24,7 +24,7 @@
 
 **StartUI4.WPF** is a modern UI control library developed based on WPF .NET 6, perfectly aligned with the WinUI Fluent Design language. Easy to configure and use, supports Windows 7 / 10 / 11 operating systems.
 
-- **Version**: 1.0.8
+- **Version**: 1.0.9
 - **Author**: KS.STUDIO
 - **Target Framework**: .NET 6 (net6.0-windows7.0)
 - **NuGet Package**: StartUI4.WPF
@@ -1059,7 +1059,7 @@ private void MyTab_CloseTab(object sender, TabCloseRoutedEventArgs e)
 - **Browser Style**: Browser tab design with rounded corners and close buttons
 - **Dual Icon Mode**: Image icon (`ImageSource`) takes priority, falls back to text icon (`TextIcon`)
 - **Add Button**: Right-side "+" button for adding new tabs (toggleable)
-- **Close Button**: Each tab has an × close button (toggleable per tab)
+- **Close Button**: Each tab has an ?? close button (toggleable per tab)
 - **Customizable Header**: `HeaderBackground` controls the top bar background color
 - **Content Switch Animation**: Slide + fade animation when switching tabs
 - **Scrollable Header**: Horizontal scrollbar appears when tabs exceed width
@@ -1421,13 +1421,13 @@ High-performance data grid control with SQLite-backed virtualized loading, custo
 #### Feature Notes
 
 - **SQLite Virtualization**: Data is stored in a per-instance temporary SQLite database, loaded page-by-page as you scroll. Handles 100k+ rows smoothly.
-- **Custom Styling**: Light gray header, white rows, hover highlight, light gray selection — clean modern table look.
+- **Custom Styling**: Light gray header, white rows, hover highlight, light gray selection ??? clean modern table look.
 - **Custom Scrollbar**: UI4ScrollViewer-style auto-hide scrollbar (10px wide, rounded thumb, fade in/out on scroll).
 - **Read-Only**: Cells are non-editable by default; full-row selection mode.
 - **Vertically Centered**: Cell content is vertically centered with text trimming.
 - **Built-in Context Menu**: Uses UI4ContextMenu with Copy and Select All commands (multi-language + icons).
 - **Auto-Cleanup**: Temporary .db file is automatically deleted when the control unloads or the process exits.
-- **Dynamic Columns**: Supports any column structure — auto-generates columns from the imported DataTable.
+- **Dynamic Columns**: Supports any column structure ??? auto-generates columns from the imported DataTable.
 - **Small Default Font**: 12px font size, 28px row height for compact, dense data display.
 
 #### Example Code
@@ -1527,35 +1527,42 @@ Also inherits all properties from `ScrollViewer`, such as `Content`, `Horizontal
 
 ---
 
-### UI4MessageBox
-
-Custom styled message dialog with entry/exit animations, resizable, and more.
+# UI4MessageBox Message Box
+Custom styled message dialog with enter/exit animation, window drag, and resizable borders.
 
 **Inherits from**: `Window`
 
-#### Static Methods
+## Enum
+### UI4MessageBoxButtons
+Button layout enum for message box
+| Value | Description |
+|--------|------|
+| OK | Single OK button (Default) |
+| OKCancel | OK + Cancel dual buttons |
 
-| Method Name | Return Value | Description |
-|------------|--------------|-------------|
-| `Show(string content, string title = "Notice", double width = 480, double height = 280)` | `bool?` | Show message box, returns dialog result |
+## Static Methods
+| Method | Return Type | Description |
+|-------|--------|------|
+| `Show(string content, string title = "Notice", UI4MessageBoxButtons buttons = UI4MessageBoxButtons.OK, double width = 480, double height = 280)` | `bool?` | Pop up message box. Returns `true` if OK clicked, `false` if Cancel clicked. |
 
-#### Constructor
-
+## Constructors
 | Constructor | Description |
-|------------|-------------|
-| `UI4MessageBox(string title, string content)` | Create message box instance |
+|---------|------|
+| `UI4MessageBox(string title, string content, UI4MessageBoxButtons buttonMode = UI4MessageBoxButtons.OK)` | Create message box instance with customizable button layout |
 
-#### Example Code
-
+## Code Examples
 ```csharp
-// Simple call
-UI4MessageBox.Show("Operation successful!", "Notice");
+// Default single OK button (simplest usage)
+UI4MessageBox.Show("Operation Succeeded!", "Tip");
 
-// Custom size
-UI4MessageBox.Show("This is a message content", "Notification", 480, 280);
+// Dual buttons: OK + Cancel
+UI4MessageBox.Show("Are you sure to delete data?", "Confirm Delete", UI4MessageBoxButtons.OKCancel);
 
-// Confirm/cancel judgment
-bool? result = UI4MessageBox.Show("Are you sure you want to delete?", "Confirm");
+// Custom window size with single OK button
+UI4MessageBox.Show("This is a message content", "Notification", UI4MessageBoxButtons.OK, 520, 320);
+
+// Get user click result (dual button mode)
+bool? result = UI4MessageBox.Show("Are you sure to delete?", "Confirm", UI4MessageBoxButtons.OKCancel);
 if (result == true)
 {
     // User clicked OK
@@ -1642,7 +1649,7 @@ Built-in C# syntax highlighting, supports the following types:
 
 ### UI4NotifyIcon
 
-System tray icon control, with a custom right-click menu rendered using `UI4ListBox` — visually consistent with `UI4ContextMenu`. Supports icons, multi-language, and `CanExecute` disabled state.
+System tray icon control, with a custom right-click menu rendered using `UI4ListBox` ??? visually consistent with `UI4ContextMenu`. Supports icons, multi-language, and `CanExecute` disabled state.
 
 **Contains two classes**:
 - `UI4NotifyIcon` - Tray icon control
@@ -1665,7 +1672,7 @@ System tray icon control, with a custom right-click menu rendered using `UI4List
 |--------------|------|-------------|
 | `Type` | `UI4MenuItemType` | Menu item type (Undo, Redo, Cut, Copy, Paste, Delete, SelectAll) |
 | `Text` | `string` | Menu item display text |
-| `Icon` | `ImageSource` | Menu item icon |
+| `Icon` | `ImageSource` or `Text` | Menu item icon |
 | `Command` | `Action` | Command to execute on click |
 | `CanExecute` | `Func<bool>` | Availability check; returns `false` to show item in disabled state (semi-transparent) |
 
@@ -1699,8 +1706,14 @@ trayIcon.AddItem(UI4MenuItemType.Delete,
 
 // Add a custom menu item
 trayIcon.AddItem(new UI4TrayMenuItem(
+    UI4MenuItemType.Cut,      // Type
+    "Open Homepage1",            // Text
+    "????",  // Icon
+    () => OpenHomePage()        // Command
+));
+trayIcon.AddItem(new UI4TrayMenuItem(
     UI4MenuItemType.Copy,      // Type
-    "Open Homepage",            // Text
+    "Open Homepage2",            // Text
     UI4MenuIcons.GetIcon(UI4MenuItemType.Copy),  // Icon
     () => OpenHomePage()        // Command
 ));
@@ -1721,7 +1734,7 @@ trayIcon.ClearMenuItems();
 - **Multi-language**: Auto-matches system language via `UI4ContextMenuLanguage` (Chinese/English/Japanese/Korean/German/French/Spanish/Russian)
 - **Disabled State**: When `CanExecute` returns `false`, the item icon opacity drops to 0.3 and text to 0.4; clicks are ignored
 - **Fade-in Animation**: Menu pops up with a 150ms fade-in animation
-- **Click-outside to Close**: `StaysOpen=false` — clicking outside the menu closes it automatically
+- **Click-outside to Close**: `StaysOpen=false` ??? clicking outside the menu closes it automatically
 - **High DPI Support**: Uses P/Invoke `GetCursorPos` to get physical screen coordinates and converts to WPF device-independent pixels for accurate positioning under high DPI scaling
 
 ---
@@ -1755,4 +1768,4 @@ Complete example:
 
 ## License
 
-?? KS.STUDIO - StartUI4.WPF v1.0.8
+?? KS.STUDIO - StartUI4.WPF v1.0.9

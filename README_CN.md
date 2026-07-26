@@ -24,7 +24,7 @@
 
 **StartUI4.WPF** 是一款基于 WPF .NET 6 开发的现代化 UI 控件库，完美契合 WinUI Fluent Design 设计语言。只需简单配置即可使用，支持 Windows 7 / 10 / 11 操作系统。
 
-- **版本**: 1.0.8
+- **版本**: 1.0.9
 - **作者**: KS.STUDIO
 - **目标框架**: .NET 6 (net6.0-windows7.0)
 - **NuGet 包**: StartUI4.WPF
@@ -1525,42 +1525,49 @@ Grid1.ImportData(dt);
 
 ---
 
-### UI4MessageBox 消息框
-
-自定义样式的消息对话框，带入场/出场动画、可调整大小等特性。
+# UI4MessageBox 消息框
+自定义样式的消息对话框，带入场/出场动画、窗口拖拽、四边缩放调整大小等特性。
 
 **继承自**: `Window`
 
-#### 静态方法
+## 枚举
+### UI4MessageBoxButtons
+弹窗按钮模式枚举
+| 枚举值 | 说明 |
+|--------|------|
+| OK | 仅展示单个OK按钮（默认） |
+| OKCancel | 展示OK + Cancel双按钮 |
 
+## 静态方法
 | 方法名 | 返回值 | 说明 |
 |-------|--------|------|
-| `Show(string content, string title = "Notice", double width = 480, double height = 280)` | `bool?` | 显示消息框，返回对话框结果 |
+| `Show(string content, string title = "Notice", UI4MessageBoxButtons buttons = UI4MessageBoxButtons.OK, double width = 480, double height = 280)` | `bool?` | 显示消息框，点击OK返回true，Cancel返回false |
 
-#### 构造函数
-
+## 构造函数
 | 构造函数 | 说明 |
 |---------|------|
-| `UI4MessageBox(string title, string content)` | 创建消息框实例 |
+| `UI4MessageBox(string title, string content, UI4MessageBoxButtons buttonMode = UI4MessageBoxButtons.OK)` | 创建消息框实例，可指定按钮模式 |
 
-#### 示例代码
-
+## 示例代码
 ```csharp
-// 简单调用
+// 默认仅OK按钮（最简调用）
 UI4MessageBox.Show("操作成功！", "提示");
 
-// 自定义尺寸
-UI4MessageBox.Show("这是一条消息内容", "通知", 480, 280);
+// 双按钮 OK+Cancel
+UI4MessageBox.Show("确定要删除数据吗？", "确认删除", UI4MessageBoxButtons.OKCancel);
 
-// 确认/取消判断
-bool? result = UI4MessageBox.Show("确定要删除吗？", "确认");
+// 自定义弹窗尺寸，仅OK按钮
+UI4MessageBox.Show("这是一条消息内容", "通知", UI4MessageBoxButtons.OK, 520, 320);
+
+// 获取弹窗点击结果（双按钮场景）
+bool? result = UI4MessageBox.Show("确定要删除吗？", "确认", UI4MessageBoxButtons.OKCancel);
 if (result == true)
 {
-    // 用户点击了确定
+    // 用户点击OK
 }
 else
 {
-    // 用户点击了取消
+    // 用户点击Cancel
 }
 ```
 
@@ -1663,7 +1670,7 @@ else
 |-------|------|------|
 | `Type` | `UI4MenuItemType` | 菜单项类型（Undo, Redo, Cut, Copy, Paste, Delete, SelectAll） |
 | `Text` | `string` | 菜单项显示文本 |
-| `Icon` | `ImageSource` | 菜单项图标 |
+| `Icon` | `ImageSource` or `Text` | 菜单项图标 |
 | `Command` | `Action` | 点击时执行的命令 |
 | `CanExecute` | `Func<bool>` | 可用性判断，返回 `false` 时菜单项呈禁用态（半透明） |
 
@@ -1697,8 +1704,14 @@ trayIcon.AddItem(UI4MenuItemType.Delete,
 
 // 添加自定义菜单项
 trayIcon.AddItem(new UI4TrayMenuItem(
+    UI4MenuItemType.Cut,      // Type（自定义项也可用任意值）
+    "打开主页1",                 // Text
+    "🌏",  // Icon
+    () => OpenHomePage()        // Command
+));
+trayIcon.AddItem(new UI4TrayMenuItem(
     UI4MenuItemType.Copy,      // Type（自定义项也可用任意值）
-    "打开主页",                 // Text
+    "打开主页2",                 // Text
     UI4MenuIcons.GetIcon(UI4MenuItemType.Copy),  // Icon
     () => OpenHomePage()        // Command
 ));
@@ -1753,4 +1766,4 @@ trayIcon.ClearMenuItems();
 
 ## 许可证
 
-© KS.STUDIO - StartUI4.WPF v1.0.8
+© KS.STUDIO - StartUI4.WPF v1.0.9

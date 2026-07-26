@@ -9,10 +9,24 @@ using System.Windows.Media.Effects;
 
 namespace StartUI4Controls
 {
+    public enum UI4MessageBoxButtons
+    {
+        OK,
+        OKCancel
+    }
+
     public class UI4MessageBox : Window
     {
-        public UI4MessageBox(string title, string content)
+        private bool _isClosingAnimating;
+        private const double ResizeThumbSize = 8;
+        private Point _resizeStartPoint;
+        private double _resizeStartWidth, _resizeStartHeight;
+        private int _resizeDirection = 0;
+        private readonly UI4MessageBoxButtons _buttonMode;
+
+        public UI4MessageBox(string title, string content, UI4MessageBoxButtons buttonMode = UI4MessageBoxButtons.OK)
         {
+            _buttonMode = buttonMode;
             Title = title;
             Width = 450;
             Height = 280;
@@ -22,14 +36,10 @@ namespace StartUI4Controls
             AllowsTransparency = true;
             Background = null;
 
-            Grid rootGrid = new Grid() { Margin=new Thickness(10)};
-
-            RowDefinition row0 = new RowDefinition();
-            row0.Height = GridLength.Auto;
-            RowDefinition row1 = new RowDefinition();
-            row1.Height = new GridLength(1, GridUnitType.Star);
-            RowDefinition row2 = new RowDefinition();
-            row2.Height = GridLength.Auto;
+            Grid rootGrid = new Grid() { Margin = new Thickness(10) };
+            RowDefinition row0 = new RowDefinition { Height = GridLength.Auto };
+            RowDefinition row1 = new RowDefinition { Height = new GridLength(1, GridUnitType.Star) };
+            RowDefinition row2 = new RowDefinition { Height = GridLength.Auto };
             rootGrid.RowDefinitions.Add(row0);
             rootGrid.RowDefinitions.Add(row1);
             rootGrid.RowDefinitions.Add(row2);
@@ -39,7 +49,7 @@ namespace StartUI4Controls
                 Text = title,
                 FontSize = 24,
                 FontWeight = FontWeights.Bold,
-                TextWrapping=TextWrapping.Wrap,
+                TextWrapping = TextWrapping.Wrap,
                 Margin = new Thickness(10)
             };
             Grid.SetRow(titleText, 0);
@@ -50,18 +60,19 @@ namespace StartUI4Controls
                 Text = content,
                 Margin = new Thickness(10, 10, 10, 0),
                 TextWrapping = TextWrapping.Wrap,
-                Background =null,
+                Background = null,
                 VerticalContentAlign = VerticalAlignment.Top,
-                BorderThickness=new Thickness(0),
+                BorderThickness = new Thickness(0),
                 ShadowOpacity = 0,
             };
             Grid.SetRow(contentText, 1);
             rootGrid.Children.Add(contentText);
 
-            Grid gridbottom = new Grid() {
-                Background=new SolidColorBrush(Color.FromArgb(20,174,174,174)),
-                Margin=new Thickness(-20) ,
-                Height=90
+            Grid gridbottom = new Grid()
+            {
+                Background = new SolidColorBrush(Color.FromArgb(20, 174, 174, 174)),
+                Margin = new Thickness(-20),
+                Height = 90
             };
             StackPanel buttonPanel = new StackPanel
             {
@@ -73,27 +84,13 @@ namespace StartUI4Controls
             rootGrid.Children.Add(gridbottom);
             gridbottom.Children.Add(buttonPanel);
 
-            UI4Button okButton = new UI4Button
-            {
-                Content = "OK",
-                Height = 30,
-                Width = 100,
-                Margin = new Thickness(0, 0, 10, 0)
-            };
-            okButton.Click += OkButton_Click;
-            buttonPanel.Children.Add(okButton);
+            BuildButtons(buttonPanel);
 
-            UI4Button closeButton = new UI4Button
+            Border border = new Border()
             {
-                Content = "Cancel",
-                Height = 30,
-                Width = 100,
-                Margin = new Thickness(20, 0, 30, 0)
+                Background = new SolidColorBrush(Colors.White),
+                CornerRadius = new CornerRadius(10)
             };
-            closeButton.Click += CloseButton_Click;
-            buttonPanel.Children.Add(closeButton);
-
-            Border border = new Border() { Background=new SolidColorBrush(Colors.White), CornerRadius = new CornerRadius(10) };
             border.MouseLeftButtonDown += (ss, ee) =>
             {
                 if (ee.ClickCount == 1) this.DragMove();
@@ -101,7 +98,6 @@ namespace StartUI4Controls
             border.Child = rootGrid;
 
             Grid resizeGrid = new Grid();
-
             Border left = new Border { Width = ResizeThumbSize, HorizontalAlignment = HorizontalAlignment.Left, Cursor = Cursors.SizeWE, Background = Brushes.Transparent };
             Border right = new Border { Width = ResizeThumbSize, HorizontalAlignment = HorizontalAlignment.Right, Cursor = Cursors.SizeWE, Background = Brushes.Transparent };
             Border top = new Border { Height = ResizeThumbSize, VerticalAlignment = VerticalAlignment.Top, Cursor = Cursors.SizeNS, Background = Brushes.Transparent };
@@ -141,60 +137,103 @@ namespace StartUI4Controls
             winUI4Style_Panel.Content = resizeGrid;
             this.Content = winUI4Style_Panel;
 
-            this.Loaded += (s, e) =>
-            {
-                if (!(this.Content is UI4Panel rootPanel))
-                    return;
+            this.Loaded += Window_LoadedAnim;
+        }
 
-                rootPanel.Opacity = 0;
-                rootPanel.RenderTransform = new TransformGroup
-                {
-                    Children = new TransformCollection
+        private void BuildButtons(StackPanel buttonPanel)
         {
-            new TranslateTransform(0, 90),
-            new ScaleTransform(0.88, 0.88)
+            double btnHeight = 30;
+            double btnWidth = 100;
+
+            UI4Button okButton;
+            if (_buttonMode == UI4MessageBoxButtons.OKCancel)
+            {
+                okButton = new UI4Button
+                {
+                    Content = "OK",
+                    Height = btnHeight,
+                    Width = btnWidth,
+                    Margin = new Thickness(0, 0, 10, 0)
+                };
+            }
+            else
+            {
+                okButton = new UI4Button
+                {
+                    Content = "OK",
+                    Height = btnHeight,
+                    Width = btnWidth,
+                    Margin = new Thickness(0, 0, 30, 0)
+                };
+            }
+            okButton.Click += OkButton_Click;
+            buttonPanel.Children.Add(okButton);
+
+            if (_buttonMode == UI4MessageBoxButtons.OKCancel)
+            {
+                UI4Button closeButton = new UI4Button
+                {
+                    Content = "Cancel",
+                    Height = btnHeight,
+                    Width = btnWidth,
+                    Margin = new Thickness(20, 0, 30, 0)
+                };
+                closeButton.Click += CloseButton_Click;
+                buttonPanel.Children.Add(closeButton);
+            }
         }
-                };
-                rootPanel.RenderTransformOrigin = new Point(0.5, 0.5);
-                rootPanel.Effect = new BlurEffect { Radius = 14 };
 
-                DoubleAnimation fadeAnim = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(200))
+        private void Window_LoadedAnim(object s, RoutedEventArgs e)
+        {
+            if (!(this.Content is UI4Panel rootPanel))
+                return;
+            rootPanel.Opacity = 0;
+            rootPanel.RenderTransform = new TransformGroup
+            {
+                Children = new TransformCollection
                 {
-                    EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
-                };
-                rootPanel.BeginAnimation(UIElement.OpacityProperty, fadeAnim);
-
-                TransformGroup transformGroup = rootPanel.RenderTransform as TransformGroup;
-                TranslateTransform translate = transformGroup.Children[0] as TranslateTransform;
-                ScaleTransform scale = transformGroup.Children[1] as ScaleTransform;
-
-                DoubleAnimation slideAnim = new DoubleAnimation(90, 0, TimeSpan.FromMilliseconds(200))
-                {
-                    EasingFunction = new BackEase { EasingMode = EasingMode.EaseOut, Amplitude = 0.35 }
-                };
-                translate.BeginAnimation(TranslateTransform.YProperty, slideAnim);
-
-                DoubleAnimation scaleAnim = new DoubleAnimation(0.88, 1, TimeSpan.FromMilliseconds(200))
-                {
-                    EasingFunction = new BackEase { EasingMode = EasingMode.EaseOut, Amplitude = 0.5 }
-                };
-                scale.BeginAnimation(ScaleTransform.ScaleXProperty, scaleAnim);
-                scale.BeginAnimation(ScaleTransform.ScaleYProperty, scaleAnim);
-
-                DoubleAnimation blurAnim = new DoubleAnimation(14, 0, TimeSpan.FromMilliseconds(200))
-                {
-                    EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut }
-                };
-                rootPanel.Effect.BeginAnimation(BlurEffect.RadiusProperty, blurAnim);
+                    new TranslateTransform(0, 90),
+                    new ScaleTransform(0.88, 0.88)
+                }
             };
+            rootPanel.RenderTransformOrigin = new Point(0.5, 0.5);
+            rootPanel.Effect = new BlurEffect { Radius = 14 };
+
+            DoubleAnimation fadeAnim = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(200))
+            {
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+            };
+            rootPanel.BeginAnimation(UIElement.OpacityProperty, fadeAnim);
+
+            TransformGroup transformGroup = rootPanel.RenderTransform as TransformGroup;
+            TranslateTransform translate = transformGroup.Children[0] as TranslateTransform;
+            ScaleTransform scale = transformGroup.Children[1] as ScaleTransform;
+
+            DoubleAnimation slideAnim = new DoubleAnimation(90, 0, TimeSpan.FromMilliseconds(200))
+            {
+                EasingFunction = new BackEase { EasingMode = EasingMode.EaseOut, Amplitude = 0.35 }
+            };
+            translate.BeginAnimation(TranslateTransform.YProperty, slideAnim);
+
+            DoubleAnimation scaleAnim = new DoubleAnimation(0.88, 1, TimeSpan.FromMilliseconds(200))
+            {
+                EasingFunction = new BackEase { EasingMode = EasingMode.EaseOut, Amplitude = 0.5 }
+            };
+            scale.BeginAnimation(ScaleTransform.ScaleXProperty, scaleAnim);
+            scale.BeginAnimation(ScaleTransform.ScaleYProperty, scaleAnim);
+
+            DoubleAnimation blurAnim = new DoubleAnimation(14, 0, TimeSpan.FromMilliseconds(200))
+            {
+                EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut }
+            };
+            rootPanel.Effect.BeginAnimation(BlurEffect.RadiusProperty, blurAnim);
         }
-        private bool _isClosingAnimating;
+
         private void CloseAnimation(bool dialogResult)
         {
             if (_isClosingAnimating) return;
             if (!(this.Content is UI4Panel rootPanel))
                 return;
-
             if (rootPanel.RenderTransform is not TransformGroup tg || tg.Children.Count < 2)
                 return;
             if (tg.Children[0] is not TranslateTransform trans || tg.Children[1] is not ScaleTransform scale)
@@ -215,13 +254,11 @@ namespace StartUI4Controls
                 EasingFunction = new CubicEase() { EasingMode = EasingMode.EaseIn },
                 FillBehavior = FillBehavior.HoldEnd
             };
-
             DoubleAnimation slideDown = new DoubleAnimation(0, 90, duration)
             {
                 EasingFunction = new BackEase() { EasingMode = EasingMode.EaseIn, Amplitude = 0.35 },
                 FillBehavior = FillBehavior.HoldEnd
             };
-
             DoubleAnimation shrinkX = new DoubleAnimation(1, 0.88, duration)
             {
                 EasingFunction = new BackEase() { EasingMode = EasingMode.EaseIn, Amplitude = 0.5 },
@@ -232,7 +269,6 @@ namespace StartUI4Controls
                 EasingFunction = new BackEase() { EasingMode = EasingMode.EaseIn, Amplitude = 0.5 },
                 FillBehavior = FillBehavior.HoldEnd
             };
-
             DoubleAnimation blurOut = new DoubleAnimation(0, 14, duration)
             {
                 EasingFunction = new QuadraticEase() { EasingMode = EasingMode.EaseIn },
@@ -241,7 +277,6 @@ namespace StartUI4Controls
 
             int completeCount = 0;
             int totalAnim = 5;
-
             void OnAnyAnimationCompleted(object s, EventArgs e)
             {
                 completeCount++;
@@ -267,6 +302,7 @@ namespace StartUI4Controls
             scale.BeginAnimation(ScaleTransform.ScaleYProperty, shrinkY);
             blurEffect.BeginAnimation(BlurEffect.RadiusProperty, blurOut);
         }
+
         private void OkButton_Click(object sender, RoutedEventArgs e)
         {
             CloseAnimation(true);
@@ -277,17 +313,18 @@ namespace StartUI4Controls
             CloseAnimation(false);
         }
 
-        public static bool? Show(string content,string title="Notice", double width = 480, double height = 280)
+        public static bool? Show(string content,
+            string title = "Notice",
+            UI4MessageBoxButtons buttons = UI4MessageBoxButtons.OK,
+            double width = 480,
+            double height = 280)
         {
-            UI4MessageBox box = new UI4MessageBox(title, content);
+            UI4MessageBox box = new UI4MessageBox(title, content, buttons);
             box.Width = width;
             box.Height = height;
             return box.ShowDialog();
         }
-        private const double ResizeThumbSize = 8;
-        private Point _resizeStartPoint;
-        private double _resizeStartWidth, _resizeStartHeight;
-        private int _resizeDirection = 0;
+
         private void StartResize(MouseButtonEventArgs e, int direction)
         {
             _resizeDirection = direction;
@@ -306,7 +343,6 @@ namespace StartUI4Controls
             double dx = current.X - _resizeStartPoint.X;
             double dy = current.Y - _resizeStartPoint.Y;
             double minW = 200, minH = 150;
-
             switch (_resizeDirection)
             {
                 case 2: Width = Math.Max(minW, _resizeStartWidth + dx); break;
