@@ -24,7 +24,7 @@
 
 **StartUI4.WPF** 是一款基于 WPF .NET 6 开发的现代化 UI 控件库，完美契合 WinUI Fluent Design 设计语言。只需简单配置即可使用，支持 Windows 7 / 10 / 11 操作系统。
 
-- **版本**: 1.0.9
+- **版本**: 1.0.11
 - **作者**: KS.STUDIO
 - **目标框架**: .NET 6 (net6.0-windows7.0)
 - **NuGet 包**: StartUI4.WPF
@@ -102,6 +102,8 @@ xmlns:ui="clr-namespace:StartUI4Controls;assembly=StartUI4Controls"
 | [UI4MessageBox](#ui4messagebox-消息框) | Window | 自定义消息对话框 |
 | [UI4CodeEditor](#ui4codeeditor-代码编辑器) | RichTextBox | 带语法高亮的代码编辑器 |
 | [UI4NotifyIcon](#ui4notifyicon-托盘图标) | TaskbarIcon | 系统托盘图标，带自定义右键菜单 |
+| [UI4Menu](#UI4Menu-菜单栏) | UI4Menu | 菜单栏，带自定义图标 |
+| [UI4PasswordBox](#ui4passwordbox-密码输入框) | TextBox | 支持明文/密文切换、自定义掩码、占位符的密码输入框 |
 
 ---
 
@@ -1737,6 +1739,101 @@ trayIcon.ClearMenuItems();
 
 ---
 
+### UI4Menu 菜单栏
+**继承自**: `Menu`
+配套控件：`UI4MenuElementItem`（菜单项）、`UI4MenuSeparatorElement`（菜单分割线）
+
+#### 可设置属性
+##### UI4Menu 根控件
+| 属性名 | 类型 | 默认值 | 说明 |
+|-------|------|--------|------|
+| BarBackground | `Brush` | `#F8F8F8` | 顶部菜单栏背景色 |
+| ItemHoverBrush | `Brush` | `#20000000` | 菜单项悬浮背景 |
+| PopupCornerRadius | `CornerRadius` | `6` | 下拉子菜单弹窗圆角 |
+| TextForeground | `Brush` | `#141414` | 全局菜单文字颜色 |
+
+##### UI4MenuElementItem 菜单项
+| 属性名 | 类型 | 默认值 | 说明 |
+|-------|------|--------|------|
+| TextIcon | `string` | `""` | 矢量图标字符（Segoe UI Symbol） |
+| IconFontFamily | `FontFamily` | `Segoe UI Symbol` | 图标字体 |
+| IconFontSize | `double` | `14` | 图标尺寸 |
+| IconForeground | `Brush` | `null` | 图标独立颜色，空则继承文字色 |
+| KeyTip | `string` | `""` | 右侧快捷键提示文本 |
+
+##### UI4MenuSeparatorElement 分割线
+| 属性名 | 类型 | 默认值 | 说明 |
+|-------|------|--------|------|
+| SeparatorColor | `Brush` | `#DCDC DC` | 分割线颜色 |
+
+#### 特性
+- 顶部横向主菜单，子菜单垂直排列，弹出滑入动画
+- 悬浮/子展开状态共用高亮背景
+- 无图标、无快捷键时自动隐藏对应区域
+- 禁用项自动透明度降至0.4
+- 子菜单带阴影、圆角、透明弹窗
+- 区分顶级菜单、子菜单文字对齐样式
+
+#### 示例代码
+```xml
+<ui:UI4Menu>
+    <ui:UI4MenuElementItem Header="File" KeyTip="(F)">
+        <ui:UI4MenuElementItem Header="New" TextIcon="♥" IconFontFamily="Segoe UI Symbol" IconFontSize="15" Click="New_Click"/>
+        <ui:UI4MenuSeparatorElement/>
+        <ui:UI4MenuElementItem Header="Exit" TextIcon="×"/>
+    </ui:UI4MenuElementItem>
+    <ui:UI4MenuElementItem Header="Edit" KeyTip="(E)">
+        <ui:UI4MenuElementItem Header="Undo" TextIcon="↩"/>
+        <ui:UI4MenuElementItem Header="Redo" TextIcon="↪"/>
+    </ui:UI4MenuElementItem>
+</ui:UI4Menu>
+
+```
+### UI4PasswordBox 密码输入框
+
+支持密码掩码显示/隐藏切换、自定义掩码字符、占位符、清除按钮的密码输入框。
+
+**继承自**: `TextBox`
+
+#### 可设置属性
+
+| 属性名 | 类型 | 默认值 | 说明 |
+|-------|------|--------|------|
+| `Password` | `string` | `""` | 密码明文内容（支持双向绑定） |
+| `PasswordChar` | `char` | `●` | 掩码字符 |
+| `IsPasswordMode` | `bool` | `true` | 是否启用密码模式（`false` 时显示明文） |
+| `CornerRadius` | `CornerRadius` | `8` | 输入框圆角半径 |
+| `BorderNormalColor` | `Color` | `#C8C8DC` (200,200,220) | 默认边框颜色 |
+| `FocusGradientStart` | `Color` | `#2563EB` (37,99,235) | 聚焦时渐变起始色 |
+| `FocusGradientEnd` | `Color` | `#9333EA` (147,51,234) | 聚焦时渐变结束色 |
+| `EditBackground` | `Brush` | `White` | 输入框背景色 |
+| `TextColor` | `Color` | `#1E1E1E` (30,30,30) | 文字颜色 |
+| `InnerPadding` | `Thickness` | `12,5,32,5` | 内部内边距 |
+| `ShowClearButton` | `bool` | `false` | 是否显示显示/隐藏密码按钮（眼睛图标） |
+| `PlaceholderText` | `string` | `""` | 占位符文本 |
+| `PlaceholderForeground` | `Brush` | `LightGray` | 占位符文字颜色 |
+
+#### 继承属性
+
+同时继承 `TextBox` 的所有属性，如 `Text`、`FontSize`、`Foreground`、`Width`、`Height`、`AcceptsReturn`、`VerticalScrollBarVisibility`、`HorizontalScrollBarVisibility` 等。
+
+#### 示例代码
+
+```xml
+<!-- 基础密码框 -->
+<ui:UI4PasswordBox PlaceholderText="请输入密码" Width="260" Height="36" />
+
+<!-- 显示显示/隐藏按钮 -->
+<ui:UI4PasswordBox ShowClearButton="True" PlaceholderText="密码" Width="260" />
+
+<!-- 自定义掩码字符 -->
+<ui:UI4PasswordBox PasswordChar="*" ShowClearButton="True" Width="260" />
+
+<!-- 数据绑定 -->
+<ui:UI4PasswordBox Password="{Binding UserPassword, Mode=TwoWay}" ShowClearButton="True" />
+```
+
+
 ## 附录：命名空间引用
 
 在所有 XAML 文件中使用前，请确保已引入命名空间：
@@ -1766,4 +1863,4 @@ trayIcon.ClearMenuItems();
 
 ## 许可证
 
-© KS.STUDIO - StartUI4.WPF v1.0.9
+© KS.STUDIO - StartUI4.WPF v1.0.11

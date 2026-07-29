@@ -179,8 +179,12 @@ namespace StartUI4Controls
                 }
             }
             RebuildAllRows();
+
             _trayPopup.PlacementTarget = mainWindow;
             _trayPopup.Placement = PlacementMode.MousePoint;
+            _trayPopup.HorizontalOffset = -10;
+            _trayPopup.VerticalOffset = 10;   
+
             _listBox.Opacity = 0;
             _trayPopup.IsOpen = true;
             var fadeAnim = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(150));

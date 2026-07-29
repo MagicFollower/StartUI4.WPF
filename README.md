@@ -24,7 +24,7 @@
 
 **StartUI4.WPF** is a modern UI control library developed based on WPF .NET 6, perfectly aligned with the WinUI Fluent Design language. Easy to configure and use, supports Windows 7 / 10 / 11 operating systems.
 
-- **Version**: 1.0.9
+- **Version**: 1.0.11
 - **Author**: KS.STUDIO
 - **Target Framework**: .NET 6 (net6.0-windows7.0)
 - **NuGet Package**: StartUI4.WPF
@@ -104,6 +104,8 @@ xmlns:ui="clr-namespace:StartUI4Controls;assembly=StartUI4Controls"
 | [UI4MessageBox](#ui4messagebox) | Window | Custom message dialog box |
 | [UI4CodeEditor](#ui4codeeditor) | RichTextBox | Code editor with syntax highlighting |
 | [UI4NotifyIcon](#ui4notifyicon) | TaskbarIcon | System tray icon with custom right-click menu |
+| [UI4Menu](#UI4Menu) | Menu | Menu can set TextIcon. |
+| [UI4PasswordBox](#ui4passwordbox) | TextBox | Password input with plaintext/reveal toggle, custom mask char, placeholder |
 
 ---
 
@@ -1726,6 +1728,101 @@ trayIcon.CloseMenu();
 trayIcon.ClearMenuItems();
 ```
 
+### UI4Menu Menu Bar
+**Inherits from**: `Menu`
+Support sub-controls: `UI4MenuElementItem` (menu item), `UI4MenuSeparatorElement` (menu separator)
+
+#### Settable Properties
+##### Root UI4Menu
+| Property Name | Type | Default Value | Description |
+|--------------|------|---------------|-------------|
+| BarBackground | `Brush` | `#F8F8F8` | Background of top menu bar |
+| ItemHoverBrush | `Brush` | `#20000000` | Hover background for menu items |
+| PopupCornerRadius | `CornerRadius` | `6` | Corner radius of submenu popup window |
+| TextForeground | `Brush` | `#141414` | Global text color for all menu text |
+
+##### UI4MenuElementItem Menu Item
+| Property Name | Type | Default Value | Description |
+|--------------|------|---------------|-------------|
+| TextIcon | `string` | `""` | Vector icon glyph (Segoe UI Symbol) |
+| IconFontFamily | `FontFamily` | `Segoe UI Symbol` | Icon font family |
+| IconFontSize | `double` | `14` | Icon size |
+| IconForeground | `Brush` | `null` | Separate icon color; inherits text color if null |
+| KeyTip | `string` | `""` | Shortcut hint text on right side |
+
+##### UI4MenuSeparatorElement Separator
+| Property Name | Type | Default Value | Description |
+|--------------|------|---------------|-------------|
+| SeparatorColor | `Brush` | `#DCDC DC` | Separator line color |
+
+### UI4PasswordBox
+
+A password input control supporting mask toggle, custom mask character, placeholder, and reveal button.
+
+**Inherits from**: `TextBox`
+
+#### Settable Properties
+
+| Property Name | Type | Default Value | Description |
+|--------------|------|---------------|-------------|
+| `Password` | `string` | `""` | Plaintext password content (two-way bindable) |
+| `PasswordChar` | `char` | `???` | Mask character |
+| `IsPasswordMode` | `bool` | `true` | Whether to enable password mode (`false` shows plaintext) |
+| `CornerRadius` | `CornerRadius` | `8` | Input box corner radius |
+| `BorderNormalColor` | `Color` | `#C8C8DC` (200,200,220) | Default border color |
+| `FocusGradientStart` | `Color` | `#2563EB` (37,99,235) | Gradient start color when focused |
+| `FocusGradientEnd` | `Color` | `#9333EA` (147,51,234) | Gradient end color when focused |
+| `EditBackground` | `Brush` | `White` | Input box background color |
+| `TextColor` | `Color` | `#1E1E1E` (30,30,30) | Text color |
+| `InnerPadding` | `Thickness` | `12,5,32,5` | Internal content padding |
+| `ShowClearButton` | `bool` | `false` | Whether to show the reveal/hide password button (eye icon) |
+| `PlaceholderText` | `string` | `""` | Placeholder text |
+| `PlaceholderForeground` | `Brush` | `LightGray` | Placeholder text color |
+
+#### Inherited Properties
+
+Also inherits all properties from `TextBox`, such as `Text`, `FontSize`, `Foreground`, `Width`, `Height`, `AcceptsReturn`, `VerticalScrollBarVisibility`, `HorizontalScrollBarVisibility`, etc.
+
+#### Example Code
+
+```xml
+<!-- Basic password box -->
+<ui:UI4PasswordBox PlaceholderText="Enter password" Width="260" Height="36" />
+
+<!-- With reveal button -->
+<ui:UI4PasswordBox ShowClearButton="True" PlaceholderText="Password" Width="260" />
+
+<!-- Custom mask char -->
+<ui:UI4PasswordBox PasswordChar="*" ShowClearButton="True" Width="260" />
+
+<!-- Data binding -->
+<ui:UI4PasswordBox Password="{Binding UserPassword, Mode=TwoWay}" ShowClearButton="True" />
+```
+
+#### Features
+- Horizontal top-level menu, vertical submenu layout with slide-in popup animation
+- Shared highlight background for mouse hover and opened submenu
+- Auto collapse icon / keytip area when value is empty or null
+- Disabled items auto set opacity to 0.4
+- Submenu popup with drop shadow, rounded corner and transparency
+- Different text alignment for top headers and submenu headers
+
+#### Example Code
+```xml
+<ui:UI4Menu>
+    <ui:UI4MenuElementItem Header="File" KeyTip="(F)">
+        <ui:UI4MenuElementItem Header="New" TextIcon="???" IconFontFamily="Segoe UI Symbol" IconFontSize="15" Click="New_Click"/>
+        <ui:UI4MenuSeparatorElement/>
+        <ui:UI4MenuElementItem Header="Exit" TextIcon="??"/>
+    </ui:UI4MenuElementItem>
+    <ui:UI4MenuElementItem Header="Edit" KeyTip="(E)">
+        <ui:UI4MenuElementItem Header="Undo" TextIcon="???"/>
+        <ui:UI4MenuElementItem Header="Redo" TextIcon="???"/>
+    </ui:UI4MenuElementItem>
+</ui:UI4Menu>
+```
+
+
 #### Feature Notes
 
 - **Right-click Menu**: Right-clicking the tray icon pops up a custom menu at the mouse position using `PlacementMode.AbsolutePoint` for precise positioning
@@ -1768,4 +1865,4 @@ Complete example:
 
 ## License
 
-?? KS.STUDIO - StartUI4.WPF v1.0.9
+?? KS.STUDIO - StartUI4.WPF v1.0.11

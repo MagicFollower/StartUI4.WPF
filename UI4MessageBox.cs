@@ -70,7 +70,7 @@ namespace StartUI4Controls
 
             Grid gridbottom = new Grid()
             {
-                Background = new SolidColorBrush(Color.FromArgb(20, 174, 174, 174)),
+                Background = new SolidColorBrush(Color.FromArgb(200, 243,243,243)),
                 Margin = new Thickness(-20),
                 Height = 90
             };
@@ -132,7 +132,8 @@ namespace StartUI4Controls
                 ShadowBlurRadius = 0,
                 ShadowOpacity = 0,
                 ShadowDepth = 0,
-                HoverScale = 1
+                HoverScale = 1,
+                HoverBorderBrush=new SolidColorBrush(Colors.Transparent)
             };
             winUI4Style_Panel.Content = resizeGrid;
             this.Content = winUI4Style_Panel;
