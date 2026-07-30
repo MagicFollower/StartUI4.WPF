@@ -24,7 +24,7 @@
 
 **StartUI4.WPF** 是一款基于 WPF .NET 6 开发的现代化 UI 控件库，完美契合 WinUI Fluent Design 设计语言。只需简单配置即可使用，支持 Windows 7 / 10 / 11 操作系统。
 
-- **版本**: 1.0.11
+- **版本**: 1.0.12
 - **作者**: KS.STUDIO
 - **目标框架**: .NET 6 (net6.0-windows7.0)
 - **NuGet 包**: StartUI4.WPF
@@ -1863,4 +1863,4 @@ trayIcon.ClearMenuItems();
 
 ## 许可证
 
-© KS.STUDIO - StartUI4.WPF v1.0.11
+© KS.STUDIO - StartUI4.WPF v1.0.12

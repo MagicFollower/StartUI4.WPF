@@ -6,7 +6,6 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Effects;
-
 namespace StartUI4Controls
 {
     public enum UI4MessageBoxButtons
@@ -14,7 +13,6 @@ namespace StartUI4Controls
         OK,
         OKCancel
     }
-
     public class UI4MessageBox : Window
     {
         private bool _isClosingAnimating;
@@ -23,79 +21,100 @@ namespace StartUI4Controls
         private double _resizeStartWidth, _resizeStartHeight;
         private int _resizeDirection = 0;
         private readonly UI4MessageBoxButtons _buttonMode;
+        private TextBlock _iconText;
+        private TextBlock _headingText;
+        private TextBlock _messageText;
+        private UI4Button _okButton;
+        private UI4Button _cancelButton;
 
         public UI4MessageBox(string title, string content, UI4MessageBoxButtons buttonMode = UI4MessageBoxButtons.OK)
         {
             _buttonMode = buttonMode;
             Title = title;
-            Width = 450;
-            Height = 280;
-            WindowStartupLocation = WindowStartupLocation.CenterScreen;
-            WindowStyle = WindowStyle.None;
+            Width = 460;
+            MinHeight = 160;
+            MaxHeight = 400;
+            SizeToContent = SizeToContent.Height;
             ResizeMode = ResizeMode.CanResize;
+            WindowStartupLocation = WindowStartupLocation.CenterOwner;
+            ShowInTaskbar = false;
+            FontFamily = new FontFamily("Segoe UI Variable Display, Segoe UI, sans-serif");
+            Background = Brushes.Transparent;
+            WindowStyle = WindowStyle.None;
             AllowsTransparency = true;
-            Background = null;
+            TextOptions.SetTextFormattingMode(this, TextFormattingMode.Display);
 
-            Grid rootGrid = new Grid() { Margin = new Thickness(10) };
-            RowDefinition row0 = new RowDefinition { Height = GridLength.Auto };
-            RowDefinition row1 = new RowDefinition { Height = new GridLength(1, GridUnitType.Star) };
-            RowDefinition row2 = new RowDefinition { Height = GridLength.Auto };
-            rootGrid.RowDefinitions.Add(row0);
-            rootGrid.RowDefinitions.Add(row1);
-            rootGrid.RowDefinitions.Add(row2);
-
-            TextBlock titleText = new TextBlock
+            Border mainContainer = new Border
             {
-                Text = title,
-                FontSize = 24,
-                FontWeight = FontWeights.Bold,
+                Margin = new Thickness(20, 16, 20, 16),
+                Background = new SolidColorBrush(Colors.White),
+                CornerRadius = new CornerRadius(10)
+            };
+
+            Grid rootGrid = new Grid() { Margin=new Thickness(20)};
+            rootGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            rootGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+            rootGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+            Grid headerGrid = new Grid();
+            headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+            _iconText = new TextBlock
+            {
+                FontFamily = new FontFamily("Segoe MDL2 Assets"),
+                FontSize = 28,
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(0, 0, 12, 0),
+                Text = "\uE134"
+            };
+            Grid.SetColumn(_iconText, 0);
+            headerGrid.Children.Add(_iconText);
+
+            _headingText = new TextBlock
+            {
+                FontSize = 16,
+                FontWeight = FontWeights.SemiBold,
+                VerticalAlignment = VerticalAlignment.Center,
+                TextTrimming = TextTrimming.CharacterEllipsis,
+                Text = title
+            };
+            Grid.SetColumn(_headingText, 1);
+            headerGrid.Children.Add(_headingText);
+            Grid.SetRow(headerGrid, 0);
+            rootGrid.Children.Add(headerGrid);
+
+            _messageText = new TextBlock
+            {
+                FontSize = 14,
                 TextWrapping = TextWrapping.Wrap,
-                Margin = new Thickness(10)
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(0, 12, 0, 0),
+                Opacity = 0.85,
+                Text = content
             };
-            Grid.SetRow(titleText, 0);
-            rootGrid.Children.Add(titleText);
+            Grid.SetRow(_messageText, 1);
+            rootGrid.Children.Add(_messageText);
 
-            UI4TextBlock contentText = new UI4TextBlock
-            {
-                Text = content,
-                Margin = new Thickness(10, 10, 10, 0),
-                TextWrapping = TextWrapping.Wrap,
-                Background = null,
-                VerticalContentAlign = VerticalAlignment.Top,
-                BorderThickness = new Thickness(0),
-                ShadowOpacity = 0,
-            };
-            Grid.SetRow(contentText, 1);
-            rootGrid.Children.Add(contentText);
+            Grid buttonWrapper = new Grid();
+            buttonWrapper.Margin = new Thickness(0, 12, 0, 0);
+            Grid.SetRow(buttonWrapper, 2);
+            rootGrid.Children.Add(buttonWrapper);
 
-            Grid gridbottom = new Grid()
-            {
-                Background = new SolidColorBrush(Color.FromArgb(200, 243,243,243)),
-                Margin = new Thickness(-20),
-                Height = 90
-            };
             StackPanel buttonPanel = new StackPanel
             {
                 Orientation = Orientation.Horizontal,
                 HorizontalAlignment = HorizontalAlignment.Right,
-                VerticalAlignment = VerticalAlignment.Center,
+                
             };
-            Grid.SetRow(gridbottom, 2);
-            rootGrid.Children.Add(gridbottom);
-            gridbottom.Children.Add(buttonPanel);
-
+            buttonWrapper.Children.Add(buttonPanel);
             BuildButtons(buttonPanel);
 
-            Border border = new Border()
+            mainContainer.Child = rootGrid;
+            mainContainer.MouseLeftButtonDown += (ss, ee) =>
             {
-                Background = new SolidColorBrush(Colors.White),
-                CornerRadius = new CornerRadius(10)
+                if (ee.ClickCount == 1) DragMove();
             };
-            border.MouseLeftButtonDown += (ss, ee) =>
-            {
-                if (ee.ClickCount == 1) this.DragMove();
-            };
-            border.Child = rootGrid;
 
             Grid resizeGrid = new Grid();
             Border left = new Border { Width = ResizeThumbSize, HorizontalAlignment = HorizontalAlignment.Left, Cursor = Cursors.SizeWE, Background = Brushes.Transparent };
@@ -106,8 +125,7 @@ namespace StartUI4Controls
             Border topRight = new Border { Width = ResizeThumbSize, Height = ResizeThumbSize, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Top, Cursor = Cursors.SizeNESW, Background = Brushes.Transparent };
             Border bottomLeft = new Border { Width = ResizeThumbSize, Height = ResizeThumbSize, HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Bottom, Cursor = Cursors.SizeNESW, Background = Brushes.Transparent };
             Border bottomRight = new Border { Width = ResizeThumbSize, Height = ResizeThumbSize, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Bottom, Cursor = Cursors.SizeNWSE, Background = Brushes.Transparent };
-
-            resizeGrid.Children.Add(border);
+            resizeGrid.Children.Add(mainContainer);
             resizeGrid.Children.Add(left);
             resizeGrid.Children.Add(right);
             resizeGrid.Children.Add(top);
@@ -129,58 +147,52 @@ namespace StartUI4Controls
             UI4Panel winUI4Style_Panel = new UI4Panel()
             {
                 Margin = new Thickness(20),
-                ShadowBlurRadius = 0,
-                ShadowOpacity = 0,
-                ShadowDepth = 0,
+                ShadowBlurRadius = 12,
+                ShadowOpacity = 0.35,
+                ShadowDepth = 6,
                 HoverScale = 1,
-                HoverBorderBrush=new SolidColorBrush(Colors.Transparent)
+                HoverBorderBrush = new SolidColorBrush(Colors.Transparent),
+                BorderThickness=new Thickness(0)
+            };
+            winUI4Style_Panel.Effect = new DropShadowEffect
+            {
+                Color = Color.FromRgb(60, 60, 60),
+                BlurRadius = 12,
+                ShadowDepth = 6,
+                Opacity = 0.35
             };
             winUI4Style_Panel.Content = resizeGrid;
             this.Content = winUI4Style_Panel;
-
             this.Loaded += Window_LoadedAnim;
         }
 
         private void BuildButtons(StackPanel buttonPanel)
         {
-            double btnHeight = 30;
-            double btnWidth = 100;
-
-            UI4Button okButton;
-            if (_buttonMode == UI4MessageBoxButtons.OKCancel)
+            _okButton = new UI4Button
             {
-                okButton = new UI4Button
-                {
-                    Content = "OK",
-                    Height = btnHeight,
-                    Width = btnWidth,
-                    Margin = new Thickness(0, 0, 10, 0)
-                };
-            }
-            else
-            {
-                okButton = new UI4Button
-                {
-                    Content = "OK",
-                    Height = btnHeight,
-                    Width = btnWidth,
-                    Margin = new Thickness(0, 0, 30, 0)
-                };
-            }
-            okButton.Click += OkButton_Click;
-            buttonPanel.Children.Add(okButton);
+                Content = "OK",
+                Width = 80,
+                Height = 32,
+                FontSize = 13,
+                Cursor = Cursors.Hand,
+                IsDefault = true
+            };
+            _okButton.Click += OkButton_Click;
+            buttonPanel.Children.Add(_okButton);
 
             if (_buttonMode == UI4MessageBoxButtons.OKCancel)
             {
-                UI4Button closeButton = new UI4Button
+                _cancelButton = new UI4Button
                 {
                     Content = "Cancel",
-                    Height = btnHeight,
-                    Width = btnWidth,
-                    Margin = new Thickness(20, 0, 30, 0)
+                    Width = 80,
+                    Height = 32,
+                    FontSize = 13,
+                    Cursor = Cursors.Hand,
+                    Margin = new Thickness(12, 0, 0, 0)
                 };
-                closeButton.Click += CloseButton_Click;
-                buttonPanel.Children.Add(closeButton);
+                _cancelButton.Click += CloseButton_Click;
+                buttonPanel.Children.Add(_cancelButton);
             }
         }
 
@@ -199,30 +211,25 @@ namespace StartUI4Controls
             };
             rootPanel.RenderTransformOrigin = new Point(0.5, 0.5);
             rootPanel.Effect = new BlurEffect { Radius = 14 };
-
             DoubleAnimation fadeAnim = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(200))
             {
                 EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
             };
             rootPanel.BeginAnimation(UIElement.OpacityProperty, fadeAnim);
-
             TransformGroup transformGroup = rootPanel.RenderTransform as TransformGroup;
             TranslateTransform translate = transformGroup.Children[0] as TranslateTransform;
             ScaleTransform scale = transformGroup.Children[1] as ScaleTransform;
-
             DoubleAnimation slideAnim = new DoubleAnimation(90, 0, TimeSpan.FromMilliseconds(200))
             {
                 EasingFunction = new BackEase { EasingMode = EasingMode.EaseOut, Amplitude = 0.35 }
             };
             translate.BeginAnimation(TranslateTransform.YProperty, slideAnim);
-
             DoubleAnimation scaleAnim = new DoubleAnimation(0.88, 1, TimeSpan.FromMilliseconds(200))
             {
                 EasingFunction = new BackEase { EasingMode = EasingMode.EaseOut, Amplitude = 0.5 }
             };
             scale.BeginAnimation(ScaleTransform.ScaleXProperty, scaleAnim);
             scale.BeginAnimation(ScaleTransform.ScaleYProperty, scaleAnim);
-
             DoubleAnimation blurAnim = new DoubleAnimation(14, 0, TimeSpan.FromMilliseconds(200))
             {
                 EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut }
@@ -239,17 +246,14 @@ namespace StartUI4Controls
                 return;
             if (tg.Children[0] is not TranslateTransform trans || tg.Children[1] is not ScaleTransform scale)
                 return;
-
             BlurEffect blurEffect = rootPanel.Effect as BlurEffect;
             if (blurEffect == null)
             {
                 blurEffect = new BlurEffect { Radius = 0 };
                 rootPanel.Effect = blurEffect;
             }
-
             _isClosingAnimating = true;
             TimeSpan duration = TimeSpan.FromMilliseconds(200);
-
             DoubleAnimation fadeOut = new DoubleAnimation(1, 0, duration)
             {
                 EasingFunction = new CubicEase() { EasingMode = EasingMode.EaseIn },
@@ -275,7 +279,6 @@ namespace StartUI4Controls
                 EasingFunction = new QuadraticEase() { EasingMode = EasingMode.EaseIn },
                 FillBehavior = FillBehavior.HoldEnd
             };
-
             int completeCount = 0;
             int totalAnim = 5;
             void OnAnyAnimationCompleted(object s, EventArgs e)
@@ -290,13 +293,11 @@ namespace StartUI4Controls
                     });
                 }
             }
-
             fadeOut.Completed += OnAnyAnimationCompleted;
             slideDown.Completed += OnAnyAnimationCompleted;
             shrinkX.Completed += OnAnyAnimationCompleted;
             shrinkY.Completed += OnAnyAnimationCompleted;
             blurOut.Completed += OnAnyAnimationCompleted;
-
             rootPanel.BeginAnimation(UIElement.OpacityProperty, fadeOut);
             trans.BeginAnimation(TranslateTransform.YProperty, slideDown);
             scale.BeginAnimation(ScaleTransform.ScaleXProperty, shrinkX);
@@ -317,12 +318,10 @@ namespace StartUI4Controls
         public static bool? Show(string content,
             string title = "Notice",
             UI4MessageBoxButtons buttons = UI4MessageBoxButtons.OK,
-            double width = 480,
-            double height = 280)
+            double width = 460)
         {
             UI4MessageBox box = new UI4MessageBox(title, content, buttons);
             box.Width = width;
-            box.Height = height;
             return box.ShowDialog();
         }
 
