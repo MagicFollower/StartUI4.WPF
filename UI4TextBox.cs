@@ -458,6 +458,7 @@ namespace StartUI4Controls
             style.Setters.Add(new Setter(BorderThicknessProperty, new Thickness(1)));
             style.Setters.Add(new Setter(BorderBrushProperty, new SolidColorBrush(BorderNormalColor)));
             style.Setters.Add(new Setter(CursorProperty, Cursors.IBeam));
+            style.Setters.Add(new Setter(MinHeightProperty, 35d));
 
             ControlTemplate template = new ControlTemplate(typeof(TextBox));
             FrameworkElementFactory borderRoot = new FrameworkElementFactory(typeof(Border));
