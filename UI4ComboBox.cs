@@ -10,6 +10,7 @@ using System.Windows.Markup;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Shapes;
+using System.Windows.Threading;
 namespace StartUI4Controls
 {
     public class UI4ComboBox : ComboBox
@@ -128,6 +129,58 @@ namespace StartUI4Controls
             }
             _globalScrollResLoaded = true;
         }
+        private static void OnDropDownPreviewMouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            if (sender is ScrollViewer scrollViewer)
+                ShowDropDownScrollBars(scrollViewer);
+        }
+        private static void OnDropDownScrollChanged(object sender, ScrollChangedEventArgs e)
+        {
+            if (sender is not ScrollViewer scrollViewer || (e.VerticalChange == 0 && e.HorizontalChange == 0))
+                return;
+
+            ShowDropDownScrollBars(scrollViewer);
+        }
+        private static void ShowDropDownScrollBars(ScrollViewer scrollViewer)
+        {
+            foreach (ScrollBar scrollBar in FindVisualChildren<ScrollBar>(scrollViewer))
+            {
+                scrollBar.BeginAnimation(OpacityProperty, null);
+                scrollBar.Opacity = 0.6;
+            }
+
+            if (scrollViewer.Tag is not DispatcherTimer timer)
+            {
+                timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(600) };
+                timer.Tick += (_, _) =>
+                {
+                    timer.Stop();
+                    foreach (ScrollBar scrollBar in FindVisualChildren<ScrollBar>(scrollViewer))
+                    {
+                        scrollBar.BeginAnimation(OpacityProperty, new DoubleAnimation(0, TimeSpan.FromMilliseconds(300)));
+                    }
+                };
+                scrollViewer.Tag = timer;
+            }
+
+            timer.Stop();
+            timer.Start();
+        }
+        private static IEnumerable FindVisualChildren<T>(DependencyObject parent) where T : DependencyObject
+        {
+            if (parent == null)
+                yield break;
+
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+            {
+                DependencyObject child = VisualTreeHelper.GetChild(parent, i);
+                if (child is T matchedChild)
+                    yield return matchedChild;
+
+                foreach (T descendant in FindVisualChildren<T>(child))
+                    yield return descendant;
+            }
+        }
         private static string GetScrollBarResourcesXaml()
         {
             return @"
@@ -204,20 +257,7 @@ namespace StartUI4Controls
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property='IsMouseOver' Value='True'>
-                            <Trigger.EnterActions>
-                                <BeginStoryboard>
-                                    <Storyboard>
-                                        <DoubleAnimation Storyboard.TargetProperty='Opacity' To='1' Duration='0:0:0.2' />
-                                    </Storyboard>
-                                </BeginStoryboard>
-                            </Trigger.EnterActions>
-                            <Trigger.ExitActions>
-                                <BeginStoryboard>
-                                    <Storyboard>
-                                        <DoubleAnimation Storyboard.TargetProperty='Opacity' To='0' Duration='0:0:0.5' />
-                                    </Storyboard>
-                                </BeginStoryboard>
-                            </Trigger.ExitActions>
+                            <Setter Property='Opacity' Value='0.6' />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -251,20 +291,7 @@ namespace StartUI4Controls
                             </Grid>
                             <ControlTemplate.Triggers>
                                 <Trigger Property='IsMouseOver' Value='True'>
-                                    <Trigger.EnterActions>
-                                        <BeginStoryboard>
-                                            <Storyboard>
-                                                <DoubleAnimation Storyboard.TargetProperty='Opacity' To='1' Duration='0:0:0.2' />
-                                            </Storyboard>
-                                        </BeginStoryboard>
-                                    </Trigger.EnterActions>
-                                    <Trigger.ExitActions>
-                                        <BeginStoryboard>
-                                            <Storyboard>
-                                                <DoubleAnimation Storyboard.TargetProperty='Opacity' To='0' Duration='0:0:0.5' />
-                                            </Storyboard>
-                                        </BeginStoryboard>
-                                    </Trigger.ExitActions>
+                                    <Setter Property='Opacity' Value='0.6' />
                                 </Trigger>
                             </ControlTemplate.Triggers>
                         </ControlTemplate>
@@ -311,6 +338,7 @@ namespace StartUI4Controls
             itemStyle.Triggers.Add(itemSelectedTrigger);
             style.Setters.Add(new Setter(ComboBox.ItemContainerStyleProperty, itemStyle));
             itemStyle.Setters.Add(new Setter(Control.HeightProperty, 36d));
+            itemStyle.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(10, 0, 0, 0)));
             itemStyle.Setters.Add(new Setter(Control.VerticalContentAlignmentProperty, VerticalAlignment.Center));
             itemStyle.Setters.Add(new Setter(Control.HorizontalContentAlignmentProperty, HorizontalAlignment.Left));
             itemStyle.Setters.Add(new Setter(Control.BackgroundProperty, Brushes.Transparent));
@@ -435,8 +463,11 @@ namespace StartUI4Controls
             dropBorder.SetValue(Border.BorderThicknessProperty, new Thickness(1, 1, 1, 1));
             dropBorder.SetValue(Border.BorderBrushProperty, new SolidColorBrush(Color.FromRgb(200, 200, 220)));
             FrameworkElementFactory dropScroll = new FrameworkElementFactory(typeof(ScrollViewer));
+            dropScroll.SetBinding(FrameworkElement.MaxHeightProperty, new Binding(nameof(MaxDropDownHeight)) { RelativeSource = RelativeSource.TemplatedParent });
             dropScroll.SetValue(ScrollViewer.VerticalScrollBarVisibilityProperty, ScrollBarVisibility.Auto);
             dropScroll.SetValue(ScrollViewer.HorizontalScrollBarVisibilityProperty, ScrollBarVisibility.Hidden);
+            dropScroll.AddHandler(UIElement.PreviewMouseWheelEvent, new MouseWheelEventHandler(OnDropDownPreviewMouseWheel), true);
+            dropScroll.AddHandler(ScrollViewer.ScrollChangedEvent, new ScrollChangedEventHandler(OnDropDownScrollChanged));
             FrameworkElementFactory itemsPresenter = new FrameworkElementFactory(typeof(ItemsPresenter));
             dropScroll.AppendChild(itemsPresenter);
             dropBorder.AppendChild(dropScroll);
