@@ -28,7 +28,7 @@ namespace StartUI4Controls
                 nameof(GradientStart),
                 typeof(Color),
                 typeof(UI4Switch),
-                new PropertyMetadata(Color.FromRgb(37, 99, 235), OnColorChanged));
+                new PropertyMetadata(Color.FromRgb(0, 120, 212), OnColorChanged));
 
         public Color GradientStart
         {
@@ -41,7 +41,7 @@ namespace StartUI4Controls
                 nameof(GradientEnd),
                 typeof(Color),
                 typeof(UI4Switch),
-                new PropertyMetadata(Color.FromRgb(147, 51, 234), OnColorChanged));
+                new PropertyMetadata(Color.FromRgb(0, 120, 212), OnColorChanged));
 
         public Color GradientEnd
         {

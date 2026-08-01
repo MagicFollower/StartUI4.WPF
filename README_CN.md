@@ -24,7 +24,7 @@
 
 **StartUI4.WPF** 是一款基于 WPF .NET 6 开发的现代化 UI 控件库，完美契合 WinUI Fluent Design 设计语言。只需简单配置即可使用，支持 Windows 7 / 10 / 11 操作系统。
 
-- **版本**: 1.0.13
+- **版本**: 1.0.15
 - **作者**: KS.STUDIO
 - **目标框架**: .NET 6 (net6.0-windows7.0)
 - **NuGet 包**: StartUI4.WPF
@@ -104,6 +104,7 @@ xmlns:ui="clr-namespace:StartUI4Controls;assembly=StartUI4Controls"
 | [UI4NotifyIcon](#ui4notifyicon-托盘图标) | TaskbarIcon | 系统托盘图标，带自定义右键菜单 |
 | [UI4Menu](#UI4Menu-菜单栏) | UI4Menu | 菜单栏，带自定义图标 |
 | [UI4PasswordBox](#ui4passwordbox-密码输入框) | TextBox | 支持明文/密文切换、自定义掩码、占位符的密码输入框 |
+| [UI4Grid](#ui4grid-网格容器) | Grid | 带默认渐变背景的网格容器 |
 
 ---
 
@@ -1861,6 +1862,61 @@ trayIcon.ClearMenuItems();
 
 ---
 
+---
+
+### UI4Grid 网格容器
+
+带默认渐变背景的网格容器控件，开箱即用，提供清爽现代的外观。
+
+**继承自**: `Grid`
+
+#### 可设置属性
+
+无额外依赖属性。继承 `Grid` 的所有属性，如 `Rows`、`Columns`、`Children`、`Background`、`Width`、`Height`、`Margin`、`Padding` 等。
+
+#### 默认背景
+
+控件在构造函数中设置了默认的 `LinearGradientBrush` 背景：
+- 起始颜色：`#FFEEF4F8` (238, 244, 248)，偏移量 0.0
+- 结束颜色：`#FFF3F3F3` (243, 243, 243)，偏移量 1.0
+- 渐变方向：从上到下
+
+#### 示例代码
+
+```xml
+<!-- 使用默认渐变背景的基础网格 -->
+<ui:UI4Grid Width="400" Height="300">
+    <ui:UI4Button Content="按钮 1" Grid.Row="0" Grid.Column="0" Margin="10"/>
+    <ui:UI4Button Content="按钮 2" Grid.Row="0" Grid.Column="1" Margin="10"/>
+</ui:UI4Grid>
+
+<!-- 覆盖背景颜色 -->
+<ui:UI4Grid Width="400" Height="300" Background="White">
+    <ui:UI4TextBox Width="200" Text="自定义背景"/>
+</ui:UI4Grid>
+
+<!-- 用作布局容器 -->
+<ui:UI4Grid Margin="20">
+    <Grid.RowDefinitions>
+        <RowDefinition Height="Auto"/>
+        <RowDefinition Height="*"/>
+    </Grid.RowDefinitions>
+    <ui:UI4TextBlock Text="标题" Grid.Row="0" FontSize="24"/>
+    <ui:UI4ListBox Grid.Row="1" Width="300" Height="200">
+        <ListBoxItem>项目 1</ListBoxItem>
+        <ListBoxItem>项目 2</ListBoxItem>
+    </ui:UI4ListBox>
+</ui:UI4Grid>
+```
+
+#### 特性说明
+
+- **默认渐变背景**: 无需任何配置即可提供柔和的渐变背景
+- **完整的 Grid 功能**: 支持所有标准 Grid 功能，如行/列定义、跨行跨列等
+- **可自定义背景**: 可通过设置 `Background` 属性覆盖默认背景
+
+---
+
 ## 许可证
 
-© KS.STUDIO - StartUI4.WPF v1.0.13
+?? KS.STUDIO - StartUI4.WPF v1.0.15

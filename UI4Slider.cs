@@ -16,7 +16,7 @@ namespace StartUI4Controls
                 nameof(CornerRadius),
                 typeof(CornerRadius),
                 typeof(UI4Slider),
-                new PropertyMetadata(new CornerRadius(4), OnStyleRefresh));
+                new PropertyMetadata(new CornerRadius(6), OnStyleRefresh));
         public CornerRadius CornerRadius
         {
             get => (CornerRadius)GetValue(CornerRadiusProperty);
@@ -28,7 +28,7 @@ namespace StartUI4Controls
                 nameof(GradientStart),
                 typeof(Color),
                 typeof(UI4Slider),
-                new PropertyMetadata(Color.FromRgb(37, 99, 235), OnStyleRefresh));
+                new PropertyMetadata(Color.FromRgb(0, 120, 212), OnStyleRefresh));
         public Color GradientStart
         {
             get => (Color)GetValue(GradientStartProperty);
@@ -40,7 +40,7 @@ namespace StartUI4Controls
                 nameof(GradientEnd),
                 typeof(Color),
                 typeof(UI4Slider),
-                new PropertyMetadata(Color.FromRgb(147, 51, 234), OnStyleRefresh));
+                new PropertyMetadata(Color.FromRgb(0, 120, 212), OnStyleRefresh));
         public Color GradientEnd
         {
             get => (Color)GetValue(GradientEndProperty);
@@ -192,7 +192,7 @@ namespace StartUI4Controls
             ControlTemplate thumbTemplate = new ControlTemplate(typeof(Thumb));
             FrameworkElementFactory thumbBorder = new FrameworkElementFactory(typeof(Border));
             thumbBorder.SetValue(Border.BackgroundProperty, gradientBrush);
-            thumbBorder.SetValue(Border.CornerRadiusProperty, new CornerRadius(8));
+            thumbBorder.SetValue(Border.CornerRadiusProperty, new CornerRadius(10));
             thumbTemplate.VisualTree = thumbBorder;
             thumbStyle.Setters.Add(new Setter(Control.TemplateProperty, thumbTemplate));
             thumbStyle.Setters.Add(new Setter(FrameworkElement.WidthProperty, ThumbSize));

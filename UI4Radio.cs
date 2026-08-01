@@ -15,7 +15,7 @@ namespace StartUI4Controls
                 nameof(CheckBackground),
                 typeof(Color),
                 typeof(UI4Radio),
-                new PropertyMetadata(Color.FromRgb(29, 78, 216), OnStyleRefresh));
+                new PropertyMetadata(Color.FromRgb(0, 102, 181), OnStyleRefresh));
 
         public Color CheckBackground
         {

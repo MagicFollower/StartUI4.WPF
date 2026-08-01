@@ -17,7 +17,7 @@ namespace StartUI4Controls
     {
         public static readonly DependencyProperty CornerRadiusProperty =
             DependencyProperty.Register(nameof(CornerRadius), typeof(CornerRadius), typeof(UI4PasswordBox),
-                new PropertyMetadata(new CornerRadius(8), OnStyleRefresh));
+                new PropertyMetadata(new CornerRadius(6), OnStyleRefresh));
         public CornerRadius CornerRadius
         {
             get => (CornerRadius)GetValue(CornerRadiusProperty);
@@ -35,7 +35,7 @@ namespace StartUI4Controls
 
         public static readonly DependencyProperty FocusGradientStartProperty =
             DependencyProperty.Register(nameof(FocusGradientStart), typeof(Color), typeof(UI4PasswordBox),
-                new PropertyMetadata(Color.FromRgb(37, 99, 235), OnStyleRefresh));
+                new PropertyMetadata(Color.FromRgb(0, 120, 212), OnStyleRefresh));
         public Color FocusGradientStart
         {
             get => (Color)GetValue(FocusGradientStartProperty);

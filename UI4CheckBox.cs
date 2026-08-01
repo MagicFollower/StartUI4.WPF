@@ -16,7 +16,7 @@ namespace StartUI4Controls
                 nameof(BoxCornerRadius),
                 typeof(CornerRadius),
                 typeof(UI4CheckBox),
-                new PropertyMetadata(new CornerRadius(4), OnStyleRefresh));
+                new PropertyMetadata(new CornerRadius(6), OnStyleRefresh));
 
         public CornerRadius BoxCornerRadius
         {
@@ -29,7 +29,7 @@ namespace StartUI4Controls
                 nameof(CheckBackground),
                 typeof(Color),
                 typeof(UI4CheckBox),
-                new PropertyMetadata(Color.FromRgb(29, 78, 216), OnStyleRefresh));
+                new PropertyMetadata(Color.FromRgb(0, 102, 181), OnStyleRefresh));
         public Color CheckBackground
         {
             get => (Color)GetValue(CheckBackgroundProperty);

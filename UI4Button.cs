@@ -13,7 +13,7 @@ namespace StartUI4Controls
                 nameof(CornerRadius),
                 typeof(CornerRadius),
                 typeof(UI4Button),
-                new PropertyMetadata(new CornerRadius(8), OnStyleRefresh));
+                new PropertyMetadata(new CornerRadius(6), OnStyleRefresh));
 
         public CornerRadius CornerRadius
         {
@@ -26,7 +26,7 @@ namespace StartUI4Controls
                 nameof(GradientStart),
                 typeof(Color),
                 typeof(UI4Button),
-                new PropertyMetadata(Color.FromRgb(37, 99, 235), OnStyleRefresh));
+                new PropertyMetadata(Color.FromRgb(0, 120, 212), OnStyleRefresh));
 
         public Color GradientStart
         {
@@ -52,7 +52,7 @@ namespace StartUI4Controls
                 nameof(HoverBackground),
                 typeof(Brush),
                 typeof(UI4Button),
-                new PropertyMetadata(new SolidColorBrush(Color.FromRgb(29, 78, 216)), OnStyleRefresh));
+                new PropertyMetadata(new SolidColorBrush(Color.FromRgb(0, 102, 181)), OnStyleRefresh));
         public Brush HoverBackground
         {
             get => (Brush)GetValue(HoverBackgroundProperty);
@@ -87,7 +87,7 @@ namespace StartUI4Controls
             style.Setters.Add(new Setter(FontSizeProperty, 15d));
             style.Setters.Add(new Setter(FontWeightProperty, FontWeights.SemiBold));
             style.Setters.Add(new Setter(CursorProperty, Cursors.Hand));
-            style.Setters.Add(new Setter(BackgroundProperty, new SolidColorBrush(Color.FromRgb(37, 99, 235))));
+            style.Setters.Add(new Setter(BackgroundProperty, new SolidColorBrush(Color.FromRgb(0, 120, 212))));
             style.Setters.Add(new Setter(MinHeightProperty, 35d));
 
             ControlTemplate normalTemplate = new ControlTemplate(typeof(Button));

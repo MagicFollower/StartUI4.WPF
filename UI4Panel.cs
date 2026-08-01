@@ -42,7 +42,7 @@ namespace StartUI4Controls
                 nameof(HoverBorderBrush),
                 typeof(SolidColorBrush),
                 typeof(UI4Panel),
-                new PropertyMetadata(new SolidColorBrush(Color.FromRgb(0x63, 0x66, 0xF1)), OnStyleUpdate));
+                new PropertyMetadata(new SolidColorBrush(Color.FromArgb(70, 120, 140, 200)), OnStyleUpdate));
 
         public SolidColorBrush HoverBorderBrush
         {
@@ -146,7 +146,7 @@ namespace StartUI4Controls
                 nameof(HoverScale),
                 typeof(double),
                 typeof(UI4Panel),
-                new PropertyMetadata(1.01, OnStyleUpdate));
+                new PropertyMetadata(1.005, OnStyleUpdate));
         public double HoverScale
         {
             get => (double)GetValue(HoverScaleProperty);

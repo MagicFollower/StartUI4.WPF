@@ -43,7 +43,7 @@ namespace StartUI4Controls
                 nameof(CornerRadius),
                 typeof(CornerRadius),
                 typeof(UI4ListBox),
-                new PropertyMetadata(new CornerRadius(8), OnStyleRefresh));
+                new PropertyMetadata(new CornerRadius(6), OnStyleRefresh));
 
         public CornerRadius CornerRadius
         {
@@ -108,7 +108,7 @@ namespace StartUI4Controls
                 nameof(ItemCornerRadius),
                 typeof(CornerRadius),
                 typeof(UI4ListBox),
-                new PropertyMetadata(new CornerRadius(8), OnStyleRefresh));
+                new PropertyMetadata(new CornerRadius(6), OnStyleRefresh));
 
         public CornerRadius ItemCornerRadius
         {

@@ -20,7 +20,7 @@ namespace StartUI4Controls
                 nameof(CornerRadius),
                 typeof(CornerRadius),
                 typeof(UI4ComboBox),
-                new PropertyMetadata(new CornerRadius(8), OnStyleRefresh));
+                new PropertyMetadata(new CornerRadius(6), OnStyleRefresh));
         public CornerRadius CornerRadius
         {
             get => (CornerRadius)GetValue(CornerRadiusProperty);
@@ -42,7 +42,7 @@ namespace StartUI4Controls
                 nameof(FocusGradientStart),
                 typeof(Color),
                 typeof(UI4ComboBox),
-                new PropertyMetadata(Color.FromRgb(37, 99, 235), OnStyleRefresh));
+                new PropertyMetadata(Color.FromRgb(0, 120, 212), OnStyleRefresh));
         public Color FocusGradientStart
         {
             get => (Color)GetValue(FocusGradientStartProperty);

@@ -24,7 +24,7 @@
 
 **StartUI4.WPF** is a modern UI control library developed based on WPF .NET 6, perfectly aligned with the WinUI Fluent Design language. Easy to configure and use, supports Windows 7 / 10 / 11 operating systems.
 
-- **Version**: 1.0.13
+- **Version**: 1.0.15
 - **Author**: KS.STUDIO
 - **Target Framework**: .NET 6 (net6.0-windows7.0)
 - **NuGet Package**: StartUI4.WPF
@@ -106,6 +106,7 @@ xmlns:ui="clr-namespace:StartUI4Controls;assembly=StartUI4Controls"
 | [UI4NotifyIcon](#ui4notifyicon) | TaskbarIcon | System tray icon with custom right-click menu |
 | [UI4Menu](#UI4Menu) | Menu | Menu can set TextIcon. |
 | [UI4PasswordBox](#ui4passwordbox) | TextBox | Password input with plaintext/reveal toggle, custom mask char, placeholder |
+| [UI4Grid](#ui4grid) | Grid | Grid container with default gradient background |
 
 ---
 
@@ -1863,6 +1864,61 @@ Complete example:
 
 ---
 
+---
+
+### UI4Grid
+
+Grid container control with a default gradient background, providing a clean modern look out of the box.
+
+**Inherits from**: `Grid`
+
+#### Settable Properties
+
+No additional dependency properties. Inherits all properties from `Grid`, such as `Rows`, `Columns`, `Children`, `Background`, `Width`, `Height`, `Margin`, `Padding`, etc.
+
+#### Default Background
+
+The control sets a default `LinearGradientBrush` background in its constructor:
+- Start color: `#FFEEF4F8` (238, 244, 248) at offset 0.0
+- End color: `#FFF3F3F3` (243, 243, 243) at offset 1.0
+- Gradient direction: Top to bottom
+
+#### Example Code
+
+```xml
+<!-- Basic grid with default gradient background -->
+<ui:UI4Grid Width="400" Height="300">
+    <ui:UI4Button Content="Button 1" Grid.Row="0" Grid.Column="0" Margin="10"/>
+    <ui:UI4Button Content="Button 2" Grid.Row="0" Grid.Column="1" Margin="10"/>
+</ui:UI4Grid>
+
+<!-- Override background color -->
+<ui:UI4Grid Width="400" Height="300" Background="White">
+    <ui:UI4TextBox Width="200" Text="Custom background"/>
+</ui:UI4Grid>
+
+<!-- Use as layout container -->
+<ui:UI4Grid Margin="20">
+    <Grid.RowDefinitions>
+        <RowDefinition Height="Auto"/>
+        <RowDefinition Height="*"/>
+    </Grid.RowDefinitions>
+    <ui:UI4TextBlock Text="Header" Grid.Row="0" FontSize="24"/>
+    <ui:UI4ListBox Grid.Row="1" Width="300" Height="200">
+        <ListBoxItem>Item 1</ListBoxItem>
+        <ListBoxItem>Item 2</ListBoxItem>
+    </ui:UI4ListBox>
+</ui:UI4Grid>
+```
+
+#### Feature Notes
+
+- **Default Gradient Background**: Provides a subtle gradient background without any configuration
+- **Full Grid Functionality**: Supports all standard Grid features like row/column definitions, spanning, etc.
+- **Customizable Background**: Background can be overridden by setting the `Background` property
+
+---
+
 ## License
 
-?? KS.STUDIO - StartUI4.WPF v1.0.13
+?? KS.STUDIO - StartUI4.WPF v1.0.15

@@ -105,7 +105,7 @@ namespace StartUI4Controls
                 nameof(MenuCornerRadius),
                 typeof(CornerRadius),
                 typeof(UI4NotifyIcon),
-                new FrameworkPropertyMetadata(new CornerRadius(8)));
+                new FrameworkPropertyMetadata(new CornerRadius(6)));
         private Popup _trayPopup;
         private UI4ListBox _listBox;
         private readonly List<UI4TrayMenuItem> _menuItems = new List<UI4TrayMenuItem>();

@@ -52,7 +52,7 @@ namespace StartUI4Controls
     {
         public static readonly DependencyProperty SelectedItemForegroundProperty =
             DependencyProperty.Register(nameof(SelectedItemForeground), typeof(Color), typeof(UI4Pivot),
-                new PropertyMetadata(Color.FromRgb(37, 99, 235), OnStyleChanged));
+                new PropertyMetadata(Color.FromRgb(0, 120, 212), OnStyleChanged));
 
         public Color SelectedItemForeground
         {
