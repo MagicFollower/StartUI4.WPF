@@ -57,7 +57,7 @@ namespace StartUI4Controls
                 nameof(ItemBackground),
                 typeof(Brush),
                 typeof(UI4ListView),
-                new PropertyMetadata(new SolidColorBrush(Color.FromArgb(10, 255, 255, 255)), OnStyleUpdate));
+                new PropertyMetadata(new SolidColorBrush(Color.FromArgb(255, 255, 255, 255)), OnStyleUpdate));
 
         public Brush ItemBackground
         {
@@ -83,7 +83,7 @@ namespace StartUI4Controls
                 nameof(ItemHoverBorderBrush),
                 typeof(Color),
                 typeof(UI4ListView),
-                new PropertyMetadata(Color.FromRgb(60, 220, 255), OnStyleUpdate));
+                new PropertyMetadata(Color.FromRgb(0, 120, 212), OnStyleUpdate));
 
         public Color ItemHoverBorderBrush
         {
@@ -122,7 +122,7 @@ namespace StartUI4Controls
                 nameof(ItemMargin),
                 typeof(Thickness),
                 typeof(UI4ListView),
-                new PropertyMetadata(new Thickness(10), OnStyleUpdate));
+                new PropertyMetadata(new Thickness(5), OnStyleUpdate));
 
         public Thickness ItemMargin
         {
@@ -184,7 +184,7 @@ namespace StartUI4Controls
                 nameof(ShadowOpacity),
                 typeof(double),
                 typeof(UI4ListView),
-                new PropertyMetadata(0.35, OnStyleUpdate));
+                new PropertyMetadata(0.0, OnStyleUpdate));
         public double ShadowOpacity
         {
             get => (double)GetValue(ShadowOpacityProperty);
@@ -196,7 +196,7 @@ namespace StartUI4Controls
                 nameof(HoverScale),
                 typeof(double),
                 typeof(UI4ListView),
-                new PropertyMetadata(1.03, OnStyleUpdate));
+                new PropertyMetadata(1.01, OnStyleUpdate));
         public double HoverScale
         {
             get => (double)GetValue(HoverScaleProperty);
@@ -236,7 +236,7 @@ namespace StartUI4Controls
                 scrollHost.SetValue(FrameworkElement.StyleProperty, _scrollViewerStyle);
             }
 
-            scrollHost.SetValue(ScrollViewer.HorizontalScrollBarVisibilityProperty, ScrollBarVisibility.Auto);
+            scrollHost.SetValue(ScrollViewer.HorizontalScrollBarVisibilityProperty, ScrollBarVisibility.Disabled);
             scrollHost.SetValue(ScrollViewer.VerticalScrollBarVisibilityProperty, ScrollBarVisibility.Auto);
             scrollHost.SetValue(ScrollViewer.BackgroundProperty, Brushes.Transparent);
             scrollHost.SetValue(ScrollViewer.PaddingProperty, new Thickness(4, 4, 4, 4));
@@ -272,6 +272,7 @@ namespace StartUI4Controls
             itemBorder.SetBinding(Border.BorderThicknessProperty, new Binding(nameof(ItemBorderThickness)) { RelativeSource = new RelativeSource(RelativeSourceMode.FindAncestor, typeof(UI4ListView), 1) });
             itemBorder.SetBinding(Border.PaddingProperty, new Binding(nameof(ItemPadding)) { RelativeSource = new RelativeSource(RelativeSourceMode.FindAncestor, typeof(UI4ListView), 1) });
             itemBorder.SetValue(UIElement.RenderTransformOriginProperty, new Point(0.5, 0.5));
+            itemBorder.SetValue(UIElement.ClipToBoundsProperty, true);
 
             ScaleTransform scaleTransform = new ScaleTransform(1, 1);
             itemBorder.SetValue(UIElement.RenderTransformProperty, scaleTransform);

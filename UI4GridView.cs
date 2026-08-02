@@ -44,7 +44,7 @@ namespace StartUI4Controls
         nameof(HoverScale),
         typeof(double),
         typeof(UI4GridView),
-        new PropertyMetadata(1.03, OnStyleUpdate));
+        new PropertyMetadata(1.01, OnStyleUpdate));
         public double HoverScale
         {
             get => (double)GetValue(HoverScaleProperty);
@@ -110,7 +110,7 @@ namespace StartUI4Controls
                 nameof(ShadowOpacity),
                 typeof(double),
                 typeof(UI4GridView),
-                new PropertyMetadata(0.35, OnStyleUpdate));
+                new PropertyMetadata(0.0, OnStyleUpdate));
         public double ShadowOpacity
         {
             get => (double)GetValue(ShadowOpacityProperty);
@@ -140,7 +140,7 @@ namespace StartUI4Controls
                 nameof(ItemHoverBorderBrush),
                 typeof(Color),
                 typeof(UI4GridView),
-                new PropertyMetadata(Color.FromRgb(60, 220, 255), OnStyleUpdate));
+                new PropertyMetadata(Color.FromRgb(0, 120, 212), OnStyleUpdate));
 
         public Color ItemHoverBorderBrush
         {

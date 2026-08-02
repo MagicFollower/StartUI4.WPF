@@ -88,7 +88,7 @@ namespace StartUI4Controls
             style.Setters.Add(new Setter(FontWeightProperty, FontWeights.SemiBold));
             style.Setters.Add(new Setter(CursorProperty, Cursors.Hand));
             style.Setters.Add(new Setter(BackgroundProperty, new SolidColorBrush(Color.FromRgb(0, 120, 212))));
-            style.Setters.Add(new Setter(MinHeightProperty, 35d));
+            style.Setters.Add(new Setter(MinHeightProperty, 30d));
 
             ControlTemplate normalTemplate = new ControlTemplate(typeof(Button));
             FrameworkElementFactory borderNormal = new FrameworkElementFactory(typeof(Border));

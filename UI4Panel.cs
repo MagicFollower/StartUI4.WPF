@@ -168,7 +168,7 @@ namespace StartUI4Controls
 
         public UI4Panel()
         {
-            Background = new SolidColorBrush(Color.FromArgb(10, 255, 255, 255));
+            Background = new SolidColorBrush(Color.FromArgb(255, 255, 255, 255));
             Style = BuildPanelStyle();
             Cursor = Cursors.Arrow;
         }

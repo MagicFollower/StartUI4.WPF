@@ -221,7 +221,7 @@ namespace StartUI4Controls
                 nameof(ShadowOpacity),
                 typeof(double),
                 typeof(UI4TextBlock),
-                new PropertyMetadata(0.2, OnShadowPropertyChanged));
+                new PropertyMetadata(0.0, OnShadowPropertyChanged));
 
         public double ShadowOpacity
         {
