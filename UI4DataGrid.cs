@@ -12,7 +12,7 @@ using System.Xml;
 
 namespace StartUI4Controls
 {
-    public class UI4DataGrid : DataGrid
+    internal class UI4DataGrid : DataGrid
     {
         private static Style? _scrollBarStyle;
         private static readonly System.Collections.Generic.List<string> _tempDbFiles = new();

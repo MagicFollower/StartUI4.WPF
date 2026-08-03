@@ -1,6 +1,6 @@
 # StartUI4.WPF 控件库文档
 
-> 基于 WPF .NET 6 的现代化 Fluent Design UI 控件库
+> 基于 WPF .NET 6 的现代化 Modern Design UI 控件库
 
 [![从 Microsoft 商店获取](https://get.microsoft.com/images/en-us%20dark.svg)](https://apps.microsoft.com/detail/9nvb5kpdjwfg)
 
@@ -22,9 +22,9 @@
 
 ## 项目简介
 
-**StartUI4.WPF** 是一款基于 WPF .NET 6 开发的现代化 UI 控件库，完美契合 WinUI Fluent Design 设计语言。只需简单配置即可使用，支持 Windows 7 / 10 / 11 操作系统。
+**StartUI4.WPF** 是一款基于 WPF .NET 6 开发的现代化 UI 控件库，完美契合 Modern Modern Design 设计语言。只需简单配置即可使用，支持 Windows 7 / 10 / 11 操作系统。
 
-- **版本**: 1.0.16
+- **版本**: 1.0.17
 - **作者**: KS.STUDIO
 - **目标框架**: .NET 6 (net6.0-windows7.0)
 - **NuGet 包**: StartUI4.WPF
@@ -35,7 +35,7 @@
 
 ## 特性
 
-- 🎨 **Fluent Design 设计风格** - 完美契合 WinUI 设计语言
+- 🎨 **Modern Design 设计风格** - 完美契合 Modern 设计语言
 - 🌈 **渐变色彩支持** - 多种控件支持渐变色配置
 - ✨ **丰富的动画效果** - 悬停、切换、加载等流畅动画
 - 🎯 **高度可定制** - 大量依赖属性供外部调整样式
@@ -97,10 +97,8 @@ xmlns:ui="clr-namespace:StartUI4Controls;assembly=StartUI4Controls"
 | [UI4ListBox](#ui4listbox-列表框) | ListBox | 自定义样式列表，支持多种列表样式 |
 | [UI4ListView](#ui4listview-列表视图) | ListBox | 卡片式列表视图 |
 | [UI4GridView](#ui4gridview-网格视图) | ListBox | 网格布局卡片视图，自适应列数 |
-| [UI4DataGrid](#ui4datagrid-数据表格) | DataGrid | 高性能数据表格，SQLite 虚拟化加载，自定义样式 |
 | [UI4ScrollViewer](#ui4scrollviewer-滚动视图) | ScrollViewer | 自定义滚动条，支持平滑滚动动画 |
 | [UI4MessageBox](#ui4messagebox-消息框) | Window | 自定义消息对话框 |
-| [UI4CodeEditor](#ui4codeeditor-代码编辑器) | RichTextBox | 带语法高亮的代码编辑器 |
 | [UI4NotifyIcon](#ui4notifyicon-托盘图标) | TaskbarIcon | 系统托盘图标，带自定义右键菜单 |
 | [UI4Menu](#UI4Menu-菜单栏) | UI4Menu | 菜单栏，带自定义图标 |
 | [UI4PasswordBox](#ui4passwordbox-密码输入框) | TextBox | 支持明文/密文切换、自定义掩码、占位符的密码输入框 |
@@ -1390,89 +1388,6 @@ private void MyTab_CloseTab(object sender, TabCloseRoutedEventArgs e)
 
 ---
 
-### UI4DataGrid 数据表格
-
-高性能数据表格控件，基于 SQLite 的虚拟化分页加载，自定义样式外观，自动隐藏滚动条，内置右键菜单。支持流畅加载十万级以上数据。
-
-**继承自**: `DataGrid`
-
-#### 可设置属性
-
-| 属性名 | 类型 | 默认值 | 说明 |
-|-------|------|--------|------|
-| `PageSize` | `int` | `200` | 虚拟化滚动时每页加载的行数 |
-| `HeaderBackground` | `Brush` | `#F5F5F5` | 列表头背景色 |
-| `HeaderForeground` | `Brush` | `#1E1E1E` | 列表头文字颜色 |
-| `RowHoverBackground` | `Brush` | `#F0F0F5` | 鼠标悬停时行背景色 |
-| `RowSelectedBackground` | `Brush` | `#D3D3D3` (浅灰) | 选中行背景色 |
-| `GridLineColor` | `Brush` | `#E6E6EB` | 网格线颜色 |
-| `TableName` | `string` | `"TableData"` | 虚拟化使用的 SQLite 表名 |
-| `DbPath` | `string` | *(自动生成)* | 临时 SQLite 数据库文件完整路径（只读） |
-
-#### 公共方法
-
-| 方法名 | 返回值 | 说明 |
-|-------|--------|------|
-| `ImportData(DataTable dt)` | `void` | 批量导入 DataTable 数据到 SQLite 并重置表格视图 |
-| `LoadNextPageData()` | `void` | 手动加载下一页数据 |
-| `ResetLoadData()` | `void` | 重置分页，从第一页重新加载 |
-| `ClearAllData()` | `void` | 清空 SQLite 表中所有数据并重置视图 |
-| `DisposeDb()` | `void` | 手动删除临时数据库文件 |
-
-#### 特性说明
-
-- **SQLite 虚拟化**：数据存储在每个实例独立的临时 SQLite 数据库中，滚动时分页加载，轻松处理 10 万+ 行数据
-- **自定义样式**：浅灰表头、白色行、悬停高亮、浅灰选中 — 简洁现代的表格外观
-- **自定义滚动条**：UI4ScrollViewer 风格的自动隐藏滚动条（10px 宽、圆角滑块、滚动淡入淡出）
-- **只读模式**：单元格默认不可编辑，整行选择模式
-- **垂直居中**：单元格内容垂直居中，支持文本溢出省略
-- **内置右键菜单**：使用 UI4ContextMenu，包含复制和全选命令（多语言 + 图标）
-- **自动清理**：控件卸载或程序退出时自动删除临时 .db 文件
-- **动态列**：支持任意列结构 — 根据导入的 DataTable 自动生成列
-- **小字体设计**：12px 字体，28px 行高，紧凑的数据展示
-
-#### 示例代码
-
-```xml
-<!-- 基础数据表格 -->
-<ui:UI4DataGrid x:Name="Grid1" Width="600" Height="400" />
-```
-
-```csharp
-// 创建测试数据并导入
-DataTable dt = new DataTable();
-dt.Columns.Add("姓名");
-dt.Columns.Add("年龄");
-dt.Columns.Add("备注");
-
-for (int i = 0; i < 100000; i++)
-{
-    DataRow row = dt.NewRow();
-    row["姓名"] = $"用户_{i}";
-    row["年龄"] = 20 + i % 30;
-    row["备注"] = $"测试备注{i}";
-    dt.Rows.Add(row);
-}
-
-Grid1.ImportData(dt);
-```
-
-```xml
-<!-- 自定义颜色的数据表格 -->
-<ui:UI4DataGrid x:Name="Grid2"
-                HeaderBackground="#E8E8F0"
-                RowHoverBackground="#E0E8FF"
-                RowSelectedBackground="#B0C4DE"
-                GridLineColor="#D0D0D8"
-                PageSize="100" />
-```
-
-#### 继承属性
-
-同时继承 `DataGrid` 的所有属性，如 `ItemsSource`、`AutoGenerateColumns`、`CanUserSortColumns`、`Width`、`Height`、`FontSize` 等。
-
----
-
 ### UI4ScrollViewer 滚动视图
 
 自定义样式的滚动视图控件，内置自动隐藏的滚动条和平滑滚动动画。
@@ -1585,68 +1500,6 @@ else
 
 ---
 
-### UI4CodeEditor 代码编辑器
-
-带 C# 语法高亮的代码编辑器控件。
-
-**继承自**: `RichTextBox`
-
-#### 可设置属性
-
-| 属性名 | 类型 | 默认值 | 说明 |
-|-------|------|--------|------|
-| `Code` | `string` | `""` | 代码文本内容（双向绑定） |
-
-#### 继承属性
-
-同时继承 `RichTextBox` 的所有属性，如 `Background`、`Foreground`、`FontFamily`、`FontSize`、`Width`、`Height`、`Padding` 等。
-
-#### 公共方法
-
-| 方法名 | 返回值 | 说明 |
-|-------|--------|------|
-| `HighlightSyntax()` | `void` | 手动触发语法高亮 |
-
-#### 语法高亮
-
-内置 C# 语法高亮，支持以下类型：
-
-| 类型 | 颜色 | 说明 |
-|------|------|------|
-| 默认文本 | `#D4D4D4` (212,212,212) | 普通文字 |
-| 关键字 | `#569CD6` (86,156,214) | C# 关键字（class, int, if 等） |
-| 字符串 | `#CE9178` (206,145,120) | 字符串字面量 |
-| 注释 | `#6A9955` (106,153,85) | 单行和多行注释 |
-| 数字 | `#B5CEA8` (181,206,168) | 数字字面量 |
-
-#### 示例代码
-
-```xml
-<!-- 基础代码编辑器 -->
-<ui:UI4CodeEditor x:Name="codeEditor" Width="500" Height="200" />
-
-<!-- 设置代码内容 -->
-<ui:UI4CodeEditor Code="{Binding CodeContent}" 
-                  Width="500" 
-                  HorizontalAlignment="Left" />
-
-<!-- 小型代码展示 -->
-<ui:UI4CodeEditor Height="60" 
-                   Width="500" 
-                   HorizontalAlignment="Left" 
-                   Margin="10,0,0,20"/>
-```
-
-#### 特性说明
-
-- **C# 语法高亮**: 自动高亮关键字、字符串、注释、数字
-- **深色主题**: 默认深色背景，适合代码显示
-- **等宽字体**: 默认使用 Consolas 字体
-- **自定义右键菜单**: 支持撤销、剪切、复制、粘贴、删除、全选
-- **自动宽度**: 未设置宽度时根据内容自动调整
-- **双向绑定**: `Code` 属性支持双向数据绑定
-
----
 
 ### UI4NotifyIcon 托盘图标
 
@@ -1919,4 +1772,4 @@ trayIcon.ClearMenuItems();
 
 ## 许可证
 
-?? KS.STUDIO - StartUI4.WPF v1.0.16
+?? KS.STUDIO - StartUI4.WPF v1.0.17

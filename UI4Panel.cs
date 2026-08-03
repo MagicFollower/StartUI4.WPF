@@ -163,7 +163,6 @@ namespace StartUI4Controls
         {
             DefaultStyleKeyProperty.OverrideMetadata(typeof(UI4Panel),
                 new FrameworkPropertyMetadata(typeof(UI4Panel)));
-
         }
 
         public UI4Panel()
@@ -176,49 +175,55 @@ namespace StartUI4Controls
         private Style BuildPanelStyle()
         {
             Style style = new Style(typeof(ContentControl));
-
             ControlTemplate template = new ControlTemplate(typeof(ContentControl));
 
-            FrameworkElementFactory rootBorder = new FrameworkElementFactory(typeof(Border));
-            rootBorder.Name = "PART_RootBorder";
-            rootBorder.SetBinding(Border.CornerRadiusProperty,
+            FrameworkElementFactory outerBorder = new FrameworkElementFactory(typeof(Border));
+            outerBorder.Name = "PART_OuterBorder";
+            outerBorder.SetValue(Border.BackgroundProperty, new SolidColorBrush(Colors.Transparent));
+            outerBorder.SetValue(Border.BorderThicknessProperty, new Thickness(0));
+            outerBorder.SetBinding(Border.CornerRadiusProperty,
                 new Binding(nameof(CornerRadius)) { RelativeSource = RelativeSource.TemplatedParent });
-            rootBorder.SetBinding(Border.BackgroundProperty,
-                new Binding(nameof(Background)) { RelativeSource = RelativeSource.TemplatedParent });
-            rootBorder.SetBinding(Border.BorderThicknessProperty,
-                new Binding(nameof(BorderThickness)) { RelativeSource = RelativeSource.TemplatedParent });
-            rootBorder.SetBinding(Border.PaddingProperty,
-                new Binding(nameof(ContentPadding)) { RelativeSource = RelativeSource.TemplatedParent });
-            rootBorder.SetValue(Border.BorderBrushProperty, new SolidColorBrush(BorderBrush));
-            rootBorder.SetValue(UIElement.ClipToBoundsProperty, true);
-            rootBorder.SetValue(UIElement.RenderTransformOriginProperty, new Point(0.5, 0.5));
-            ScaleTransform scaleTransform = new ScaleTransform(1, 1);
-            rootBorder.SetValue(UIElement.RenderTransformProperty, scaleTransform);
-            var shadow = new DropShadowEffect
+
+            DropShadowEffect shadow = new DropShadowEffect
             {
                 ShadowDepth = ShadowDepth,
                 BlurRadius = ShadowBlurRadius,
                 Opacity = ShadowOpacity,
                 Color = ShadowColor
             };
-            rootBorder.SetValue(UIElement.EffectProperty, shadow);
+            outerBorder.SetValue(UIElement.EffectProperty, shadow);
+
+            FrameworkElementFactory innerBorder = new FrameworkElementFactory(typeof(Border));
+            innerBorder.Name = "PART_InnerBorder";
+            innerBorder.SetBinding(Border.CornerRadiusProperty,
+                new Binding(nameof(CornerRadius)) { RelativeSource = RelativeSource.TemplatedParent });
+            innerBorder.SetBinding(Border.BackgroundProperty,
+                new Binding(nameof(Background)) { RelativeSource = RelativeSource.TemplatedParent });
+            innerBorder.SetBinding(Border.BorderThicknessProperty,
+                new Binding(nameof(BorderThickness)) { RelativeSource = RelativeSource.TemplatedParent });
+            innerBorder.SetBinding(Border.PaddingProperty,
+                new Binding(nameof(ContentPadding)) { RelativeSource = RelativeSource.TemplatedParent });
+            innerBorder.SetValue(Border.BorderBrushProperty, new SolidColorBrush(BorderBrush));
+            innerBorder.SetValue(UIElement.ClipToBoundsProperty, true);
+            innerBorder.SetValue(UIElement.RenderTransformOriginProperty, new Point(0.5, 0.5));
+            innerBorder.SetValue(UIElement.RenderTransformProperty, new ScaleTransform(1, 1));
 
             FrameworkElementFactory contentPresenter = new FrameworkElementFactory(typeof(ContentPresenter));
             contentPresenter.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Stretch);
             contentPresenter.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Stretch);
-            rootBorder.AppendChild(contentPresenter);
+            innerBorder.AppendChild(contentPresenter);
 
-            template.VisualTree = rootBorder;
+            outerBorder.AppendChild(innerBorder);
+            template.VisualTree = outerBorder;
 
             ColorAnimation hoverAnim = new ColorAnimation
             {
                 To = HoverBorderBrush.Color,
                 Duration = HoverAnimationDuration
             };
-
             Storyboard hoverStoryboard = new Storyboard();
             hoverStoryboard.Children.Add(hoverAnim);
-            Storyboard.SetTargetName(hoverAnim, "PART_RootBorder");
+            Storyboard.SetTargetName(hoverAnim, "PART_InnerBorder");
             Storyboard.SetTargetProperty(hoverAnim,
                 new PropertyPath("(Border.BorderBrush).(SolidColorBrush.Color)"));
 
@@ -227,10 +232,9 @@ namespace StartUI4Controls
                 To = BorderBrush,
                 Duration = HoverAnimationDuration
             };
-
             Storyboard leaveStoryboard = new Storyboard();
             leaveStoryboard.Children.Add(leaveAnim);
-            Storyboard.SetTargetName(leaveAnim, "PART_RootBorder");
+            Storyboard.SetTargetName(leaveAnim, "PART_InnerBorder");
             Storyboard.SetTargetProperty(leaveAnim,
                 new PropertyPath("(Border.BorderBrush).(SolidColorBrush.Color)"));
 
@@ -248,9 +252,9 @@ namespace StartUI4Controls
             };
             hoverStoryboard.Children.Add(scaleXHoverAnim);
             hoverStoryboard.Children.Add(scaleYHoverAnim);
-            Storyboard.SetTargetName(scaleXHoverAnim, "PART_RootBorder");
+            Storyboard.SetTargetName(scaleXHoverAnim, "PART_InnerBorder");
             Storyboard.SetTargetProperty(scaleXHoverAnim, new PropertyPath("(UIElement.RenderTransform).(ScaleTransform.ScaleX)"));
-            Storyboard.SetTargetName(scaleYHoverAnim, "PART_RootBorder");
+            Storyboard.SetTargetName(scaleYHoverAnim, "PART_InnerBorder");
             Storyboard.SetTargetProperty(scaleYHoverAnim, new PropertyPath("(UIElement.RenderTransform).(ScaleTransform.ScaleY)"));
 
             DoubleAnimation scaleXLeaveAnim = new DoubleAnimation
@@ -267,9 +271,9 @@ namespace StartUI4Controls
             };
             leaveStoryboard.Children.Add(scaleXLeaveAnim);
             leaveStoryboard.Children.Add(scaleYLeaveAnim);
-            Storyboard.SetTargetName(scaleXLeaveAnim, "PART_RootBorder");
+            Storyboard.SetTargetName(scaleXLeaveAnim, "PART_InnerBorder");
             Storyboard.SetTargetProperty(scaleXLeaveAnim, new PropertyPath("(UIElement.RenderTransform).(ScaleTransform.ScaleX)"));
-            Storyboard.SetTargetName(scaleYLeaveAnim, "PART_RootBorder");
+            Storyboard.SetTargetName(scaleYLeaveAnim, "PART_InnerBorder");
             Storyboard.SetTargetProperty(scaleYLeaveAnim, new PropertyPath("(UIElement.RenderTransform).(ScaleTransform.ScaleY)"));
 
             EventTrigger mouseEnterTrigger = new EventTrigger(UIElement.MouseEnterEvent);
@@ -281,7 +285,6 @@ namespace StartUI4Controls
             template.Triggers.Add(mouseLeaveTrigger);
 
             style.Setters.Add(new Setter(Control.TemplateProperty, template));
-
             style.Setters.Add(new Setter(FrameworkElement.HorizontalAlignmentProperty, HorizontalAlignment.Stretch));
             style.Setters.Add(new Setter(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Stretch));
             return style;

@@ -14,8 +14,8 @@ namespace StartUI4Controls
                 EndPoint = new Point(0.5, 1),
                 GradientStops = new GradientStopCollection
                 {
-                    new GradientStop(Color.FromArgb(255, 238, 244, 248), 0.0), // #FFEEF4F8
-                    new GradientStop(Color.FromArgb(255, 243, 243, 243), 1.0)  // #FFF3F3F3
+                    new GradientStop(Color.FromArgb(255, 225, 236, 245), 0.0), //#E1ECF5
+                    new GradientStop(Color.FromArgb(255, 255, 255, 255), 1.0)  
                 }
             };
         }

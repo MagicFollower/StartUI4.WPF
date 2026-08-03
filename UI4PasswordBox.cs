@@ -33,22 +33,22 @@ namespace StartUI4Controls
             set => SetValue(BorderNormalColorProperty, value);
         }
 
-        public static readonly DependencyProperty FocusGradientStartProperty =
-            DependencyProperty.Register(nameof(FocusGradientStart), typeof(Color), typeof(UI4PasswordBox),
+        public static readonly DependencyProperty HoverBorderColorProperty =
+            DependencyProperty.Register(nameof(HoverBorderColor), typeof(Color), typeof(UI4PasswordBox),
                 new PropertyMetadata(Color.FromRgb(0, 120, 212), OnStyleRefresh));
-        public Color FocusGradientStart
+        public Color HoverBorderColor
         {
-            get => (Color)GetValue(FocusGradientStartProperty);
-            set => SetValue(FocusGradientStartProperty, value);
+            get => (Color)GetValue(HoverBorderColorProperty);
+            set => SetValue(HoverBorderColorProperty, value);
         }
 
-        public static readonly DependencyProperty FocusGradientEndProperty =
-            DependencyProperty.Register(nameof(FocusGradientEnd), typeof(Color), typeof(UI4PasswordBox),
-                new PropertyMetadata(Color.FromRgb(147, 51, 234), OnStyleRefresh));
-        public Color FocusGradientEnd
+        public static readonly DependencyProperty FocusBorderColorProperty =
+            DependencyProperty.Register(nameof(FocusBorderColor), typeof(Color), typeof(UI4PasswordBox),
+                new PropertyMetadata(Color.FromRgb(0, 102, 181), OnStyleRefresh));
+        public Color FocusBorderColor
         {
-            get => (Color)GetValue(FocusGradientEndProperty);
-            set => SetValue(FocusGradientEndProperty, value);
+            get => (Color)GetValue(FocusBorderColorProperty);
+            set => SetValue(FocusBorderColorProperty, value);
         }
 
         public static readonly DependencyProperty EditBackgroundProperty =
@@ -78,13 +78,13 @@ namespace StartUI4Controls
             set => SetValue(InnerPaddingProperty, value);
         }
 
-        public static readonly DependencyProperty ShowClearButtonProperty =
-            DependencyProperty.Register(nameof(ShowClearButton), typeof(bool), typeof(UI4PasswordBox),
-                new PropertyMetadata(false, OnStyleRefresh));
-        public bool ShowClearButton
+        public static readonly DependencyProperty ShowPasswordButtonProperty =
+            DependencyProperty.Register(nameof(ShowPasswordButton), typeof(bool), typeof(UI4PasswordBox),
+                new PropertyMetadata(true, OnStyleRefresh));
+        public bool ShowPasswordButton
         {
-            get => (bool)GetValue(ShowClearButtonProperty);
-            set => SetValue(ShowClearButtonProperty, value);
+            get => (bool)GetValue(ShowPasswordButtonProperty);
+            set => SetValue(ShowPasswordButtonProperty, value);
         }
 
         public static readonly DependencyProperty PlaceholderTextProperty =
@@ -131,6 +131,8 @@ namespace StartUI4Controls
             get => (bool)GetValue(IsPasswordModeProperty);
             set => SetValue(IsPasswordModeProperty, value);
         }
+
+        private static readonly Brush DefaultRevealButtonForeground = new SolidColorBrush(Color.FromArgb(150, 80, 80, 100));
 
         private static void OnPasswordModeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
@@ -636,7 +638,12 @@ namespace StartUI4Controls
             if (e.LeftButton == MouseButtonState.Pressed)
             {
                 ShowPlainText();
-                (sender as Button)?.CaptureMouse();
+                var btn = sender as Button;
+                if (btn != null)
+                {
+                    btn.Foreground = new SolidColorBrush(Color.FromRgb(0, 120, 212));
+                    btn.CaptureMouse();
+                }
                 e.Handled = true;
             }
         }
@@ -645,9 +652,12 @@ namespace StartUI4Controls
         {
             if (e.LeftButton == MouseButtonState.Released)
             {
-                if ((sender as Button)?.IsMouseCaptured == true)
+                var btn = sender as Button;
+                if (btn != null)
                 {
-                    (sender as Button)?.ReleaseMouseCapture();
+                    if (btn.IsMouseCaptured)
+                        btn.ReleaseMouseCapture();
+                    btn.Foreground = DefaultRevealButtonForeground;
                 }
                 HidePlainText();
                 e.Handled = true;
@@ -656,9 +666,11 @@ namespace StartUI4Controls
 
         private void OnRevealButtonMouseLeave(object sender, MouseEventArgs e)
         {
-            if ((sender as Button)?.IsMouseCaptured == true)
+            var btn = sender as Button;
+            if (btn != null && btn.IsMouseCaptured)
             {
-                (sender as Button)?.ReleaseMouseCapture();
+                btn.ReleaseMouseCapture();
+                btn.Foreground = DefaultRevealButtonForeground;
                 HidePlainText();
             }
         }
@@ -801,7 +813,7 @@ namespace StartUI4Controls
             revealBtnStyle.Setters.Add(new Setter(Button.BorderThicknessProperty, new Thickness(0)));
             revealBtnStyle.Setters.Add(new Setter(Button.PaddingProperty, new Thickness(0)));
             revealBtnStyle.Setters.Add(new Setter(Button.CursorProperty, Cursors.Hand));
-            revealBtnStyle.Setters.Add(new Setter(Button.ForegroundProperty, new SolidColorBrush(Color.FromArgb(150, 80, 80, 100))));
+            revealBtnStyle.Setters.Add(new Setter(Button.ForegroundProperty, DefaultRevealButtonForeground));
             revealBtnStyle.Setters.Add(new Setter(Button.MarginProperty, new Thickness(0, 0, 10, 0)));
 
             ControlTemplate revealBtnTemplate = new ControlTemplate(typeof(Button));
@@ -825,7 +837,7 @@ namespace StartUI4Controls
             revealBtn.SetValue(Button.HeightProperty, double.NaN);
             revealBtn.SetValue(Button.StyleProperty, revealBtnStyle);
             revealBtn.SetBinding(Button.BackgroundProperty, new Binding(nameof(Background)) { RelativeSource = RelativeSource.TemplatedParent });
-            revealBtn.SetBinding(UIElement.VisibilityProperty, new Binding(nameof(ShowClearButton))
+            revealBtn.SetBinding(UIElement.VisibilityProperty, new Binding(nameof(ShowPasswordButton))
             {
                 RelativeSource = RelativeSource.TemplatedParent,
                 Converter = new BoolToVisibilityConverter()
@@ -851,18 +863,12 @@ namespace StartUI4Controls
             style.Setters.Add(new Setter(TemplateProperty, template));
 
             Trigger focusTrigger = new Trigger { Property = IsFocusedProperty, Value = true };
-            LinearGradientBrush focusBorderGrad = new LinearGradientBrush
-            {
-                StartPoint = new Point(0, 0),
-                EndPoint = new Point(1, 1),
-                GradientStops = { new GradientStop(FocusGradientStart, 0), new GradientStop(FocusGradientEnd, 1) }
-            };
-            focusTrigger.Setters.Add(new Setter(BorderBrushProperty, focusBorderGrad));
+            focusTrigger.Setters.Add(new Setter(BorderBrushProperty, new SolidColorBrush(FocusBorderColor)));
             focusTrigger.Setters.Add(new Setter(BorderThicknessProperty, new Thickness(1.2)));
             style.Triggers.Add(focusTrigger);
 
             Trigger hoverTrigger = new Trigger { Property = IsMouseOverProperty, Value = true };
-            hoverTrigger.Setters.Add(new Setter(BorderBrushProperty, new SolidColorBrush(Color.FromRgb(160, 160, 190))));
+            hoverTrigger.Setters.Add(new Setter(BorderBrushProperty, new SolidColorBrush(HoverBorderColor)));
             style.Triggers.Add(hoverTrigger);
 
             return style;

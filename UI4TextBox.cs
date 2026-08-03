@@ -33,22 +33,22 @@ namespace StartUI4Controls
             set => SetValue(BorderNormalColorProperty, value);
         }
 
-        public static readonly DependencyProperty FocusGradientStartProperty =
-            DependencyProperty.Register(nameof(FocusGradientStart), typeof(Color), typeof(UI4TextBox),
+        public static readonly DependencyProperty HoverBorderColorProperty =
+            DependencyProperty.Register(nameof(HoverBorderColor), typeof(Color), typeof(UI4TextBox),
                 new PropertyMetadata(Color.FromRgb(0, 120, 212), OnStyleRefresh));
-        public Color FocusGradientStart
+        public Color HoverBorderColor
         {
-            get => (Color)GetValue(FocusGradientStartProperty);
-            set => SetValue(FocusGradientStartProperty, value);
+            get => (Color)GetValue(HoverBorderColorProperty);
+            set => SetValue(HoverBorderColorProperty, value);
         }
 
-        public static readonly DependencyProperty FocusGradientEndProperty =
-            DependencyProperty.Register(nameof(FocusGradientEnd), typeof(Color), typeof(UI4TextBox),
-                new PropertyMetadata(Color.FromRgb(147, 51, 234), OnStyleRefresh));
-        public Color FocusGradientEnd
+        public static readonly DependencyProperty FocusBorderColorProperty =
+            DependencyProperty.Register(nameof(FocusBorderColor), typeof(Color), typeof(UI4TextBox),
+                new PropertyMetadata(Color.FromRgb(0, 102, 181), OnStyleRefresh));
+        public Color FocusBorderColor
         {
-            get => (Color)GetValue(FocusGradientEndProperty);
-            set => SetValue(FocusGradientEndProperty, value);
+            get => (Color)GetValue(FocusBorderColorProperty);
+            set => SetValue(FocusBorderColorProperty, value);
         }
 
         public static readonly DependencyProperty EditBackgroundProperty =
@@ -125,7 +125,6 @@ namespace StartUI4Controls
 
         private static string GetScrollBarResourcesXaml()
         {
-
             return @"
 <ResourceDictionary xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation'
                     xmlns:x='http://schemas.microsoft.com/winfx/2006/xaml'>
@@ -327,16 +326,13 @@ namespace StartUI4Controls
         private void OnScrollBarMouseEnter(object sender, MouseEventArgs e)
         {
             _fadeTimer?.Stop();
-
             _verticalScrollBar?.BeginAnimation(UIElement.OpacityProperty, null);
         }
 
         private void OnScrollBarMouseLeave(object sender, MouseEventArgs e)
         {
-
             if (_verticalScrollBar != null && _verticalScrollBar.Opacity > 0.9)
             {
-
                 _verticalScrollBar.BeginAnimation(UIElement.OpacityProperty, null);
                 _verticalScrollBar.Opacity = 0.4;
                 StartFadeTimer();
@@ -378,13 +374,11 @@ namespace StartUI4Controls
                 _fadeTimer.Stop();
                 if (_verticalScrollBar != null && !_verticalScrollBar.IsMouseOver)
                 {
-
                     _verticalScrollBar.BeginAnimation(UIElement.OpacityProperty,
                         new DoubleAnimation(0, TimeSpan.FromSeconds(0.5)) { FillBehavior = FillBehavior.HoldEnd });
                 }
                 else if (_verticalScrollBar != null && _verticalScrollBar.IsMouseOver)
                 {
-
                     StartFadeTimer();
                 }
             };
@@ -544,18 +538,12 @@ namespace StartUI4Controls
             style.Setters.Add(new Setter(TemplateProperty, template));
 
             Trigger focusTrigger = new Trigger { Property = IsFocusedProperty, Value = true };
-            LinearGradientBrush focusBorderGrad = new LinearGradientBrush
-            {
-                StartPoint = new Point(0, 0),
-                EndPoint = new Point(1, 1),
-                GradientStops = { new GradientStop(FocusGradientStart, 0), new GradientStop(FocusGradientEnd, 1) }
-            };
-            focusTrigger.Setters.Add(new Setter(BorderBrushProperty, focusBorderGrad));
+            focusTrigger.Setters.Add(new Setter(BorderBrushProperty, new SolidColorBrush(FocusBorderColor)));
             focusTrigger.Setters.Add(new Setter(BorderThicknessProperty, new Thickness(1.2)));
             style.Triggers.Add(focusTrigger);
 
             Trigger hoverTrigger = new Trigger { Property = IsMouseOverProperty, Value = true };
-            hoverTrigger.Setters.Add(new Setter(BorderBrushProperty, new SolidColorBrush(Color.FromRgb(160, 160, 190))));
+            hoverTrigger.Setters.Add(new Setter(BorderBrushProperty, new SolidColorBrush(HoverBorderColor)));
             style.Triggers.Add(hoverTrigger);
 
             return style;

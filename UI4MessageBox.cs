@@ -2,10 +2,10 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Effects;
+
 namespace StartUI4Controls
 {
     public enum UI4MessageBoxButtons
@@ -13,6 +13,7 @@ namespace StartUI4Controls
         OK,
         OKCancel
     }
+
     public class UI4MessageBox : Window
     {
         private bool _isClosingAnimating;
@@ -26,6 +27,7 @@ namespace StartUI4Controls
         private TextBlock _messageText;
         private UI4Button _okButton;
         private UI4Button _cancelButton;
+        private Border _mainContainer;
 
         public UI4MessageBox(string title, string content, UI4MessageBoxButtons buttonMode = UI4MessageBoxButtons.OK)
         {
@@ -44,14 +46,21 @@ namespace StartUI4Controls
             AllowsTransparency = true;
             TextOptions.SetTextFormattingMode(this, TextFormattingMode.Display);
 
-            Border mainContainer = new Border
+            _mainContainer = new Border
             {
-                Margin = new Thickness(20, 16, 20, 16),
+                Margin = new Thickness(28),
                 Background = new SolidColorBrush(Colors.White),
-                CornerRadius = new CornerRadius(10)
+                CornerRadius = new CornerRadius(10),
+                Effect = new DropShadowEffect
+                {
+                    Color = Colors.Black,
+                    BlurRadius = 18,
+                    ShadowDepth = 6,
+                    Opacity = 0.3
+                }
             };
 
-            Grid rootGrid = new Grid() { Margin=new Thickness(20)};
+            Grid rootGrid = new Grid { Margin = new Thickness(20) };
             rootGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             rootGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
             rootGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
@@ -105,13 +114,12 @@ namespace StartUI4Controls
             {
                 Orientation = Orientation.Horizontal,
                 HorizontalAlignment = HorizontalAlignment.Right,
-                
             };
             buttonWrapper.Children.Add(buttonPanel);
             BuildButtons(buttonPanel);
 
-            mainContainer.Child = rootGrid;
-            mainContainer.MouseLeftButtonDown += (ss, ee) =>
+            _mainContainer.Child = rootGrid;
+            _mainContainer.MouseLeftButtonDown += (ss, ee) =>
             {
                 if (ee.ClickCount == 1) DragMove();
             };
@@ -125,7 +133,7 @@ namespace StartUI4Controls
             Border topRight = new Border { Width = ResizeThumbSize, Height = ResizeThumbSize, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Top, Cursor = Cursors.SizeNESW, Background = Brushes.Transparent };
             Border bottomLeft = new Border { Width = ResizeThumbSize, Height = ResizeThumbSize, HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Bottom, Cursor = Cursors.SizeNESW, Background = Brushes.Transparent };
             Border bottomRight = new Border { Width = ResizeThumbSize, Height = ResizeThumbSize, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Bottom, Cursor = Cursors.SizeNWSE, Background = Brushes.Transparent };
-            resizeGrid.Children.Add(mainContainer);
+            resizeGrid.Children.Add(_mainContainer);
             resizeGrid.Children.Add(left);
             resizeGrid.Children.Add(right);
             resizeGrid.Children.Add(top);
@@ -144,22 +152,16 @@ namespace StartUI4Controls
             bottomLeft.MouseLeftButtonDown += (s, e) => StartResize(e, 7);
             bottomRight.MouseLeftButtonDown += (s, e) => StartResize(e, 8);
 
-            UI4Panel winUI4Style_Panel = new UI4Panel()
+            UI4Panel winUI4Style_Panel = new UI4Panel
             {
                 Margin = new Thickness(20),
-                ShadowBlurRadius = 12,
-                ShadowOpacity = 0.35,
-                ShadowDepth = 6,
                 HoverScale = 1,
                 HoverBorderBrush = new SolidColorBrush(Colors.Transparent),
-                BorderThickness=new Thickness(0)
-            };
-            winUI4Style_Panel.Effect = new DropShadowEffect
-            {
-                Color = Color.FromRgb(60, 60, 60),
-                BlurRadius = 12,
-                ShadowDepth = 6,
-                Opacity = 0.35
+                BorderThickness = new Thickness(0),
+                Background = Brushes.Transparent,
+                ShadowBlurRadius = 0,
+                ShadowOpacity = 0,
+                ShadowDepth = 0
             };
             winUI4Style_Panel.Content = resizeGrid;
             this.Content = winUI4Style_Panel;
