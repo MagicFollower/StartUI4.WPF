@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -32,7 +32,7 @@ namespace StartUI4Controls
         public UI4MessageBox(string title, string content, UI4MessageBoxButtons buttonMode = UI4MessageBoxButtons.OK)
         {
             _buttonMode = buttonMode;
-            Title = title;
+            Title = title ?? UI4MultiLanguage.Get(UI4LanguageKey.Notice);
             Width = 460;
             MinHeight = 160;
             MaxHeight = 400;
@@ -172,7 +172,7 @@ namespace StartUI4Controls
         {
             _okButton = new UI4Button
             {
-                Content = "OK",
+                Content = UI4MultiLanguage.Get(UI4LanguageKey.OK),
                 Width = 80,
                 Height = 32,
                 FontSize = 13,
@@ -186,7 +186,7 @@ namespace StartUI4Controls
             {
                 _cancelButton = new UI4Button
                 {
-                    Content = "Cancel",
+                    Content = UI4MultiLanguage.Get(UI4LanguageKey.Cancel),
                     Width = 80,
                     Height = 32,
                     FontSize = 13,
@@ -318,11 +318,11 @@ namespace StartUI4Controls
         }
 
         public static bool? Show(string content,
-            string title = "Notice",
+            string title = null,
             UI4MessageBoxButtons buttons = UI4MessageBoxButtons.OK,
             double width = 460)
         {
-            UI4MessageBox box = new UI4MessageBox(title, content, buttons);
+            UI4MessageBox box = new UI4MessageBox(title ?? UI4MultiLanguage.Get(UI4LanguageKey.Notice), content, buttons);
             box.Width = width;
             return box.ShowDialog();
         }

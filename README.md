@@ -24,7 +24,7 @@
 
 **StartUI4.WPF** is a modern UI control library developed based on WPF .NET 6, perfectly aligned with the Modern Modern Design language. Easy to configure and use, supports Windows 7 / 10 / 11 operating systems.
 
-- **Version**: 1.0.17
+- **Version**: 1.0.18
 - **Author**: KS.STUDIO
 - **Target Framework**: .NET 6 (net6.0-windows7.0)
 - **NuGet Package**: StartUI4.WPF
@@ -87,11 +87,13 @@ xmlns:ui="clr-namespace:StartUI4Controls;assembly=StartUI4Controls"
 | [UI4Switch](#ui4switch) | ToggleButton | Modern toggle switch with gradient style |
 | [UI4TextBox](#ui4textbox) | TextBox | TextBox with focus gradient, clear button |
 | [UI4TextBlock](#ui4textblock) | ContentControl | Text display control with shadow effects |
+| [UI4FlipTextBlock](#ui4fliptextblock) | ContentControl | Flip animation text display with card styling |
 | [UI4ComboBox](#ui4combobox) | ComboBox | Custom styled dropdown selector |
 | [UI4ProgressBar](#ui4progressbar) | Control | Gradient progress bar with indeterminate mode |
 | [UI4ProgressRing](#ui4progressring) | ContentControl | Ring progress indicator (determinate/indeterminate) |
 | [UI4Slider](#ui4slider) | Slider | Gradient slider control with value display |
 | [UI4CircleSlider](#ui4circleslider) | ContentControl | Interactive circular slider |
+| [UI4ColorPicker](#ui4colorpicker) | Window | Color picker dialog with HSV picker, hex/RGB input |
 | [UI4Panel](#ui4panel) | ContentControl | Container panel with shadow and hover scale effects |
 | [UI4Pivot](#ui4pivot) | Selector | Tab control with slide transition animation |
 | [UI4Tab](#ui4tab) | Selector | Browser-style tab control with close and add buttons |
@@ -485,6 +487,81 @@ Enhanced text display control with text shadow effects, custom context menu, etc
 
 ---
 
+### UI4FlipTextBlock
+
+A flip animation text display control with card styling. When the text changes, it triggers a smooth flip animation using rendered bitmap snapshots.
+
+**Inherits from**: `ContentControl`
+
+#### Settable Properties
+
+| Property Name | Type | Default Value | Description |
+|--------------|------|---------------|-------------|
+| `Text` | `string` | `"0"` | Display text content |
+| `FlipRate` | `double` | `0.3` | Flip animation duration (seconds) |
+| `CardBackground` | `Color` | `White` | Card background color |
+| `CardForeground` | `Color` | `Black` | Text foreground color |
+| `CardBorderBrush` | `Color` | `Gray` | Card border color |
+| `CardCornerRadius` | `CornerRadius` | `12` | Card corner radius |
+| `CardBorderThickness` | `Thickness` | `1` | Card border thickness |
+| **Shadow Properties** | | | |
+| `ShadowColor` | `Color` | `Black` | Shadow color |
+| `CardShadowDepth` | `double` | `10.0` | Shadow depth (offset) |
+| `CardShadowBlurRadius` | `double` | `15.0` | Shadow blur radius |
+| `CardShadowOpacity` | `double` | `0.1` | Shadow opacity |
+
+#### Inherited Properties
+
+Also inherits all properties from `ContentControl`, and forwards font properties to the inner text: `FontSize` (default `60`), `FontFamily`, `FontWeight`, `FontStyle`.
+
+#### Example Code
+
+```xml
+<!-- Basic flip text -->
+<ui:UI4FlipTextBlock Text="42" />
+
+<!-- Custom styling -->
+<ui:UI4FlipTextBlock Text="7" 
+                     FontSize="48"
+                     CardBackground="DarkGreen" 
+                     CardForeground="Gold"
+                     FlipRate="0.5" />
+
+<!-- All properties set -->
+<ui:UI4FlipTextBlock x:Name="flipText"
+            Text="42"
+            FontSize="160"
+            FontWeight="Bold"
+            FontStyle="Normal"
+            FontFamily="Segoe UI"
+            FlipRate="0.3"
+            CardBackground="White"
+            CardForeground="Black"
+            CardBorderBrush="Gray"
+            CardCornerRadius="12"
+            CardBorderThickness="1"
+            ShadowColor="Black"
+            CardShadowDepth="10"
+            CardShadowBlurRadius="15"
+            CardShadowOpacity="0.1" />
+```
+
+Code-behind:
+
+```csharp
+// Programmatically update text (triggers flip animation)
+flipText.Text = "99";
+```
+
+#### Feature Notes
+
+- **Flip Animation**: When the `Text` property changes, the control renders the current visual to a bitmap, splits it into top and bottom halves, and plays a scale-based flip animation
+- **Card Styling**: Uses `UI4Panel` internally for shadow, border, and corner radius support
+- **Center Divider**: A gradient center line provides visual separation between the top and bottom halves during animation
+- **Font Inheritance**: `FontSize` (default 60), `FontFamily`, `FontWeight`, `FontStyle` are forwarded to the inner text element
+
+---
+
 ### UI4ComboBox
 
 Custom styled dropdown selector with focus gradient border, hover effects, etc.
@@ -794,6 +871,97 @@ Also inherits all properties from `ContentControl`, such as `Foreground`, `Width
 - **Slider Thumb**: Circular slider with white stroke
 - **Load Animation**: Smooth transition from minimum to set value on initial load
 - **Round Caps**: Both ends of the ring are round-capped
+
+---
+
+### UI4ColorPicker
+
+A modern color picker dialog with HSV color map, hue bar, hex input, and ARGB value editing. Features animated open/close, resizable window, and multi-language support.
+
+**Inherits from**: `Window`
+
+#### Constructor
+
+```csharp
+new UI4ColorPicker(string title = null, Color? defaultColor = null)
+```
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `title` | `string` | `null` | Window title (auto-localized if null) |
+| `defaultColor` | `Color?` | `null` | Initial selected color (defaults to Red if null) |
+
+#### Readonly Properties
+
+| Property Name | Type | Description |
+|--------------|------|-------------|
+| `SelectedColor` | `Color` | The currently selected color |
+
+#### Static Methods
+
+| Method | Return Type | Description |
+|--------|-------------|-------------|
+| `ShowDialog(string title = null, Color? defaultColor = null, Window owner = null)` | `Color?` | Opens the picker as a modal dialog. Returns the selected `Color` if OK is clicked, or `null` if cancelled. |
+
+> **Important**: Use the static `UI4ColorPicker.ShowDialog(...)` to avoid name conflict with `Window.ShowDialog()`.
+
+#### Instance Methods
+
+| Method | Return Type | Description |
+|--------|-------------|-------------|
+| `Show(Window owner = null)` | `bool?` | Shows the picker as a dialog. Use this when you need to access `SelectedColor` after closing. |
+
+#### UI Elements
+
+- **Color Map** (left): Saturation/Value picker, 280x200, 8px corner radius, crosshair cursor
+- **Hue Bar** (right): Vertical hue slider, 20x200, 4px corner radius, rainbow gradient
+- **Preview**: Small rectangle showing current selected color
+- **Hex Input**: Editable text box in `#AARRGGBB` format (compatible with 6-digit `#RRGGBB`)
+- **ARGB Inputs**: Editable text boxes with labels A (alpha), R (red), G (green), B (blue)
+- **OK / Cancel Buttons**: Confirm or cancel color selection
+
+#### Example Code
+
+```csharp
+// Simple usage - open picker and get selected color
+Color? result = UI4ColorPicker.ShowDialog();
+if (result.HasValue)
+{
+    myPanel.Background = new SolidColorBrush(result.Value);
+}
+
+// Custom title and default color
+Color? color = UI4ColorPicker.ShowDialog(
+    title: "Choose Background Color",
+    defaultColor: Colors.CornflowerBlue
+);
+
+// With owner window
+Color? accentColor = UI4ColorPicker.ShowDialog(
+    "Pick Accent Color",
+    Colors.Blue,
+    owner: this
+);
+
+// Instance-based usage
+var picker = new UI4ColorPicker("Select Color", Colors.Green);
+if (picker.Show(this) == true)
+{
+    Color selected = picker.SelectedColor;
+    // use selected color...
+}
+```
+
+#### Feature Notes
+
+- **HSV Color Model**: Uses HSV (Hue, Saturation, Value) for intuitive color picking
+- **Animated Open**: Slide up + scale + blur dissipation entrance animation (200ms, BackEase + CubicEase)
+- **Animated Close**: Slide down + shrink + blur + fade out exit animation (200ms)
+- **Resizable**: Window can be resized from all 8 directions (min 200x150)
+- **Draggable**: Drag the title area to move the window
+- **Borderless**: Custom window style with no system title bar, transparent background
+- **Multi-language**: Title and buttons auto-localized via `UI4MultiLanguage` (8 languages)
+- **Real-time Preview**: Color updates instantly as you interact with the picker
 
 ---
 
@@ -1773,4 +1941,4 @@ The control sets a default `LinearGradientBrush` background in its constructor:
 
 ## License
 
-?? KS.STUDIO - StartUI4.WPF v1.0.17
+?? KS.STUDIO - StartUI4.WPF v1.0.18

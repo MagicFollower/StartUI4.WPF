@@ -24,7 +24,7 @@
 
 **StartUI4.WPF** 是一款基于 WPF .NET 6 开发的现代化 UI 控件库，完美契合 Modern Modern Design 设计语言。只需简单配置即可使用，支持 Windows 7 / 10 / 11 操作系统。
 
-- **版本**: 1.0.17
+- **版本**: 1.0.18
 - **作者**: KS.STUDIO
 - **目标框架**: .NET 6 (net6.0-windows7.0)
 - **NuGet 包**: StartUI4.WPF
@@ -85,11 +85,13 @@ xmlns:ui="clr-namespace:StartUI4Controls;assembly=StartUI4Controls"
 | [UI4Switch](#ui4switch-开关) | ToggleButton | 渐变风格的现代化开关控件 |
 | [UI4TextBox](#ui4textbox-文本输入框) | TextBox | 带焦点渐变、清除按钮的文本框 |
 | [UI4TextBlock](#ui4textblock-文本块) | ContentControl | 带阴影效果的文本显示控件 |
+| [UI4FlipTextBlock](#ui4fliptextblock-翻页文本) | ContentControl | 翻页动画文本显示控件，带卡片样式 |
 | [UI4ComboBox](#ui4combobox-下拉框) | ComboBox | 自定义样式下拉选择框 |
 | [UI4ProgressBar](#ui4progressbar-进度条) | Control | 渐变进度条，支持不确定模式 |
 | [UI4ProgressRing](#ui4progressring-环形进度) | ContentControl | 环形进度指示器（确定/不确定模式） |
 | [UI4Slider](#ui4slider-滑块) | Slider | 渐变滑块控件，带数值显示 |
 | [UI4CircleSlider](#ui4circleslider-环形滑块) | ContentControl | 可交互的环形滑块 |
+| [UI4ColorPicker](#ui4colorpicker-颜色选择器) | Window | 颜色选择器对话框，支持 HSV 色板、十六进制/RGB 输入 |
 | [UI4Panel](#ui4panel-面板容器) | ContentControl | 带阴影和悬停缩放的容器面板 |
 | [UI4Pivot](#ui4pivot-选项卡) | Selector | 选项卡控件，带滑动切换动画 |
 | [UI4Tab](#ui4tab-浏览器标签) | Selector | 浏览器风格标签控件，支持关闭和新增按钮 |
@@ -483,6 +485,81 @@ xmlns:ui="clr-namespace:StartUI4Controls;assembly=StartUI4Controls"
 
 ---
 
+### UI4FlipTextBlock 翻页文本
+
+翻页动画文本显示控件，带卡片样式。当文本内容变化时，会触发基于渲染位图截图的平滑翻页动画。
+
+**继承自**: `ContentControl`
+
+#### 可设置属性
+
+| 属性名 | 类型 | 默认值 | 说明 |
+|-------|------|--------|------|
+| `Text` | `string` | `"0"` | 显示的文本内容 |
+| `FlipRate` | `double` | `0.3` | 翻页动画时长（秒） |
+| `CardBackground` | `Color` | `White` | 卡片背景色 |
+| `CardForeground` | `Color` | `Black` | 文本前景色 |
+| `CardBorderBrush` | `Color` | `Gray` | 卡片边框颜色 |
+| `CardCornerRadius` | `CornerRadius` | `12` | 卡片圆角半径 |
+| `CardBorderThickness` | `Thickness` | `1` | 卡片边框粗细 |
+| **阴影属性** | | | |
+| `ShadowColor` | `Color` | `Black` | 阴影颜色 |
+| `CardShadowDepth` | `double` | `10.0` | 阴影深度（偏移量） |
+| `CardShadowBlurRadius` | `double` | `15.0` | 阴影模糊半径 |
+| `CardShadowOpacity` | `double` | `0.1` | 阴影不透明度 |
+
+#### 继承属性
+
+同时继承 `ContentControl` 的所有属性，字体属性会转发到内部文本：`FontSize`（默认 `60`）、`FontFamily`、`FontWeight`、`FontStyle`。
+
+#### 示例代码
+
+```xml
+<!-- 基础翻页文本 -->
+<ui:UI4FlipTextBlock Text="42" />
+
+<!-- 自定义样式 -->
+<ui:UI4FlipTextBlock Text="7" 
+                     FontSize="48"
+                     CardBackground="DarkGreen" 
+                     CardForeground="Gold"
+                     FlipRate="0.5" />
+
+<!-- 所有属性设置 -->
+<ui:UI4FlipTextBlock x:Name="flipText"
+            Text="42"
+            FontSize="160"
+            FontWeight="Bold"
+            FontStyle="Normal"
+            FontFamily="Segoe UI"
+            FlipRate="0.3"
+            CardBackground="White"
+            CardForeground="Black"
+            CardBorderBrush="Gray"
+            CardCornerRadius="12"
+            CardBorderThickness="1"
+            ShadowColor="Black"
+            CardShadowDepth="10"
+            CardShadowBlurRadius="15"
+            CardShadowOpacity="0.1" />
+```
+
+后台代码：
+
+```csharp
+// 通过代码更新文本（触发翻页动画）
+flipText.Text = "99";
+```
+
+#### 特性说明
+
+- **翻页动画**: 当 `Text` 属性变化时，控件将当前视觉渲染为位图，分割为上下两半，播放基于缩放的翻页动画
+- **卡片样式**: 内部使用 `UI4Panel` 提供阴影、边框和圆角支持
+- **中心分割线**: 渐变中心线在动画过程中提供上下半部分的视觉分隔
+- **字体继承**: `FontSize`（默认 60）、`FontFamily`、`FontWeight`、`FontStyle` 会转发到内部文本元素
+
+---
+
 ### UI4ComboBox 下拉框
 
 自定义样式的下拉选择框，支持焦点渐变边框、悬停效果等。
@@ -792,6 +869,97 @@ xmlns:ui="clr-namespace:StartUI4Controls;assembly=StartUI4Controls"
 - **滑块按钮**: 带白色描边的圆形滑块
 - **加载动画**: 初始加载时从最小值平滑过渡到设定值
 - **圆头端点**: 环形两端为圆形端点
+
+---
+
+### UI4ColorPicker 颜色选择器
+
+现代化颜色选择器对话框，支持 HSV 色板、色相条、十六进制输入和 ARGB 数值编辑。具有动画打开/关闭、可调整大小窗口和多语言支持。
+
+**继承自**: `Window`
+
+#### 构造函数
+
+```csharp
+new UI4ColorPicker(string title = null, Color? defaultColor = null)
+```
+
+| 参数 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `title` | `string` | `null` | 窗口标题（为 null 时自动使用多语言文本） |
+| `defaultColor` | `Color?` | `null` | 初始选中颜色（为 null 时默认红色） |
+
+#### 只读属性
+
+| 属性名 | 类型 | 说明 |
+|-------|------|------|
+| `SelectedColor` | `Color` | 当前选中的颜色 |
+
+#### 静态方法
+
+| 方法 | 返回值 | 说明 |
+|------|--------|------|
+| `ShowDialog(string title = null, Color? defaultColor = null, Window owner = null)` | `Color?` | 以模态对话框方式打开选择器。点击确定返回选中的 `Color`，取消返回 `null`。 |
+
+> **重要**: 必须使用静态方法 `UI4ColorPicker.ShowDialog(...)` 以避免与 `Window.ShowDialog()` 的命名冲突。
+
+#### 实例方法
+
+| 方法 | 返回值 | 说明 |
+|------|--------|------|
+| `Show(Window owner = null)` | `bool?` | 以对话框方式显示选择器。关闭后可通过 `SelectedColor` 获取结果。 |
+
+#### UI 元素
+
+- **色板**（左侧）：饱和度/明度选择区域，280x200，8px 圆角，十字准星光标
+- **色相条**（右侧）：垂直色相滑块，20x200，4px 圆角，彩虹渐变
+- **预览区**: 显示当前选中颜色的小矩形
+- **十六进制输入**: 可编辑文本框，格式为 `#AARRGGBB`（兼容 6 位 `#RRGGBB` 输入）
+- **ARGB 输入**: 可编辑文本框，带标签 A（透明度）、R（红）、G（绿）、B（蓝）
+- **确定 / 取消按钮**: 确认或取消颜色选择
+
+#### 示例代码
+
+```csharp
+// 简单用法 - 打开选择器并获取颜色
+Color? result = UI4ColorPicker.ShowDialog();
+if (result.HasValue)
+{
+    myPanel.Background = new SolidColorBrush(result.Value);
+}
+
+// 自定义标题和默认颜色
+Color? color = UI4ColorPicker.ShowDialog(
+    title: "选择背景颜色",
+    defaultColor: Colors.CornflowerBlue
+);
+
+// 指定所有者窗口
+Color? accentColor = UI4ColorPicker.ShowDialog(
+    "选择主题色",
+    Colors.Blue,
+    owner: this
+);
+
+// 实例化用法
+var picker = new UI4ColorPicker("选择颜色", Colors.Green);
+if (picker.Show(this) == true)
+{
+    Color selected = picker.SelectedColor;
+    // 使用选中的颜色...
+}
+```
+
+#### 特性说明
+
+- **HSV 色彩模型**: 使用 HSV（色相、饱和度、明度）模型，色彩选择更直观
+- **入场动画**: 上滑 + 缩放 + 模糊消散入场动画（200ms，BackEase + CubicEase）
+- **出场动画**: 下滑 + 缩小 + 模糊 + 淡出出场动画（200ms）
+- **可调整大小**: 窗口支持 8 个方向调整大小（最小 200x150）
+- **可拖动**: 拖拽标题区域移动窗口
+- **无边框**: 自定义窗口样式，无系统标题栏，透明背景
+- **多语言支持**: 标题和按钮通过 `UI4MultiLanguage` 自动本地化（支持 8 种语言）
+- **实时预览**: 与选择器交互时颜色实时更新
 
 ---
 
@@ -1772,4 +1940,4 @@ trayIcon.ClearMenuItems();
 
 ## 许可证
 
-?? KS.STUDIO - StartUI4.WPF v1.0.17
+?? KS.STUDIO - StartUI4.WPF v1.0.18

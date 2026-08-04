@@ -318,7 +318,7 @@ namespace StartUI4Controls
             _contextMenu.Attach(_textBox);
         }
 
-        private Style BuildTextStyle()
+        protected virtual Style BuildTextStyle()
         {
             Style style = new Style(typeof(ContentControl));
 

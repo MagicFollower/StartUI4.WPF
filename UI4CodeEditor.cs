@@ -1,156 +1,86 @@
+﻿using ICSharpCode.AvalonEdit;
+using ICSharpCode.AvalonEdit.Highlighting;
 using System;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Animation;
+using System.Windows.Controls.Primitives;
 using System.Windows.Markup;
+using System.Windows.Media;
 using System.Xml;
 
 namespace StartUI4Controls
 {
-
-    public class UI4ScrollViewer : ScrollViewer
+    public class UI4CodeEditor : TextEditor
     {
-        private static Style _scrollViewerStyle;
-        private double _targetVerticalOffset;
-        private double _targetHorizontalOffset;
-        private bool _isAnimatingVertical;
-        private bool _isAnimatingHorizontal;
-        private const double AnimationDuration = 100;
+        private static readonly Style ScrollViewerStyle;
 
-        public static readonly DependencyProperty IsSmoothScrollEnabledProperty =
-            DependencyProperty.Register(
-                nameof(IsSmoothScrollEnabled),
-                typeof(bool),
-                typeof(UI4ScrollViewer),
-                new PropertyMetadata(true));
-
-        public bool IsSmoothScrollEnabled
+        static UI4CodeEditor()
         {
-            get => (bool)GetValue(IsSmoothScrollEnabledProperty);
-            set => SetValue(IsSmoothScrollEnabledProperty, value);
+            ScrollViewerStyle = CreateScrollViewerStyleFromXaml();
         }
 
-        static UI4ScrollViewer()
+        public UI4CodeEditor()
         {
-            _scrollViewerStyle = CreateScrollViewerStyleFromXaml();
-        }
-
-        public UI4ScrollViewer()
-        {
-            if (_scrollViewerStyle != null)
+            SyntaxHighlighting = HighlightingManager.Instance.GetDefinition("C#");
+            ShowLineNumbers = true;
+            WordWrap = true;
+            FontFamily = new FontFamily("Consolas");
+            FontSize = 14;
+            Name = "codeeditor_firstreference";
+            Options = new TextEditorOptions
             {
-                Style = _scrollViewerStyle;
-            }
+                ConvertTabsToSpaces = true,
+                IndentationSize = 4,
+                EnableRectangularSelection = false,
+
+            };
+
+            var editor = this;
+            var menu = new UI4ContextMenu
+            {
+                Width = 200,
+                Background = new SolidColorBrush(Color.FromRgb(255, 255, 255)),
+                BorderColor = Color.FromRgb(200, 200, 200),
+                HoverBackground = Color.FromArgb(10, 0, 0, 0)
+            };
+
+            menu.AddItem(UI4MenuItemType.Undo, () => editor.Undo(), () => editor.CanUndo);
+            menu.AddItem(UI4MenuItemType.Redo, () => editor.Redo(), () => editor.CanRedo);
+            menu.AddItem(UI4MenuItemType.Cut, () => editor.Cut(), () => !string.IsNullOrEmpty(editor.SelectedText));
+            menu.AddItem(UI4MenuItemType.Copy, () => editor.Copy(), () => !string.IsNullOrEmpty(editor.SelectedText));
+            menu.AddItem(UI4MenuItemType.Paste, () => editor.Paste(), () => Clipboard.ContainsText());
+            menu.AddItem(UI4MenuItemType.Delete, () => editor.SelectedText = "", () => !string.IsNullOrEmpty(editor.SelectedText));
+            menu.AddItem(UI4MenuItemType.SelectAll, () => editor.SelectAll(), () => editor.Text.Length > 0);
+
+            menu.Attach(this);
+
+            // 控件加载完成后为内部的 ScrollViewer 应用自定义样式
             Loaded += OnLoaded;
         }
 
         private void OnLoaded(object sender, RoutedEventArgs e)
         {
-            _targetVerticalOffset = VerticalOffset;
-            _targetHorizontalOffset = HorizontalOffset;
-        }
-
-        protected override void OnMouseWheel(MouseWheelEventArgs e)
-        {
-            if (!IsSmoothScrollEnabled)
+            var scrollViewer = FindVisualChild<ScrollViewer>(this);
+            if (scrollViewer != null && ScrollViewerStyle != null)
             {
-                base.OnMouseWheel(e);
-                return;
+                scrollViewer.Style = ScrollViewerStyle;
             }
-
-            e.Handled = true;
-
-            double scrollAmount = e.Delta;
-            double lineHeight = 16;
-            double totalDelta = scrollAmount / 120.0 * 3 * lineHeight;
-
-            _targetVerticalOffset = Math.Max(0, Math.Min(ScrollableHeight, _targetVerticalOffset - totalDelta));
-
-            AnimateVerticalOffset(VerticalOffset, _targetVerticalOffset);
         }
 
-        private void AnimateVerticalOffset(double from, double to)
+        private static T FindVisualChild<T>(DependencyObject obj) where T : DependencyObject
         {
-            if (Math.Abs(from - to) < 0.1) return;
-
-            double startTime = Environment.TickCount;
-            double duration = AnimationDuration;
-            double startVal = from;
-            double endVal = to;
-
-            EventHandler renderHandler = null;
-            renderHandler = (s, e) =>
+            if (obj == null) return null;
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(obj); i++)
             {
-                double elapsed = Environment.TickCount - startTime;
-                if (elapsed >= duration)
-                {
-                    CompositionTarget.Rendering -= renderHandler;
-                    ScrollToVerticalOffset(endVal);
-                    _isAnimatingVertical = false;
-                    return;
-                }
-
-                double t = elapsed / duration;
-                double eased = EaseOutCubic(t);
-                double currentVal = startVal + (endVal - startVal) * eased;
-                ScrollToVerticalOffset(currentVal);
-            };
-
-            CompositionTarget.Rendering += renderHandler;
-            _isAnimatingVertical = true;
-        }
-
-        private static double EaseOutCubic(double t)
-        {
-            return 1 - Math.Pow(1 - t, 3);
-        }
-
-        public void SmoothScrollToVerticalOffset(double offset)
-        {
-            offset = Math.Max(0, Math.Min(ScrollableHeight, offset));
-            _targetVerticalOffset = offset;
-            AnimateVerticalOffset(VerticalOffset, offset);
-        }
-
-        public void SmoothScrollToHorizontalOffset(double offset)
-        {
-            offset = Math.Max(0, Math.Min(ScrollableWidth, offset));
-            _targetHorizontalOffset = offset;
-            AnimateHorizontalOffset(HorizontalOffset, offset);
-        }
-
-        private void AnimateHorizontalOffset(double from, double to)
-        {
-            if (Math.Abs(from - to) < 0.1) return;
-
-            double startTime = Environment.TickCount;
-            double duration = AnimationDuration;
-            double startVal = from;
-            double endVal = to;
-
-            EventHandler renderHandler = null;
-            renderHandler = (s, e) =>
-            {
-                double elapsed = Environment.TickCount - startTime;
-                if (elapsed >= duration)
-                {
-                    CompositionTarget.Rendering -= renderHandler;
-                    ScrollToHorizontalOffset(endVal);
-                    _isAnimatingHorizontal = false;
-                    return;
-                }
-
-                double t = elapsed / duration;
-                double eased = EaseOutCubic(t);
-                double currentVal = startVal + (endVal - startVal) * eased;
-                ScrollToHorizontalOffset(currentVal);
-            };
-
-            CompositionTarget.Rendering += renderHandler;
-            _isAnimatingHorizontal = true;
+                var child = VisualTreeHelper.GetChild(obj, i);
+                if (child is T typedChild)
+                    return typedChild;
+                var result = FindVisualChild<T>(child);
+                if (result != null)
+                    return result;
+            }
+            return null;
         }
 
         private static Style CreateScrollViewerStyleFromXaml()
@@ -167,7 +97,7 @@ namespace StartUI4Controls
                 <Setter.Value>
                     <ControlTemplate TargetType='{x:Type Thumb}'>
                         <Grid>
-                            <Rectangle Fill='#50000000' RadiusX='5' RadiusY='5'/>
+                            <Rectangle Fill='#50000000' RadiusX='3' RadiusY='3'/>
                         </Grid>
                     </ControlTemplate>
                 </Setter.Value>
@@ -209,9 +139,9 @@ namespace StartUI4Controls
             <Setter Property='Stylus.IsPressAndHoldEnabled' Value='false'/>
             <Setter Property='Stylus.IsFlicksEnabled' Value='false'/>
             <Setter Property='Background' Value='Transparent'/>
-            <Setter Property='Margin' Value='0,1,2,6'/>
-            <Setter Property='Width' Value='6'/>
-            <Setter Property='MinWidth' Value='6'/>
+            <Setter Property='Margin' Value='0,1,1,6'/>
+            <Setter Property='Width' Value='5'/>
+            <Setter Property='MinWidth' Value='5'/>
             <Setter Property='Opacity' Value='0'/>
             <Setter Property='Template'>
                 <Setter.Value>
@@ -255,9 +185,9 @@ namespace StartUI4Controls
             <Style.Triggers>
                 <Trigger Property='Orientation' Value='Horizontal'>
                     <Setter Property='Background' Value='Transparent'/>
-                    <Setter Property='Margin' Value='2,0,6,2'/>
-                    <Setter Property='Height' Value='6'/>
-                    <Setter Property='MinHeight' Value='6'/>
+                    <Setter Property='Margin' Value='1,0,6,1'/>
+                    <Setter Property='Height' Value='5'/>
+                    <Setter Property='MinHeight' Value='5'/>
                     <Setter Property='Width' Value='Auto'/>
                     <Setter Property='Opacity' Value='0'/>
                     <Setter Property='Template'>
@@ -365,7 +295,6 @@ namespace StartUI4Controls
             }
             catch
             {
-
                 return null;
             }
         }

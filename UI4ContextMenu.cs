@@ -395,16 +395,29 @@ namespace StartUI4Controls
 
         public void AddItem(UI4MenuItemType type, Action command, Func<bool> canExecute = null)
         {
-            var strings = UI4ContextMenuLanguage.Current;
-            if (strings.ContainsKey(type))
+            var key = TypeToKey(type);
+            var label = UI4MultiLanguage.Get(key);
+            var item = new UI4MenuItem(
+                type,
+                label,
+                UI4MenuIcons.GetIcon(type),
+                command,
+                canExecute);
+            _menuItems.Add(item);
+        }
+
+        private static UI4LanguageKey TypeToKey(UI4MenuItemType type)
+        {
+            switch (type)
             {
-                var item = new UI4MenuItem(
-                    type,
-                    strings[type],
-                    UI4MenuIcons.GetIcon(type),
-                    command,
-                    canExecute);
-                _menuItems.Add(item);
+                case UI4MenuItemType.Undo: return UI4LanguageKey.Undo;
+                case UI4MenuItemType.Redo: return UI4LanguageKey.Redo;
+                case UI4MenuItemType.Cut: return UI4LanguageKey.Cut;
+                case UI4MenuItemType.Copy: return UI4LanguageKey.Copy;
+                case UI4MenuItemType.Paste: return UI4LanguageKey.Paste;
+                case UI4MenuItemType.Delete: return UI4LanguageKey.Delete;
+                case UI4MenuItemType.SelectAll: return UI4LanguageKey.SelectAll;
+                default: return UI4LanguageKey.Copy;
             }
         }
 

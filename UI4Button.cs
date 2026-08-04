@@ -1,6 +1,7 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
+using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 
@@ -53,10 +54,37 @@ namespace StartUI4Controls
                 typeof(Brush),
                 typeof(UI4Button),
                 new PropertyMetadata(new SolidColorBrush(Color.FromRgb(0, 102, 181)), OnStyleRefresh));
+
         public Brush HoverBackground
         {
             get => (Brush)GetValue(HoverBackgroundProperty);
             set => SetValue(HoverBackgroundProperty, value);
+        }
+
+        public static readonly DependencyProperty HoverBorderBrushProperty =
+            DependencyProperty.Register(
+                nameof(HoverBorderBrush),
+                typeof(Brush),
+                typeof(UI4Button),
+                new PropertyMetadata(null, OnStyleRefresh));
+
+        public Brush HoverBorderBrush
+        {
+            get => (Brush)GetValue(HoverBorderBrushProperty);
+            set => SetValue(HoverBorderBrushProperty, value);
+        }
+
+        public static readonly DependencyProperty HoverForegroundProperty =
+            DependencyProperty.Register(
+                nameof(HoverForeground),
+                typeof(Brush),
+                typeof(UI4Button),
+                new PropertyMetadata(new SolidColorBrush(Colors.White), OnStyleRefresh));
+
+        public Brush HoverForeground
+        {
+            get => (Brush)GetValue(HoverForegroundProperty);
+            set => SetValue(HoverForegroundProperty, value);
         }
 
         private static void OnStyleRefresh(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -96,6 +124,8 @@ namespace StartUI4Controls
             borderNormal.SetBinding(Border.CornerRadiusProperty, new Binding(nameof(CornerRadius)) { RelativeSource = RelativeSource.TemplatedParent });
             borderNormal.SetBinding(Border.BackgroundProperty, new Binding(nameof(Background)) { RelativeSource = RelativeSource.TemplatedParent });
             borderNormal.SetBinding(Border.PaddingProperty, new Binding(nameof(Padding)) { RelativeSource = RelativeSource.TemplatedParent });
+            borderNormal.SetBinding(Border.BorderBrushProperty, new Binding(nameof(BorderBrush)) { RelativeSource = RelativeSource.TemplatedParent });
+            borderNormal.SetBinding(Border.BorderThicknessProperty, new Binding(nameof(BorderThickness)) { RelativeSource = RelativeSource.TemplatedParent });
 
             FrameworkElementFactory cpNormal = new FrameworkElementFactory(typeof(ContentPresenter));
             cpNormal.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Center);
@@ -114,10 +144,13 @@ namespace StartUI4Controls
             borderHover.SetBinding(Border.CornerRadiusProperty, new Binding(nameof(CornerRadius)) { RelativeSource = RelativeSource.TemplatedParent });
             borderHover.SetBinding(Border.BackgroundProperty, new Binding(nameof(HoverBackground)) { RelativeSource = RelativeSource.TemplatedParent });
             borderHover.SetBinding(Border.PaddingProperty, new Binding(nameof(Padding)) { RelativeSource = RelativeSource.TemplatedParent });
+            borderHover.SetBinding(Border.BorderBrushProperty, new Binding(nameof(HoverBorderBrush)) { RelativeSource = RelativeSource.TemplatedParent });
+            borderHover.SetBinding(Border.BorderThicknessProperty, new Binding(nameof(BorderThickness)) { RelativeSource = RelativeSource.TemplatedParent });
 
             FrameworkElementFactory cpHover = new FrameworkElementFactory(typeof(ContentPresenter));
             cpHover.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Center);
             cpHover.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center);
+            cpHover.SetBinding(TextElement.ForegroundProperty, new Binding(nameof(HoverForeground)) { RelativeSource = RelativeSource.TemplatedParent });
             borderHover.AppendChild(cpHover);
             hoverTemplate.VisualTree = borderHover;
 
@@ -127,5 +160,4 @@ namespace StartUI4Controls
             return style;
         }
     }
-
 }

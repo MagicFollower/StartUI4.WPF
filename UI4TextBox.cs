@@ -447,12 +447,17 @@ namespace StartUI4Controls
         {
             Style style = new Style(typeof(TextBox));
             style.Setters.Add(new Setter(ForegroundProperty, new SolidColorBrush(TextColor)));
-            style.Setters.Add(new Setter(PaddingProperty, InnerPadding));
             style.Setters.Add(new Setter(BackgroundProperty, EditBackground));
             style.Setters.Add(new Setter(BorderThicknessProperty, new Thickness(1)));
             style.Setters.Add(new Setter(BorderBrushProperty, new SolidColorBrush(BorderNormalColor)));
             style.Setters.Add(new Setter(CursorProperty, Cursors.IBeam));
             style.Setters.Add(new Setter(MinHeightProperty, 30d));
+
+            MultiBinding paddingBinding = new MultiBinding();
+            paddingBinding.Bindings.Add(new Binding(nameof(InnerPadding)) { RelativeSource = RelativeSource.TemplatedParent });
+            paddingBinding.Bindings.Add(new Binding(nameof(ShowClearButton)) { RelativeSource = RelativeSource.TemplatedParent });
+            paddingBinding.Converter = new InnerPaddingConverter();
+            style.Setters.Add(new Setter(PaddingProperty, paddingBinding));
 
             ControlTemplate template = new ControlTemplate(typeof(TextBox));
             FrameworkElementFactory borderRoot = new FrameworkElementFactory(typeof(Border));
@@ -494,7 +499,7 @@ namespace StartUI4Controls
             clearBtnStyle.Setters.Add(new Setter(Button.PaddingProperty, new Thickness(0)));
             clearBtnStyle.Setters.Add(new Setter(Button.CursorProperty, Cursors.Hand));
             clearBtnStyle.Setters.Add(new Setter(Button.ForegroundProperty, new SolidColorBrush(Color.FromArgb(150, 120, 120, 140))));
-            clearBtnStyle.Setters.Add(new Setter(Button.MarginProperty, new Thickness(0, 0, 10, 0)));
+            clearBtnStyle.Setters.Add(new Setter(Button.MarginProperty, new Thickness(0, -5, 10, 0)));
 
             ControlTemplate clearBtnTemplate = new ControlTemplate(typeof(Button));
             FrameworkElementFactory clearBtnPresenter = new FrameworkElementFactory(typeof(ContentPresenter));
@@ -512,9 +517,9 @@ namespace StartUI4Controls
 
             FrameworkElementFactory clearBtn = new FrameworkElementFactory(typeof(Button));
             clearBtn.SetValue(FrameworkElement.HorizontalAlignmentProperty, HorizontalAlignment.Right);
-            clearBtn.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Stretch);
+            clearBtn.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center);
             clearBtn.SetValue(Button.WidthProperty, 26d);
-            clearBtn.SetValue(Button.HeightProperty, double.NaN);
+            clearBtn.SetValue(Button.HeightProperty, 20d);
             clearBtn.SetValue(Button.StyleProperty, clearBtnStyle);
             clearBtn.SetBinding(Button.BackgroundProperty, new Binding(nameof(Background)) { RelativeSource = RelativeSource.TemplatedParent });
             clearBtn.SetBinding(UIElement.VisibilityProperty, new Binding(nameof(ShowClearButton))
@@ -566,6 +571,23 @@ namespace StartUI4Controls
             return string.IsNullOrEmpty(text) ? Visibility.Visible : Visibility.Collapsed;
         }
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+            => throw new NotImplementedException();
+    }
+
+    public class InnerPaddingConverter : IMultiValueConverter
+    {
+        public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (values[0] is Thickness padding && values[1] is bool showClear)
+            {
+                if (showClear)
+                    return padding;
+                else
+                    return new Thickness(padding.Left, padding.Top, padding.Left, padding.Bottom);
+            }
+            return new Thickness(12, 5, 12, 5);
+        }
+        public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
             => throw new NotImplementedException();
     }
 }
