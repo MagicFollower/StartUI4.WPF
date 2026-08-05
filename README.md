@@ -24,7 +24,7 @@
 
 **StartUI4.WPF** is a modern UI control library developed based on WPF .NET 6, perfectly aligned with the Modern Modern Design language. Easy to configure and use, supports Windows 7 / 10 / 11 operating systems.
 
-- **Version**: 1.0.18
+- **Version**: 1.0.19
 - **Author**: KS.STUDIO
 - **Target Framework**: .NET 6 (net6.0-windows7.0)
 - **NuGet Package**: StartUI4.WPF
@@ -1941,4 +1941,4 @@ The control sets a default `LinearGradientBrush` background in its constructor:
 
 ## License
 
-?? KS.STUDIO - StartUI4.WPF v1.0.18
+?? KS.STUDIO - StartUI4.WPF v1.0.19

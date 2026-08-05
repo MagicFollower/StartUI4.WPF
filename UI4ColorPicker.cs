@@ -36,6 +36,12 @@ namespace StartUI4Controls
         private UI4TextBox _rTextBox;
         private UI4TextBox _gTextBox;
         private UI4TextBox _bTextBox;
+        private TextBlock _labelA;
+        private TextBlock _labelR;
+        private TextBlock _labelG;
+        private TextBlock _labelB;
+        private UI4ComboBox _colorModeComboBox;
+        private bool _isHsvMode;
         private UI4Button _okButton;
         private UI4Button _cancelButton;
 
@@ -226,7 +232,7 @@ namespace StartUI4Controls
             Grid.SetRow(rgbRow, 1);
             Grid.SetColumnSpan(rgbRow, 2);
 
-            var labelA = new TextBlock
+            var labelA = new TextBlock  // _labelA
             {
                 Text = "A",
                 Width = 16,
@@ -236,6 +242,7 @@ namespace StartUI4Controls
                 VerticalAlignment = VerticalAlignment.Center,
                 Margin = new Thickness(0, 0, 4, 0),
             };
+            _labelA = labelA;
             _aTextBox = new UI4TextBox
             {
                 Width = 50,
@@ -246,7 +253,7 @@ namespace StartUI4Controls
             };
             _aTextBox.TextChanged += RgbTextBox_TextChanged;
 
-            var labelR = new TextBlock
+            var labelR = new TextBlock  // _labelR
             {
                 Text = "R",
                 Width = 16,
@@ -256,6 +263,7 @@ namespace StartUI4Controls
                 VerticalAlignment = VerticalAlignment.Center,
                 Margin = new Thickness(10, 0, 4, 0)
             };
+            _labelR = labelR;
             _rTextBox = new UI4TextBox
             {
                 Width = 50,
@@ -266,7 +274,7 @@ namespace StartUI4Controls
             };
             _rTextBox.TextChanged += RgbTextBox_TextChanged;
 
-            var labelG = new TextBlock
+            var labelG = new TextBlock  // _labelG
             {
                 Text = "G",
                 Width = 16,
@@ -276,6 +284,7 @@ namespace StartUI4Controls
                 VerticalAlignment = VerticalAlignment.Center,
                 Margin = new Thickness(10, 0, 4, 0)
             };
+            _labelG = labelG;
             _gTextBox = new UI4TextBox
             {
                 Width = 50,
@@ -286,7 +295,7 @@ namespace StartUI4Controls
             };
             _gTextBox.TextChanged += RgbTextBox_TextChanged;
 
-            var labelB = new TextBlock
+            var labelB = new TextBlock  // _labelB
             {
                 Text = "B",
                 Width = 16,
@@ -296,6 +305,7 @@ namespace StartUI4Controls
                 VerticalAlignment = VerticalAlignment.Center,
                 Margin = new Thickness(10, 0, 4, 0)
             };
+            _labelB = labelB;
             _bTextBox = new UI4TextBox
             {
                 Width = 50,
@@ -320,8 +330,25 @@ namespace StartUI4Controls
             rootGrid.Children.Add(previewGrid);
 
             Grid buttonWrapper = new Grid { Margin = new Thickness(0, 12, 0, 0) };
+            buttonWrapper.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            buttonWrapper.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            buttonWrapper.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             Grid.SetRow(buttonWrapper, 3);
             rootGrid.Children.Add(buttonWrapper);
+
+            _colorModeComboBox = new UI4ComboBox
+            {
+                Width = 110,
+                Height = 35,
+                FontSize = 12,
+                VerticalAlignment = VerticalAlignment.Center,
+                SelectedIndex = 0
+            };
+            _colorModeComboBox.Items.Add(new ComboBoxItem { Content = "RGB" });
+            _colorModeComboBox.Items.Add(new ComboBoxItem { Content = "HSV" });
+            _colorModeComboBox.SelectionChanged += ColorModeComboBox_SelectionChanged;
+            Grid.SetColumn(_colorModeComboBox, 0);
+            buttonWrapper.Children.Add(_colorModeComboBox);
 
             StackPanel buttonPanel = new StackPanel
             {
@@ -329,6 +356,8 @@ namespace StartUI4Controls
                 HorizontalAlignment = HorizontalAlignment.Right
             };
             buttonWrapper.Children.Add(buttonPanel);
+
+            Grid.SetColumn(buttonPanel, 2);
 
             _okButton = new UI4Button
             {
@@ -515,10 +544,19 @@ namespace StartUI4Controls
 
             _isUpdating = true;
             _hexTextBox.Text = GetHexString(_selectedColor);
-            _aTextBox.Text = _selectedColor.A.ToString();
-            _rTextBox.Text = _selectedColor.R.ToString();
-            _gTextBox.Text = _selectedColor.G.ToString();
-            _bTextBox.Text = _selectedColor.B.ToString();
+            if (_isHsvMode)
+            {
+                _aTextBox.Text = ((int)Math.Round(_hue)).ToString();
+                _rTextBox.Text = ((int)Math.Round(_saturation * 100)).ToString();
+                _gTextBox.Text = ((int)Math.Round(_value * 100)).ToString();
+            }
+            else
+            {
+                _aTextBox.Text = _selectedColor.A.ToString();
+                _rTextBox.Text = _selectedColor.R.ToString();
+                _gTextBox.Text = _selectedColor.G.ToString();
+                _bTextBox.Text = _selectedColor.B.ToString();
+            }
             _isUpdating = false;
         }
 
@@ -545,10 +583,19 @@ namespace StartUI4Controls
                 RgbToHsv(color, out _hue, out _saturation, out _value);
                 UpdateColorMap();
                 _isUpdating = true;
-                _aTextBox.Text = a.ToString();
-                _rTextBox.Text = r.ToString();
-                _gTextBox.Text = g.ToString();
-                _bTextBox.Text = b.ToString();
+                if (_isHsvMode)
+                {
+                    _aTextBox.Text = ((int)Math.Round(_hue)).ToString();
+                    _rTextBox.Text = ((int)Math.Round(_saturation * 100)).ToString();
+                    _gTextBox.Text = ((int)Math.Round(_value * 100)).ToString();
+                }
+                else
+                {
+                    _aTextBox.Text = a.ToString();
+                    _rTextBox.Text = r.ToString();
+                    _gTextBox.Text = g.ToString();
+                    _bTextBox.Text = b.ToString();
+                }
                 _previewRect.Fill = new SolidColorBrush(color);
                 _selectedColor = color;
                 _isUpdating = false;
@@ -559,19 +606,78 @@ namespace StartUI4Controls
         {
             if (_isUpdating) return;
 
-            if (byte.TryParse(_aTextBox.Text, out byte a) &&
-                byte.TryParse(_rTextBox.Text, out byte r) &&
-                byte.TryParse(_gTextBox.Text, out byte g) &&
-                byte.TryParse(_bTextBox.Text, out byte b))
+            if (_isHsvMode)
             {
-                var color = Color.FromArgb(a, r, g, b);
-                RgbToHsv(color, out _hue, out _saturation, out _value);
-                UpdateColorMap();
-                _isUpdating = true;
-                _hexTextBox.Text = GetHexString(color);
-                _previewRect.Fill = new SolidColorBrush(color);
-                _selectedColor = color;
-                _isUpdating = false;
+                if (double.TryParse(_aTextBox.Text, out double h) &&
+                    double.TryParse(_rTextBox.Text, out double s) &&
+                    double.TryParse(_gTextBox.Text, out double v))
+                {
+                    _hue = Math.Clamp(h, 0, 360);
+                    _saturation = Math.Clamp(s / 100.0, 0, 1);
+                    _value = Math.Clamp(v / 100.0, 0, 1);
+                    UpdateColorMap();
+                    byte alpha = _selectedColor.A;
+                    _selectedColor = HsvToRgb(_hue, _saturation, _value);
+                    _selectedColor = Color.FromArgb(alpha, _selectedColor.R, _selectedColor.G, _selectedColor.B);
+                    _isUpdating = true;
+                    _hexTextBox.Text = GetHexString(_selectedColor);
+                    _previewRect.Fill = new SolidColorBrush(_selectedColor);
+                    _isUpdating = false;
+                }
+            }
+            else
+            {
+                if (byte.TryParse(_aTextBox.Text, out byte a) &&
+                    byte.TryParse(_rTextBox.Text, out byte r) &&
+                    byte.TryParse(_gTextBox.Text, out byte g) &&
+                    byte.TryParse(_bTextBox.Text, out byte b))
+                {
+                    var color = Color.FromArgb(a, r, g, b);
+                    RgbToHsv(color, out _hue, out _saturation, out _value);
+                    UpdateColorMap();
+                    _isUpdating = true;
+                    _hexTextBox.Text = GetHexString(color);
+                    _previewRect.Fill = new SolidColorBrush(color);
+                    _selectedColor = color;
+                    _isUpdating = false;
+                }
+            }
+        }
+
+        private void ColorModeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (_colorModeComboBox.SelectedIndex == 1)
+            {
+                _isHsvMode = true;
+                _labelA.Text = "H";
+                _labelA.Foreground = new SolidColorBrush(Color.FromRgb(200, 80, 40));
+                _labelR.Text = "S";
+                _labelR.Foreground = new SolidColorBrush(Color.FromRgb(120, 120, 130));
+                _labelG.Text = "V";
+                _labelG.Foreground = new SolidColorBrush(Color.FromRgb(120, 120, 130));
+                _labelB.Visibility = Visibility.Collapsed;
+                _bTextBox.Visibility = Visibility.Collapsed;
+
+                _aTextBox.Text = ((int)Math.Round(_hue)).ToString();
+                _rTextBox.Text = ((int)Math.Round(_saturation * 100)).ToString();
+                _gTextBox.Text = ((int)Math.Round(_value * 100)).ToString();
+            }
+            else
+            {
+                _isHsvMode = false;
+                _labelA.Text = "A";
+                _labelA.Foreground = new SolidColorBrush(Color.FromRgb(120, 120, 130));
+                _labelR.Text = "R";
+                _labelR.Foreground = new SolidColorBrush(Color.FromRgb(180, 60, 60));
+                _labelG.Text = "G";
+                _labelG.Foreground = new SolidColorBrush(Color.FromRgb(60, 150, 60));
+                _labelB.Visibility = Visibility.Visible;
+                _bTextBox.Visibility = Visibility.Visible;
+
+                _aTextBox.Text = _selectedColor.A.ToString();
+                _rTextBox.Text = _selectedColor.R.ToString();
+                _gTextBox.Text = _selectedColor.G.ToString();
+                _bTextBox.Text = _selectedColor.B.ToString();
             }
         }
 
