@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -28,6 +30,19 @@ namespace StartUI4Controls
         public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
         {
             return value != null ? Visibility.Collapsed : Visibility.Visible;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    internal class NavigationColorToBrushConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            return value is Color color ? new SolidColorBrush(color) : Brushes.Transparent;
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
@@ -78,13 +93,17 @@ namespace StartUI4Controls
 
         public static readonly DependencyProperty ItemFontSizeProperty =
     DependencyProperty.Register("ItemFontSize", typeof(double), typeof(UI4NavigationView),
-        new FrameworkPropertyMetadata(13.0, FrameworkPropertyMetadataOptions.AffectsMeasure));
+        new FrameworkPropertyMetadata(10.0, FrameworkPropertyMetadataOptions.AffectsMeasure));
 
         public double ItemFontSize
         {
             get { return (double)GetValue(ItemFontSizeProperty); }
             set { SetValue(ItemFontSizeProperty, value); }
         }
+    }
+
+    public class UI4NavigationViewBottomItem : UI4NavigationViewItem
+    {
     }
 
     public class UI4NavigationView : ItemsControl
@@ -94,19 +113,26 @@ namespace StartUI4Controls
         private const string PartMenuButton = "PART_MenuButton";
         private const string PartTitleText = "PART_TitleText";
         private const string PartListBox = "PART_ListBox";
+        private const string PartBottomListBox = "PART_BottomListBox";
+        private const string PartSelectionIndicator = "PART_SelectionIndicator";
+        private const string PartBottomSelectionIndicator = "PART_BottomSelectionIndicator";
         private const string PartContentPresenter = "PART_ContentPresenter";
 
         private Grid _leftPanel;
-        private UI4Button _menuButton;
-        private TextBlock _titleText;
         private UI4ListBox _listBox;
+        private UI4ListBox _bottomListBox;
+        private Border _selectionIndicator;
+        private Border _bottomSelectionIndicator;
+        private TranslateTransform _selectionIndicatorTransform;
+        private TranslateTransform _bottomSelectionIndicatorTransform;
         private ContentPresenter _contentPresenter;
-        private double _currentWidth = 200;
         private TranslateTransform _contentTransform;
+        private readonly ObservableCollection<UI4NavigationViewItem> _regularItems = new ObservableCollection<UI4NavigationViewItem>();
+        private readonly ObservableCollection<UI4NavigationViewBottomItem> _bottomItems = new ObservableCollection<UI4NavigationViewBottomItem>();
 
         public static readonly DependencyProperty LeftPanelBackgroundProperty =
             DependencyProperty.Register("LeftPanelBackground", typeof(Brush), typeof(UI4NavigationView),
-                new FrameworkPropertyMetadata(null,
+                new FrameworkPropertyMetadata(new SolidColorBrush(Color.FromArgb(10, 0, 0, 0)),
                     FrameworkPropertyMetadataOptions.AffectsRender,
                     OnLeftPanelBackgroundChanged));
 
@@ -132,7 +158,7 @@ namespace StartUI4Controls
 
         public static readonly DependencyProperty LeftPanelWidthProperty =
             DependencyProperty.Register("LeftPanelWidth", typeof(double), typeof(UI4NavigationView),
-                new FrameworkPropertyMetadata(200.0,
+                new FrameworkPropertyMetadata(double.NaN,
                     FrameworkPropertyMetadataOptions.BindsTwoWayByDefault | FrameworkPropertyMetadataOptions.AffectsMeasure,
                     OnLeftPanelWidthChanged));
 
@@ -150,16 +176,15 @@ namespace StartUI4Controls
 
         private void OnLeftPanelWidthChanged(double oldValue, double newValue)
         {
-            if (_leftPanel != null && Math.Abs(_currentWidth - 45) > 0.01)
+            if (_leftPanel != null)
             {
                 _leftPanel.Width = newValue;
-                _currentWidth = newValue;
             }
         }
 
         public static readonly DependencyProperty ItemHoverColorProperty =
             DependencyProperty.Register("ItemHoverColor", typeof(Color), typeof(UI4NavigationView),
-                new FrameworkPropertyMetadata(Colors.White,
+                new FrameworkPropertyMetadata(Color.FromArgb(10,0,0,0),
                     FrameworkPropertyMetadataOptions.AffectsRender,
                     OnItemHoverColorChanged));
 
@@ -183,9 +208,19 @@ namespace StartUI4Controls
             }
         }
 
+        public static readonly DependencyProperty ItemBackgroundProperty =
+            DependencyProperty.Register("ItemBackground", typeof(Brush), typeof(UI4NavigationView),
+                new FrameworkPropertyMetadata(Brushes.Transparent, FrameworkPropertyMetadataOptions.AffectsRender));
+
+        public Brush ItemBackground
+        {
+            get { return (Brush)GetValue(ItemBackgroundProperty); }
+            set { SetValue(ItemBackgroundProperty, value); }
+        }
+
         public static readonly DependencyProperty ItemPressedBackgroundProperty =
             DependencyProperty.Register("ItemPressedBackground", typeof(Color), typeof(UI4NavigationView),
-                new FrameworkPropertyMetadata(Color.FromArgb(0x0C, 0x00, 0x00, 0x00),
+                new FrameworkPropertyMetadata(Colors.White,
                     FrameworkPropertyMetadataOptions.AffectsRender,
                     OnItemPressedBackgroundChanged));
 
@@ -299,7 +334,7 @@ namespace StartUI4Controls
 
         public static readonly DependencyProperty SelectedItemBackgroundProperty =
             DependencyProperty.Register("SelectedItemBackground", typeof(Brush), typeof(UI4NavigationView),
-                new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
+                new FrameworkPropertyMetadata(Brushes.White, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault | FrameworkPropertyMetadataOptions.AffectsRender));
 
         public Brush SelectedItemBackground
         {
@@ -327,13 +362,21 @@ namespace StartUI4Controls
         private void OnSelectedItemChangedInternal(UI4NavigationViewItem oldItem, UI4NavigationViewItem newItem)
         {
             if (oldItem == newItem) return;
-            if (_contentTransform == null || _contentPresenter == null) return;
 
             int oldIndex = -1, newIndex = -1;
+            int oldBottomIndex = -1, newBottomIndex = -1;
             if (oldItem != null)
-                oldIndex = Items.IndexOf(oldItem);
+            {
+                oldIndex = _regularItems.IndexOf(oldItem);
+                if (oldItem is UI4NavigationViewBottomItem oldBottomItem)
+                    oldBottomIndex = _bottomItems.IndexOf(oldBottomItem);
+            }
             if (newItem != null)
-                newIndex = Items.IndexOf(newItem);
+            {
+                newIndex = _regularItems.IndexOf(newItem);
+                if (newItem is UI4NavigationViewBottomItem newBottomItem)
+                    newBottomIndex = _bottomItems.IndexOf(newBottomItem);
+            }
 
             bool slideFromTop;
             if (oldItem == null)
@@ -342,106 +385,91 @@ namespace StartUI4Controls
             }
             else
             {
-                slideFromTop = (newIndex < oldIndex);
+                int oldSelectionIndex = oldIndex >= 0 ? oldIndex : oldBottomIndex;
+                int newSelectionIndex = newIndex >= 0 ? newIndex : newBottomIndex;
+                slideFromTop = (newSelectionIndex < oldSelectionIndex);
             }
 
             AnimateContentSlide(slideFromTop);
+            AnimateSelectionIndicator(newIndex, oldItem == null);
+            AnimateBottomSelectionIndicator(newBottomIndex, oldItem == null);
         }
 
-        static UI4NavigationView()
+        private void AnimateSelectionIndicator(int newIndex, bool isInitialSelection)
         {
-            DefaultStyleKeyProperty.OverrideMetadata(typeof(UI4NavigationView),
-                new FrameworkPropertyMetadata(typeof(UI4NavigationView)));
+            if (_selectionIndicatorTransform == null || _selectionIndicator == null) return;
 
-            var template = new ControlTemplate(typeof(UI4NavigationView));
-
-            var rootGrid = new FrameworkElementFactory(typeof(Grid));
-            rootGrid.Name = "RootGrid";
-
-            var bgBinding = new Binding("Background")
+            if (newIndex < 0)
             {
-                RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent)
+                _selectionIndicator.Visibility = Visibility.Collapsed;
+                return;
+            }
+
+            _selectionIndicator.Visibility = Visibility.Visible;
+
+            double targetY = newIndex * 70.0 + 20.0;
+            if (isInitialSelection)
+            {
+                _selectionIndicatorTransform.Y = targetY;
+                return;
+            }
+
+            var animation = new DoubleAnimation
+            {
+                To = targetY,
+                Duration = TimeSpan.FromMilliseconds(220),
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
             };
-            rootGrid.SetBinding(Grid.BackgroundProperty, bgBinding);
+            _selectionIndicatorTransform.BeginAnimation(TranslateTransform.YProperty, animation);
+        }
 
-            var colDef1 = new FrameworkElementFactory(typeof(ColumnDefinition));
-            colDef1.SetValue(ColumnDefinition.WidthProperty, new GridLength(0, GridUnitType.Auto));
-            var colDef2 = new FrameworkElementFactory(typeof(ColumnDefinition));
-            colDef2.SetValue(ColumnDefinition.WidthProperty, new GridLength(1, GridUnitType.Star));
-            rootGrid.AppendChild(colDef1);
-            rootGrid.AppendChild(colDef2);
+        private void AnimateBottomSelectionIndicator(int newIndex, bool isInitialSelection)
+        {
+            if (_bottomSelectionIndicatorTransform == null || _bottomSelectionIndicator == null) return;
 
-            var leftPanel = new FrameworkElementFactory(typeof(Grid));
-            leftPanel.Name = PartLeftPanel;
-            leftPanel.SetValue(Grid.ColumnProperty, 0);
-            leftPanel.SetValue(Grid.WidthProperty, 200.0);
+            if (newIndex < 0)
+            {
+                _bottomSelectionIndicator.Visibility = Visibility.Collapsed;
+                return;
+            }
 
-            var rowDef1 = new FrameworkElementFactory(typeof(RowDefinition));
-            rowDef1.SetValue(RowDefinition.HeightProperty, new GridLength(40));
-            var rowDef2 = new FrameworkElementFactory(typeof(RowDefinition));
-            rowDef2.SetValue(RowDefinition.HeightProperty, new GridLength(1, GridUnitType.Star));
-            leftPanel.AppendChild(rowDef1);
-            leftPanel.AppendChild(rowDef2);
+            _bottomSelectionIndicator.Visibility = Visibility.Visible;
 
-            var titleGrid = new FrameworkElementFactory(typeof(Grid));
-            titleGrid.SetValue(Grid.RowProperty, 0);
+            double targetY = newIndex * 70.0 + 20.0;
+            if (isInitialSelection)
+            {
+                _bottomSelectionIndicatorTransform.Y = targetY;
+                return;
+            }
 
-            var colTitle1 = new FrameworkElementFactory(typeof(ColumnDefinition));
-            colTitle1.SetValue(ColumnDefinition.WidthProperty, new GridLength(45));
-            var colTitle2 = new FrameworkElementFactory(typeof(ColumnDefinition));
-            colTitle2.SetValue(ColumnDefinition.WidthProperty, new GridLength(1, GridUnitType.Star));
-            titleGrid.AppendChild(colTitle1);
-            titleGrid.AppendChild(colTitle2);
+            var animation = new DoubleAnimation
+            {
+                To = targetY,
+                Duration = TimeSpan.FromMilliseconds(220),
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+            };
+            _bottomSelectionIndicatorTransform.BeginAnimation(TranslateTransform.YProperty, animation);
+        }
 
-            var menuButton = new FrameworkElementFactory(typeof(UI4Button));
-            menuButton.Name = PartMenuButton;
-            menuButton.SetValue(Grid.ColumnProperty, 0);
-            menuButton.SetValue(UI4Button.ContentProperty, "\uE700");
-            menuButton.SetValue(UI4Button.FontSizeProperty, 16.0);
-            menuButton.SetValue(UI4Button.FontFamilyProperty, new FontFamily("Segoe MDL2 Assets"));
-            menuButton.SetValue(UI4Button.WidthProperty, 40.0);
-            menuButton.SetValue(UI4Button.ForegroundProperty, Brushes.Black);
-            menuButton.SetValue(UI4Button.BackgroundProperty, Brushes.Transparent);
-            menuButton.SetValue(FrameworkElement.MarginProperty, new Thickness(0, 3, 0, 3));
-            titleGrid.AppendChild(menuButton);
-
-            var titleText = new FrameworkElementFactory(typeof(TextBlock));
-            titleText.Name = PartTitleText;
-            titleText.SetValue(Grid.ColumnProperty, 1);
-            titleText.SetValue(TextBlock.FontSizeProperty, 15.0);
-            titleText.SetValue(TextBlock.HorizontalAlignmentProperty, HorizontalAlignment.Left);
-            titleText.SetValue(TextBlock.VerticalAlignmentProperty, VerticalAlignment.Center);
-            titleText.SetValue(TextBlock.MarginProperty, new Thickness(5, 0, 0, 0));
-            var headerBinding = new Binding("Header") { RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent) };
-            titleText.SetBinding(TextBlock.TextProperty, headerBinding);
-            titleGrid.AppendChild(titleText);
-
-            leftPanel.AppendChild(titleGrid);
-
-            var border = new FrameworkElementFactory(typeof(Border));
-            border.SetValue(Grid.RowProperty, 1);
-            border.SetValue(Border.BorderBrushProperty, new SolidColorBrush(Color.FromArgb(0x0C, 0x00, 0x00, 0x00)));
-            border.SetValue(Border.BorderThicknessProperty, new Thickness(0, 0, 1, 0));
-
-            var listBox = new FrameworkElementFactory(typeof(UI4ListBox));
-            listBox.Name = PartListBox;
-            listBox.SetValue(UI4ListBox.BackgroundProperty, Brushes.Transparent);
-
-            var itemsBinding = new Binding("Items") { RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent) };
-            listBox.SetBinding(ItemsControl.ItemsSourceProperty, itemsBinding);
-
+        private static DataTemplate CreateItemDataTemplate()
+        {
             var dataTemplate = new DataTemplate();
             var stackPanel = new FrameworkElementFactory(typeof(StackPanel));
-            stackPanel.SetValue(StackPanel.OrientationProperty, Orientation.Horizontal);
+            stackPanel.SetValue(StackPanel.OrientationProperty, Orientation.Vertical);
+            stackPanel.SetValue(FrameworkElement.WidthProperty, 60.0);
+            stackPanel.SetValue(FrameworkElement.HeightProperty, 60.0);
+            stackPanel.SetValue(FrameworkElement.HorizontalAlignmentProperty, HorizontalAlignment.Center);
+            stackPanel.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center);
 
             var iconGrid = new FrameworkElementFactory(typeof(Grid));
-            iconGrid.SetValue(Grid.WidthProperty, 30.0);
-            iconGrid.SetValue(Grid.HeightProperty, 20.0);
-            iconGrid.SetValue(FrameworkElement.MarginProperty, new Thickness(-10, 0, 10, 0));
+            iconGrid.SetValue(Grid.WidthProperty, 28.0);
+            iconGrid.SetValue(Grid.HeightProperty, 26.0);
+            iconGrid.SetValue(FrameworkElement.HorizontalAlignmentProperty, HorizontalAlignment.Center);
+            iconGrid.SetValue(FrameworkElement.MarginProperty, new Thickness(0, 8, 0, 4));
 
             var image = new FrameworkElementFactory(typeof(Image));
-            image.SetValue(Image.WidthProperty, 30.0);
-            image.SetValue(Image.HeightProperty, 20.0);
+            image.SetValue(Image.WidthProperty, 24.0);
+            image.SetValue(Image.HeightProperty, 24.0);
             image.SetValue(Image.HorizontalAlignmentProperty, HorizontalAlignment.Center);
             image.SetValue(Image.VerticalAlignmentProperty, VerticalAlignment.Center);
             var imageBinding = new Binding("ImageSource");
@@ -474,7 +502,10 @@ namespace StartUI4Controls
             stackPanel.AppendChild(iconGrid);
 
             var textBlock = new FrameworkElementFactory(typeof(TextBlock));
-            textBlock.SetValue(TextBlock.VerticalAlignmentProperty, VerticalAlignment.Center);
+            textBlock.SetValue(TextBlock.HorizontalAlignmentProperty, HorizontalAlignment.Center);
+            textBlock.SetValue(TextBlock.TextAlignmentProperty, TextAlignment.Center);
+            textBlock.SetValue(TextBlock.TextTrimmingProperty, TextTrimming.CharacterEllipsis);
+            textBlock.SetValue(TextBlock.MaxWidthProperty, 76.0);
             var fontSizeBinding = new Binding("ItemFontSize")
             {
                 RelativeSource = new RelativeSource(RelativeSourceMode.FindAncestor, typeof(UI4NavigationView), 1)
@@ -485,10 +516,108 @@ namespace StartUI4Controls
             stackPanel.AppendChild(textBlock);
 
             dataTemplate.VisualTree = stackPanel;
+            return dataTemplate;
+        }
+
+        static UI4NavigationView()
+        {
+            DefaultStyleKeyProperty.OverrideMetadata(typeof(UI4NavigationView),
+                new FrameworkPropertyMetadata(typeof(UI4NavigationView)));
+
+            var template = new ControlTemplate(typeof(UI4NavigationView));
+
+            var rootGrid = new FrameworkElementFactory(typeof(Grid));
+            rootGrid.Name = "RootGrid";
+
+            var bgBinding = new Binding("Background")
+            {
+                RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent)
+            };
+            rootGrid.SetBinding(Grid.BackgroundProperty, bgBinding);
+
+            var colDef1 = new FrameworkElementFactory(typeof(ColumnDefinition));
+            colDef1.SetValue(ColumnDefinition.WidthProperty, new GridLength(0, GridUnitType.Auto));
+            var colDef2 = new FrameworkElementFactory(typeof(ColumnDefinition));
+            colDef2.SetValue(ColumnDefinition.WidthProperty, new GridLength(1, GridUnitType.Star));
+            rootGrid.AppendChild(colDef1);
+            rootGrid.AppendChild(colDef2);
+
+            var leftPanel = new FrameworkElementFactory(typeof(Grid));
+            leftPanel.Name = PartLeftPanel;
+            leftPanel.SetValue(Grid.ColumnProperty, 0);
+
+            var leftRowDef1 = new FrameworkElementFactory(typeof(RowDefinition));
+            leftRowDef1.SetValue(RowDefinition.HeightProperty, new GridLength(1, GridUnitType.Star));
+            var leftRowDef2 = new FrameworkElementFactory(typeof(RowDefinition));
+            leftRowDef2.SetValue(RowDefinition.HeightProperty, new GridLength(0, GridUnitType.Auto));
+            leftPanel.AppendChild(leftRowDef1);
+            leftPanel.AppendChild(leftRowDef2);
+
+            var border = new FrameworkElementFactory(typeof(Border));
+            border.SetValue(Grid.RowProperty, 0);
+            border.SetValue(Border.BorderBrushProperty, new SolidColorBrush(Color.FromArgb(0x0C, 0x00, 0x00, 0x00)));
+            border.SetValue(Border.BorderThicknessProperty, new Thickness(0, 0, 1, 0));
+
+            var scrollContentGrid = new FrameworkElementFactory(typeof(Grid));
+            scrollContentGrid.SetValue(Panel.ZIndexProperty, 0);
+
+            var listBox = new FrameworkElementFactory(typeof(UI4ListBox));
+            listBox.Name = PartListBox;
+            listBox.SetValue(Panel.ZIndexProperty, 0);
+            listBox.SetValue(UI4ListBox.BackgroundProperty, Brushes.Transparent);
+            listBox.SetValue(ScrollViewer.VerticalScrollBarVisibilityProperty, ScrollBarVisibility.Disabled);
+            listBox.SetValue(ScrollViewer.HorizontalScrollBarVisibilityProperty, ScrollBarVisibility.Disabled);
+            listBox.SetValue(ItemsControl.ItemsSourceProperty, new Binding("RegularItems") { RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent) });
+
+            var dataTemplate = CreateItemDataTemplate();
             listBox.SetValue(ItemsControl.ItemTemplateProperty, dataTemplate);
 
-            border.AppendChild(listBox);
+            scrollContentGrid.AppendChild(listBox);
+
+            var selectionIndicator = new FrameworkElementFactory(typeof(Border));
+            selectionIndicator.Name = PartSelectionIndicator;
+            selectionIndicator.SetValue(Panel.ZIndexProperty, 1);
+            selectionIndicator.SetValue(FrameworkElement.WidthProperty, 4.0);
+            selectionIndicator.SetValue(FrameworkElement.HeightProperty, 30.0);
+            selectionIndicator.SetValue(FrameworkElement.MarginProperty, new Thickness(6, 4, 0, 0));
+            selectionIndicator.SetValue(FrameworkElement.HorizontalAlignmentProperty, HorizontalAlignment.Left);
+            selectionIndicator.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Top);
+            selectionIndicator.SetValue(Border.BackgroundProperty, new SolidColorBrush(Color.FromRgb(0, 120, 212)));
+            scrollContentGrid.AppendChild(selectionIndicator);
+
+            var scrollViewer = new FrameworkElementFactory(typeof(UI4ScrollViewer));
+            scrollViewer.SetValue(ScrollViewer.VerticalScrollBarVisibilityProperty, ScrollBarVisibility.Auto);
+            scrollViewer.SetValue(ScrollViewer.HorizontalScrollBarVisibilityProperty, ScrollBarVisibility.Disabled);
+            scrollViewer.AppendChild(scrollContentGrid);
+
+            border.AppendChild(scrollViewer);
             leftPanel.AppendChild(border);
+
+            var bottomGrid = new FrameworkElementFactory(typeof(Grid));
+            bottomGrid.SetValue(Grid.RowProperty, 1);
+
+            var bottomListBox = new FrameworkElementFactory(typeof(UI4ListBox));
+            bottomListBox.Name = PartBottomListBox;
+            bottomListBox.SetValue(Panel.ZIndexProperty, 0);
+            bottomListBox.SetValue(UI4ListBox.BackgroundProperty, Brushes.Transparent);
+            bottomListBox.SetValue(ScrollViewer.VerticalScrollBarVisibilityProperty, ScrollBarVisibility.Disabled);
+            bottomListBox.SetBinding(ItemsControl.ItemsSourceProperty, new Binding("BottomItems") { RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent) });
+            bottomListBox.SetValue(ItemsControl.ItemTemplateProperty, dataTemplate);
+            bottomGrid.AppendChild(bottomListBox);
+
+            var bottomSelectionIndicator = new FrameworkElementFactory(typeof(Border));
+            bottomSelectionIndicator.Name = PartBottomSelectionIndicator;
+            bottomSelectionIndicator.SetValue(Panel.ZIndexProperty, 1);
+            bottomSelectionIndicator.SetValue(FrameworkElement.WidthProperty, 4.0);
+            bottomSelectionIndicator.SetValue(FrameworkElement.HeightProperty, 30.0);
+            bottomSelectionIndicator.SetValue(FrameworkElement.MarginProperty, new Thickness(6, 4, 0, 0));
+            bottomSelectionIndicator.SetValue(FrameworkElement.HorizontalAlignmentProperty, HorizontalAlignment.Left);
+            bottomSelectionIndicator.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Top);
+            bottomSelectionIndicator.SetValue(UIElement.VisibilityProperty, Visibility.Collapsed);
+            bottomSelectionIndicator.SetValue(Border.BackgroundProperty, new SolidColorBrush(Color.FromRgb(0, 120, 212)));
+            bottomGrid.AppendChild(bottomSelectionIndicator);
+
+            leftPanel.AppendChild(bottomGrid);
             rootGrid.AppendChild(leftPanel);
 
             var rightBorder = new FrameworkElementFactory(typeof(Border));
@@ -518,48 +647,56 @@ namespace StartUI4Controls
             Foreground = Brushes.Black;
         }
 
+        public ObservableCollection<UI4NavigationViewItem> RegularItems => _regularItems;
+        public ObservableCollection<UI4NavigationViewBottomItem> BottomItems => _bottomItems;
+
+        protected override void OnItemsChanged(NotifyCollectionChangedEventArgs e)
+        {
+            base.OnItemsChanged(e);
+            _regularItems.Clear();
+            _bottomItems.Clear();
+            foreach (var item in Items)
+            {
+                if (item is UI4NavigationViewBottomItem bottomItem)
+                    _bottomItems.Add(bottomItem);
+                else if (item is UI4NavigationViewItem regularItem)
+                    _regularItems.Add(regularItem);
+            }
+        }
+
         public override void OnApplyTemplate()
         {
             base.OnApplyTemplate();
 
             _leftPanel = GetTemplateChild(PartLeftPanel) as Grid;
-            _menuButton = GetTemplateChild(PartMenuButton) as UI4Button;
-            _titleText = GetTemplateChild(PartTitleText) as TextBlock;
             _listBox = GetTemplateChild(PartListBox) as UI4ListBox;
+            _bottomListBox = GetTemplateChild(PartBottomListBox) as UI4ListBox;
+            _selectionIndicator = GetTemplateChild(PartSelectionIndicator) as Border;
+            _bottomSelectionIndicator = GetTemplateChild(PartBottomSelectionIndicator) as Border;
+            _selectionIndicatorTransform = new TranslateTransform();
+            if (_selectionIndicator != null)
+            {
+                _selectionIndicator.RenderTransform = _selectionIndicatorTransform;
+            }
+            _bottomSelectionIndicatorTransform = new TranslateTransform();
+            if (_bottomSelectionIndicator != null)
+            {
+                _bottomSelectionIndicator.RenderTransform = _bottomSelectionIndicatorTransform;
+            }
             _contentPresenter = GetTemplateChild(PartContentPresenter) as ContentPresenter;
 
-            if (_leftPanel == null || _menuButton == null || _listBox == null || _contentPresenter == null)
+            if (_leftPanel == null || _listBox == null || _bottomListBox == null || _contentPresenter == null)
                 throw new InvalidOperationException("Missing template parts.");
 
             _leftPanel.Background = LeftPanelBackground;
 
-            _listBox.Foreground = ItemForeground;
-            _listBox.PressedForeground = ItemPressedForeground;
-            _listBox.PressedBackground = ItemPressedBackground;
-            _listBox.HoverBackground = ItemHoverColor;
-            _listBox.HoverForeground = ItemHoverForeground;
-
-            _menuButton.HoverBackground = new SolidColorBrush(Color.FromArgb(0x0C, 0x00, 0x00, 0x00));
-
-            if (_titleText != null && string.IsNullOrEmpty(_titleText.Text))
-                _titleText.Text = Header;
+            ConfigureListBox(_listBox);
+            ConfigureListBox(_bottomListBox);
 
             _contentTransform = new TranslateTransform();
             _contentPresenter.RenderTransform = _contentTransform;
 
-            _menuButton.Click -= MenuButton_Click;
-            _menuButton.Click += MenuButton_Click;
-
-            _listBox.SelectionChanged -= ListBox_SelectionChanged;
-            _listBox.SelectionChanged += ListBox_SelectionChanged;
-
             _leftPanel.Width = LeftPanelWidth;
-            _currentWidth = LeftPanelWidth;
-
-            Style baseStyle = _listBox.ItemContainerStyle;
-            var newStyle = new Style(typeof(ListBoxItem), baseStyle);
-            newStyle.Setters.Add(new Setter(FrameworkElement.CursorProperty, Cursors.Hand));
-            _listBox.ItemContainerStyle = newStyle;
 
             if (SelectedItem == null && _listBox.SelectedItem == null && Items.Count > 0)
             {
@@ -573,31 +710,110 @@ namespace StartUI4Controls
             {
                 SelectedItem = first;
             }
+            else if (_bottomListBox.SelectedItem is UI4NavigationViewItem bottomFirst)
+            {
+                SelectedItem = bottomFirst;
+            }
+
+            if (SelectedItem != null)
+            {
+                int regularIndex = _regularItems.IndexOf(SelectedItem);
+                int bottomIndex = SelectedItem is UI4NavigationViewBottomItem bottomItem ? _bottomItems.IndexOf(bottomItem) : -1;
+                AnimateSelectionIndicator(regularIndex, true);
+                AnimateBottomSelectionIndicator(bottomIndex, true);
+            }
         }
 
-        private void MenuButton_Click(object sender, RoutedEventArgs e)
+        private void ConfigureListBox(UI4ListBox listBox)
         {
-            if (_leftPanel == null) return;
+            listBox.Foreground = ItemForeground;
+            listBox.PressedForeground = ItemPressedForeground;
+            listBox.PressedBackground = ItemPressedBackground;
+            listBox.HoverBackground = ItemHoverColor;
+            listBox.HoverForeground = ItemHoverForeground;
+            listBox.ItemPadding = new Thickness(0);
+            listBox.ItemContainerStyle = CreateNavigationItemContainerStyle(listBox.ItemContainerStyle);
+            listBox.SelectionChanged -= ListBox_SelectionChanged;
+            listBox.SelectionChanged += ListBox_SelectionChanged;
+            listBox.PreviewMouseWheel -= ListBox_PreviewMouseWheel;
+            listBox.PreviewMouseWheel += ListBox_PreviewMouseWheel;
+        }
 
-            bool isCollapsed = Math.Abs(_currentWidth - 45) < 0.01;
-            double targetWidth = isCollapsed ? LeftPanelWidth : 45;
+        private void ListBox_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            var listBox = sender as UI4ListBox;
+            if (listBox == null) return;
 
-            if (Math.Abs(_currentWidth - targetWidth) < 0.01)
-                return;
-
-            DoubleAnimation widthAnim = new DoubleAnimation
+            var parent = VisualTreeHelper.GetParent(listBox);
+            while (parent != null)
             {
-                To = targetWidth,
-                Duration = TimeSpan.FromSeconds(0.1),
-                EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseInOut }
-            };
-            _leftPanel.BeginAnimation(Grid.WidthProperty, widthAnim);
-            _currentWidth = targetWidth;
+                if (parent is UI4ScrollViewer scrollViewer)
+                {
+                    scrollViewer.ScrollToVerticalOffset(scrollViewer.VerticalOffset - e.Delta / 3.0);
+                    e.Handled = true;
+                    return;
+                }
+                parent = VisualTreeHelper.GetParent(parent);
+            }
+        }
+
+        private static Style CreateNavigationItemContainerStyle(Style baseStyle)
+        {
+            var style = new Style(typeof(ListBoxItem), baseStyle);
+            style.Setters.Add(new Setter(FrameworkElement.CursorProperty, Cursors.Hand));
+            style.Setters.Add(new Setter(FrameworkElement.WidthProperty, 70.0));
+            style.Setters.Add(new Setter(FrameworkElement.HeightProperty, 70.0));
+            style.Setters.Add(new Setter(Control.HorizontalContentAlignmentProperty, HorizontalAlignment.Center));
+            style.Setters.Add(new Setter(Control.VerticalContentAlignmentProperty, VerticalAlignment.Center));
+
+            var itemTemplate = new ControlTemplate(typeof(ListBoxItem));
+            var itemBorder = new FrameworkElementFactory(typeof(Border));
+            itemBorder.Name = "PART_ItemBorder";
+            itemBorder.SetBinding(Border.BackgroundProperty, new Binding(nameof(ItemBackground))
+            {
+                RelativeSource = new RelativeSource(RelativeSourceMode.FindAncestor, typeof(UI4NavigationView), 1)
+            });
+            itemBorder.SetValue(Border.MarginProperty, new Thickness(2, 0, 0, 0));
+            itemBorder.SetBinding(Border.CornerRadiusProperty, new Binding(nameof(UI4ListBox.ItemCornerRadius))
+            {
+                RelativeSource = new RelativeSource(RelativeSourceMode.FindAncestor, typeof(UI4ListBox), 1)
+            });
+
+            var contentPresenter = new FrameworkElementFactory(typeof(ContentPresenter));
+            contentPresenter.SetBinding(ContentPresenter.ContentProperty, new Binding("Content") { RelativeSource = RelativeSource.TemplatedParent });
+            contentPresenter.SetBinding(ContentPresenter.ContentTemplateProperty, new Binding("ContentTemplate") { RelativeSource = RelativeSource.TemplatedParent });
+            contentPresenter.SetBinding(System.Windows.Documents.TextElement.ForegroundProperty, new Binding("Foreground") { RelativeSource = new RelativeSource(RelativeSourceMode.FindAncestor, typeof(ListBoxItem), 1) });
+            contentPresenter.SetValue(FrameworkElement.HorizontalAlignmentProperty, HorizontalAlignment.Center);
+            contentPresenter.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center);
+
+            itemBorder.AppendChild(contentPresenter);
+            itemTemplate.VisualTree = itemBorder;
+
+            var hoverTrigger = new Trigger { Property = UIElement.IsMouseOverProperty, Value = true };
+            hoverTrigger.Setters.Add(new Setter(Border.BackgroundProperty, new Binding(nameof(UI4ListBox.HoverBackground))
+            {
+                RelativeSource = new RelativeSource(RelativeSourceMode.FindAncestor, typeof(UI4ListBox), 1),
+                Converter = new NavigationColorToBrushConverter()
+            }) { TargetName = "PART_ItemBorder" });
+            itemTemplate.Triggers.Add(hoverTrigger);
+
+            var selectedTrigger = new Trigger { Property = ListBoxItem.IsSelectedProperty, Value = true };
+            selectedTrigger.Setters.Add(new Setter(Border.BackgroundProperty, new Binding(nameof(SelectedItemBackground))
+            {
+                RelativeSource = new RelativeSource(RelativeSourceMode.FindAncestor, typeof(UI4NavigationView), 1)
+            }) { TargetName = "PART_ItemBorder" });
+            itemTemplate.Triggers.Add(selectedTrigger);
+
+            style.Setters.Add(new Setter(Control.TemplateProperty, itemTemplate));
+            return style;
         }
 
         private void ListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (_listBox.SelectedItem is UI4NavigationViewItem selected)
+            var senderListBox = sender as UI4ListBox;
+            if (senderListBox == null) return;
+
+            if (senderListBox.SelectedItem is UI4NavigationViewItem selected)
             {
                 if (SelectedItem != selected)
                     SelectedItem = selected;
@@ -610,12 +826,32 @@ namespace StartUI4Controls
 
         private void UpdateListBoxSelection(UI4NavigationViewItem item)
         {
-            if (_listBox == null) return;
+            if (_listBox == null || _bottomListBox == null) return;
 
-            if (item != null && _listBox.Items.Contains(item))
-                _listBox.SelectedItem = item;
+            _listBox.SelectionChanged -= ListBox_SelectionChanged;
+            _bottomListBox.SelectionChanged -= ListBox_SelectionChanged;
+
+            if (item != null)
+            {
+                if (_regularItems.Contains(item))
+                {
+                    _listBox.SelectedItem = item;
+                    _bottomListBox.SelectedItem = null;
+                }
+                else
+                {
+                    _bottomListBox.SelectedItem = item;
+                    _listBox.SelectedItem = null;
+                }
+            }
             else
+            {
                 _listBox.SelectedItem = null;
+                _bottomListBox.SelectedItem = null;
+            }
+
+            _listBox.SelectionChanged += ListBox_SelectionChanged;
+            _bottomListBox.SelectionChanged += ListBox_SelectionChanged;
         }
 
         private void AnimateContentSlide(bool slideFromTop)

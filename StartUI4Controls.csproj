@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net6.0-windows7.0</TargetFramework>
@@ -9,15 +9,14 @@
     <PackageId>StartUI4.WPF</PackageId>
     <Title>StartUI4.WPF</Title>
     <Authors>KS.STUDIO</Authors>
-    <FileVersion>1.0.19</FileVersion>
-    <AssemblyVersion>1.0.19</AssemblyVersion>
-    <Version>1.0.19</Version>
+    <FileVersion>1.0.20</FileVersion>
+    <AssemblyVersion>1.0.20</AssemblyVersion>
+    <Version>1.0.20</Version>
     <PackageProjectUrl>https://github.com/KSSTU/StartUI4.WPF</PackageProjectUrl>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="AvalonEdit" Version="6.3.1.120" />
-    <PackageReference Include="Hardcodet.NotifyIcon.Wpf" Version="2.0.1" />
     <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.10" />
     <PackageReference Include="System.Data.SQLite" Version="2.0.3" />
   </ItemGroup>

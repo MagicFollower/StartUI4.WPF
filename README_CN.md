@@ -24,7 +24,7 @@
 
 **StartUI4.WPF** 是一款基于 WPF .NET 6 开发的现代化 UI 控件库，完美契合 Modern Modern Design 设计语言。只需简单配置即可使用，支持 Windows 7 / 10 / 11 操作系统。
 
-- **版本**: 1.0.19
+- **版本**: 1.0.20
 - **作者**: KS.STUDIO
 - **目标框架**: .NET 6 (net6.0-windows7.0)
 - **NuGet 包**: StartUI4.WPF
@@ -1236,30 +1236,33 @@ private void MyTab_CloseTab(object sender, TabCloseRoutedEventArgs e)
 
 ### UI4NavigationView 导航视图
 
-侧边栏导航控件，支持可折叠侧边栏、内容切换动画等。
+侧边栏导航控件，支持固定图标项、普通项滚动区域、底部固定项、内容切换动画和选中指示条位移动画。
 
 ![1](https://store-images.s-microsoft.com/image/apps.53158.14402085032895111.4e651371-d0df-4a15-9e7b-7fa694cf7844.9d8e483a-32c9-433e-96b6-9f736e874cf1)
 
-**包含两个类**:
+**包含三个类**:
 - `UI4NavigationView` - 主导航视图
-- `UI4NavigationViewItem` - 导航项
+- `UI4NavigationViewItem` - 可滚动区域中的导航项
+- `UI4NavigationViewBottomItem` - 底部固定导航项，样式和属性与 `UI4NavigationViewItem` 一致
 
 #### UI4NavigationView 可设置属性
 
 | 属性名 | 类型 | 默认值 | 说明 |
 |-------|------|--------|------|
-| `LeftPanelBackground` | `Brush` | `null` | 左侧面板背景 |
-| `LeftPanelWidth` | `double` | `200.0` | 左侧面板展开宽度 |
-| `ItemHoverColor` | `Color` | `White` | 列表项悬停背景色 |
-| `ItemPressedBackground` | `Color` | `#0C000000` (12,0,0,0) | 列表项按下背景色 |
-| `ItemPressedForeground` | `Color` | `Black` | 列表项按下前景色 |
-| `ItemHoverForeground` | `Color` | `Black` | 列表项悬停前景色 |
-| `ItemForeground` | `Brush` | `Black` | 列表项正常前景色 |
+| `LeftPanelBackground` | `Brush` | `LightGray` | 左侧面板背景 |
+| `LeftPanelWidth` | `double` | `double.NaN` | 左侧面板宽度，`NaN` 表示根据 item 宽度自适应 |
+| `ItemFontSize` | `double` | `13.0` | 导航项文字字号 |
+| `ItemBackground` | `Brush` | `Transparent` | 导航项普通背景 |
+| `ItemHoverColor` | `Color` | `#0A000000` (10,0,0,0) | 导航项悬停背景色 |
+| `ItemPressedBackground` | `Color` | `White` | 保留的按下背景色 |
+| `ItemPressedForeground` | `Color` | `Black` | 导航项按下前景色 |
+| `ItemHoverForeground` | `Color` | `Black` | 导航项悬停前景色 |
+| `ItemForeground` | `Brush` | `Black` | 导航项正常前景色 |
 | `Header` | `string` | `null` | 导航视图标题 |
-| `SelectedItemBackground` | `Brush` | `null` | 选中项背景 |
+| `SelectedItemBackground` | `Brush` | `White` | 选中项背景 |
 | `SelectedItem` | `UI4NavigationViewItem` | `null` | 当前选中项 |
 
-#### UI4NavigationViewItem 可设置属性
+#### UI4NavigationViewItem / UI4NavigationViewBottomItem 可设置属性
 
 | 属性名 | 类型 | 默认值 | 说明 |
 |-------|------|--------|------|
@@ -1272,25 +1275,37 @@ private void MyTab_CloseTab(object sender, TabCloseRoutedEventArgs e)
 #### 示例代码
 
 ```xml
-<!-- 基础导航视图 -->
-<ui:UI4NavigationView Header="NavigationView">
+<!-- 带普通滚动项和底部固定项的导航视图 -->
+<ui:UI4NavigationView Header="NavigationView"
+                      LeftPanelBackground="LightGray"
+                      ItemBackground="Transparent"
+                      SelectedItemBackground="White">
     <ui:UI4NavigationViewItem ImageSource="/1.png" Header="代码">
         <TextBlock Text="代码页面内容"/>
     </ui:UI4NavigationViewItem>
-    <ui:UI4NavigationViewItem TextIcon="&#xE104;" 
-                              TextIconFontFamily="Segoe MDL2 Assets" 
+    <ui:UI4NavigationViewItem TextIcon="&#xE104;"
+                              TextIconFontFamily="Segoe MDL2 Assets"
                               Header="属性">
         <TextBlock Text="属性页面内容"/>
     </ui:UI4NavigationViewItem>
+    <ui:UI4NavigationViewBottomItem TextIcon="&#xE713;"
+                                    TextIconFontFamily="Segoe MDL2 Assets"
+                                    Header="设置">
+        <TextBlock Text="设置页面内容"/>
+    </ui:UI4NavigationViewBottomItem>
 </ui:UI4NavigationView>
 ```
 
 #### 特性说明
 
-- **可折叠侧边栏**: 点击菜单按钮可折叠/展开侧边栏
+- **固定侧边栏**: 已移除标题栏、菜单按钮和展开/折叠功能
+- **垂直 Item 布局**: 图标在上、文字在下，并在 item 区域内居中
+- **普通项滚动区域**: `UI4NavigationViewItem` 位于 `UI4ScrollViewer` 中，使用自定义滚动条样式
+- **底部固定项**: `UI4NavigationViewBottomItem` 固定在底部，不参与滚动
+- **选中指示条**: 左侧 4px 宽蓝色竖条随普通选中项上下位移动画
 - **双图标模式**: 支持图片图标（`ImageSource`）和文本图标（`TextIcon`）
 - **内容切换动画**: 切换导航项时内容上下滑动淡入
-- **自定义菜单项颜色**: 悬停、按下、选中状态均可配置
+- **自定义 Item 颜色**: 普通、悬停、前景和选中背景均可配置
 - **内置列表**: 基于 `UI4ListBox` 实现导航列表
 
 ---
@@ -1940,4 +1955,4 @@ trayIcon.ClearMenuItems();
 
 ## 许可证
 
-?? KS.STUDIO - StartUI4.WPF v1.0.19
+?? KS.STUDIO - StartUI4.WPF v1.0.20

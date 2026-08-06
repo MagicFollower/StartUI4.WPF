@@ -24,7 +24,7 @@
 
 **StartUI4.WPF** is a modern UI control library developed based on WPF .NET 6, perfectly aligned with the Modern Modern Design language. Easy to configure and use, supports Windows 7 / 10 / 11 operating systems.
 
-- **Version**: 1.0.19
+- **Version**: 1.0.20
 - **Author**: KS.STUDIO
 - **Target Framework**: .NET 6 (net6.0-windows7.0)
 - **NuGet Package**: StartUI4.WPF
@@ -1238,30 +1238,33 @@ private void MyTab_CloseTab(object sender, TabCloseRoutedEventArgs e)
 
 ### UI4NavigationView
 
-Sidebar navigation control with collapsible sidebar, content switch animation, etc.
+Sidebar navigation control with fixed-width icon items, a scrollable main item area, fixed bottom items, content switch animation, and a moving selection indicator.
 
 ![1](https://store-images.s-microsoft.com/image/apps.53158.14402085032895111.4e651371-d0df-4a15-9e7b-7fa694cf7844.9d8e483a-32c9-433e-96b6-9f736e874cf1)
 
-**Contains two classes**:
+**Contains three classes**:
 - `UI4NavigationView` - Main navigation view
-- `UI4NavigationViewItem` - Navigation item
+- `UI4NavigationViewItem` - Scrollable navigation item
+- `UI4NavigationViewBottomItem` - Fixed bottom navigation item, same style and properties as `UI4NavigationViewItem`
 
 #### UI4NavigationView Settable Properties
 
 | Property Name | Type | Default Value | Description |
 |--------------|------|---------------|-------------|
-| `LeftPanelBackground` | `Brush` | `null` | Left panel background |
-| `LeftPanelWidth` | `double` | `200.0` | Left panel expanded width |
-| `ItemHoverColor` | `Color` | `White` | List item hover background color |
-| `ItemPressedBackground` | `Color` | `#0C000000` (12,0,0,0) | List item pressed background color |
-| `ItemPressedForeground` | `Color` | `Black` | List item pressed foreground color |
-| `ItemHoverForeground` | `Color` | `Black` | List item hover foreground color |
-| `ItemForeground` | `Brush` | `Black` | List item normal foreground color |
+| `LeftPanelBackground` | `Brush` | `LightGray` | Left panel background |
+| `LeftPanelWidth` | `double` | `double.NaN` | Left panel width. `NaN` means auto width based on item size |
+| `ItemFontSize` | `double` | `13.0` | Navigation item text font size |
+| `ItemBackground` | `Brush` | `Transparent` | Navigation item normal background |
+| `ItemHoverColor` | `Color` | `#0A000000` (10,0,0,0) | Navigation item hover background color |
+| `ItemPressedBackground` | `Color` | `White` | Reserved pressed background color |
+| `ItemPressedForeground` | `Color` | `Black` | Navigation item pressed foreground color |
+| `ItemHoverForeground` | `Color` | `Black` | Navigation item hover foreground color |
+| `ItemForeground` | `Brush` | `Black` | Navigation item normal foreground color |
 | `Header` | `string` | `null` | Navigation view header |
-| `SelectedItemBackground` | `Brush` | `null` | Selected item background |
+| `SelectedItemBackground` | `Brush` | `White` | Selected item background |
 | `SelectedItem` | `UI4NavigationViewItem` | `null` | Currently selected item |
 
-#### UI4NavigationViewItem Settable Properties
+#### UI4NavigationViewItem / UI4NavigationViewBottomItem Settable Properties
 
 | Property Name | Type | Default Value | Description |
 |--------------|------|---------------|-------------|
@@ -1274,26 +1277,38 @@ Sidebar navigation control with collapsible sidebar, content switch animation, e
 #### Example Code
 
 ```xml
-<!-- Basic navigation view -->
-<ui:UI4NavigationView Header="NavigationView">
+<!-- Navigation view with scrollable items and fixed bottom items -->
+<ui:UI4NavigationView Header="NavigationView"
+                      LeftPanelBackground="LightGray"
+                      ItemBackground="Transparent"
+                      SelectedItemBackground="White">
     <ui:UI4NavigationViewItem ImageSource="/1.png" Header="Code">
         <TextBlock Text="Code page content"/>
     </ui:UI4NavigationViewItem>
-    <ui:UI4NavigationViewItem TextIcon="&#xE104;" 
-                              TextIconFontFamily="Segoe MDL2 Assets" 
+    <ui:UI4NavigationViewItem TextIcon="&#xE104;"
+                              TextIconFontFamily="Segoe MDL2 Assets"
                               Header="Properties">
         <TextBlock Text="Properties page content"/>
     </ui:UI4NavigationViewItem>
+    <ui:UI4NavigationViewBottomItem TextIcon="&#xE713;"
+                                    TextIconFontFamily="Segoe MDL2 Assets"
+                                    Header="Settings">
+        <TextBlock Text="Settings page content"/>
+    </ui:UI4NavigationViewBottomItem>
 </ui:UI4NavigationView>
 ```
 
 #### Feature Notes
 
-- **Collapsible Sidebar**: Click menu button to collapse/expand sidebar
+- **Fixed Sidebar**: The sidebar no longer has a title bar, menu button, or expand/collapse behavior
+- **Vertical Item Layout**: Item icon is displayed above the text and centered within the item area
+- **Scrollable Main Items**: `UI4NavigationViewItem` is placed in a `UI4ScrollViewer` area with custom scrollbar styling
+- **Fixed Bottom Items**: `UI4NavigationViewBottomItem` is fixed at the bottom and does not participate in scrolling
+- **Moving Selection Indicator**: A 4px-wide blue indicator moves vertically to the selected main item
 - **Dual Icon Mode**: Supports image icon (`ImageSource`) and text icon (`TextIcon`)
 - **Content Switch Animation**: Content slides up/down and fades in when switching navigation items
-- **Custom Menu Item Colors**: Hover, pressed, selected states all configurable
-- **Built-in List**: Navigation list implemented based on `UI4ListBox`
+- **Custom Item Colors**: Normal, hover, foreground, and selected backgrounds are configurable
+- **Built-in List**: Navigation lists are implemented based on `UI4ListBox`
 
 ---
 
@@ -1941,4 +1956,4 @@ The control sets a default `LinearGradientBrush` background in its constructor:
 
 ## License
 
-?? KS.STUDIO - StartUI4.WPF v1.0.19
+?? KS.STUDIO - StartUI4.WPF v1.0.20
