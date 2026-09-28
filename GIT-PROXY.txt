@@ -1,0 +1,75 @@
+你遇到的 `curl 28` 和 `Failed to connect to github.com:443` 错误，核心原因是**你的电脑无法通过 HTTPS（443端口）连接到 GitHub 服务器**。这通常与网络代理配置、DNS解析或防火墙有关，而不是 Git 本身的问题。
+
+### 🔍 第一步：快速网络诊断
+
+在尝试修复前，先通过几个命令判断问题出在哪一层。
+
+1.  **测试基础连通性**：在命令行中执行 `ping github.com`。
+    *   **如果 ping 不通**：说明可能是 DNS 解析问题或网络层完全被阻断。
+    *   **如果 ping 得通**：说明网络是通的，问题可能出在 HTTPS 协议或代理上。
+
+2.  **测试 443 端口连通性**：执行 `telnet github.com 443`。
+    *   **如果显示 `Connected to github.com`**：说明 443 端口是通的，问题很可能出在 Git 的代理配置上。
+    *   **如果连接失败或超时**：说明 443 端口被防火墙或网络策略阻止了。
+
+### 🛠️ 第二步：针对性解决方案
+
+根据诊断结果，你可以尝试以下按推荐顺序排列的方案：
+
+#### 方案一：检查并配置 Git 代理（最常见原因）
+如果你使用了代理软件（如 Clash、v2ray），Git 可能没有使用正确的代理端口，或者代理配置冲突了。
+
+*   **查看当前代理配置**：
+    ```bash
+    git config --global --get http.proxy
+    git config --global --get https.proxy
+    ```
+*   **如果代理端口与你的代理软件设置不一致，请更新它**（请将 `10809` 替换为你实际的代理端口）：
+    ```bash
+    git config --global http.proxy http://127.0.0.1:7890
+    git config --global https.proxy http://127.0.0.1:7890
+    ```
+*   **如果你不需要代理，可以清除配置**：
+    ```bash
+    git config --global --unset http.proxy
+    git config --global --unset https.proxy
+    ```
+
+#### 方案二：强制 Git 使用 HTTP/1.1
+有时 TLS/HTTP2 的握手问题会导致连接失败，强制使用 HTTP/1.1 可以绕过。
+```bash
+git config --global http.version HTTP/1.1
+```
+
+#### 方案三：更改 DNS 服务器
+如果 `ping` 失败，可以尝试将电脑的 DNS 更改为公共 DNS，如 Google 的 `8.8.8.8` 或 Cloudflare 的 `1.1.1.1`，这能解决部分 DNS 解析问题。
+
+#### 方案四：改用 SSH 协议连接（HTTPS 被阻断时的最佳选择）
+如果公司网络或防火墙阻止了 443 端口，但允许 SSH，那么切换到 SSH 协议是最有效的办法。GitHub 官方也支持通过 HTTPS 端口（443）来使用 SSH。
+
+1.  **生成 SSH 密钥**（如果还没有）：
+    ```bash
+    ssh-keygen -t ed25519 -C "your-email@example.com"
+    ```
+2.  **将公钥添加到 GitHub**：登录 GitHub，进入 `Settings` -> `SSH and GPG keys`，添加 `~/.ssh/id_ed25519.pub` 文件的内容。
+3.  **测试 SSH 连接**：
+    ```bash
+    ssh -T git@github.com
+    ```
+4.  **修改远程仓库地址为 SSH**：
+    ```bash
+    git remote set-url origin git@github.com:用户名/仓库名.git
+    ```
+
+#### 方案五：其他排查步骤
+*   **增加 Git 缓冲区和超时时间**：对于大仓库或慢速网络，可以调整配置以减少超时。
+    ```bash
+    git config --global http.postBuffer 524288000
+    git config --global http.lowSpeedLimit 1000
+    git config --global http.lowSpeedTime 300
+    ```
+*   **检查防火墙/杀毒软件**：临时禁用它们，测试是否是它们阻止了 Git 连接。
+*   **更新 Git 版本**：确保你使用的是最新版 Git，旧版本可能存在兼容性问题。
+
+### 💎 总结
+建议你先从**方案一（检查代理）** 开始，这能解决大部分此类问题。如果无效，再按顺序尝试其他方案。如果所有方法都无效，可以访问 [GitHub Status](https://www.githubstatus.com/) 确认是否是 GitHub 服务本身出现了故障。

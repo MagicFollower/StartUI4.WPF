@@ -1,0 +1,454 @@
+<Window x:Class="StartUI4Demo.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="clr-namespace:StartUI4Controls;assembly=StartUI4Controls"
+        Title="StartUI4.WPF for .NET Framework 4.8 — 控件演示"
+        Width="1280" Height="820"
+        WindowStartupLocation="CenterScreen"
+        Background="#FFF4F6FB"
+        Closed="MainWindow_Closed">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Background="White" Padding="16,10" BorderBrush="#FFE2E6F0" BorderThickness="0,0,0,1">
+            <Grid>
+                <StackPanel Orientation="Horizontal">
+                    <ui:UI4TextBlock Text="StartUI4.WPF" FontSize="22" FontWeight="Bold" Foreground="#FF2861EB"/>
+                    <ui:UI4TextBlock Text=".NET Framework 4.8 / C# 7.3 移植版" FontSize="13"
+                                     Foreground="#FF8A93A6" VerticalContentAlign="Center" Margin="12,0,0,0"/>
+                </StackPanel>
+                <TextBlock x:Name="RuntimeText" HorizontalAlignment="Right" VerticalAlignment="Center"
+                           FontSize="12" Foreground="#FF6B7488"/>
+            </Grid>
+        </Border>
+
+        <TabControl x:Name="DemoTabs" Grid.Row="1" TabStripPlacement="Left" Margin="8" Background="Transparent" BorderThickness="0">
+
+            <!-- ============ 1. 按钮 / 勾选 / 开关 ============ -->
+            <TabItem Header="按钮与开关">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="16" MaxWidth="760" HorizontalAlignment="Left">
+
+                        <TextBlock Text="UI4Button" Style="{StaticResource SectionTitle}"/>
+                        <WrapPanel>
+                            <ui:UI4Button Content="默认按钮" Width="130" Height="36" Margin="0,0,10,10" Click="PlainButton_Click"/>
+                            <ui:UI4Button Content="绿色按钮" Background="Green" HoverBackground="DarkGreen"
+                                          Width="130" Height="36" Margin="0,0,10,10"/>
+                            <ui:UI4Button Content="渐变按钮" GradientStart="#FF0024FF" GradientEnd="#FFB400FF"
+                                          Width="130" Height="36" Margin="0,0,10,10"/>
+                            <ui:UI4Button Content="圆角按钮" CornerRadius="18" Width="130" Height="36" Margin="0,0,10,10"/>
+                        </WrapPanel>
+
+                        <TextBlock Text="UI4CheckBox" Style="{StaticResource SectionTitle}"/>
+                        <StackPanel>
+                            <ui:UI4CheckBox Content="同意服务条款" IsChecked="True" Margin="0,0,0,8"/>
+                            <ui:UI4CheckBox Content="绿色主题" CheckBackground="Green" BorderNormalColor="DarkGreen"
+                                            BoxSize="24" BoxCornerRadius="6" Margin="0,0,0,8"/>
+                            <ui:UI4CheckBox Content="自定义文字" TextColor="Black" TextMargin="12,0,0,0" FontSize="16"/>
+                        </StackPanel>
+
+                        <TextBlock Text="UI4Radio" Style="{StaticResource SectionTitle}"/>
+                        <StackPanel>
+                            <ui:UI4Radio Content="选项 1" IsChecked="True" GroupName="G1" Margin="0,0,0,6"/>
+                            <ui:UI4Radio Content="选项 2" GroupName="G1" Margin="0,0,0,6"/>
+                            <ui:UI4Radio Content="绿色主题" CheckBackground="Green" BorderNormalColor="DarkGreen"
+                                         DotColor="White" BoxSize="20" GroupName="G1"/>
+                        </StackPanel>
+
+                        <TextBlock Text="UI4Switch" Style="{StaticResource SectionTitle}"/>
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                <ui:UI4Switch IsOn="True" Toggled="Switch_Toggled"/>
+                                <TextBlock Text="深色模式" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                            </StackPanel>
+                            <ui:UI4Switch IsOn="True" SwitchWidth="60" SwitchHeight="32"
+                                          GradientStart="Green" GradientEnd="DarkGreen" OffBackground="LightGray"/>
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- ============ 2. 文本输入 ============ -->
+            <TabItem Header="文本输入">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="16" MaxWidth="760" HorizontalAlignment="Left">
+
+                        <TextBlock Text="UI4TextBox" Style="{StaticResource SectionTitle}"/>
+                        <StackPanel>
+                            <ui:UI4TextBox Width="320" Text="可编辑文本" Margin="0,0,0,10" HorizontalAlignment="Left"/>
+                            <ui:UI4TextBox Width="320" Text="带清除按钮" ShowClearButton="True" Margin="0,0,0,10" HorizontalAlignment="Left"/>
+                            <ui:UI4TextBox Width="320" PlaceholderText="请输入用户名..." Margin="0,0,0,10" HorizontalAlignment="Left"/>
+                            <ui:UI4TextBox Width="320" PlaceholderText="绿色聚焦边框" FocusBorderColor="Green" Margin="0,0,0,10" HorizontalAlignment="Left"/>
+                            <ui:UI4TextBox Width="420" Height="90" AcceptsReturn="True" TextWrapping="Wrap"
+                                           VerticalScrollBarVisibility="Auto" ShowClearButton="True"
+                                           Text="多行文本输入&#x0a;第二行&#x0a;第三行" HorizontalAlignment="Left"/>
+                        </StackPanel>
+
+                        <TextBlock Text="UI4PasswordBox" Style="{StaticResource SectionTitle}"/>
+                        <StackPanel>
+                            <ui:UI4PasswordBox Width="320" Height="36" PlaceholderText="请输入密码" Margin="0,0,0,10" HorizontalAlignment="Left"/>
+                            <ui:UI4PasswordBox x:Name="PwdBox" Width="320" Height="36" PasswordChar="*"
+                                               ShowPasswordButton="True" PlaceholderText="可切换明文" Margin="0,0,0,6" HorizontalAlignment="Left"/>
+                            <TextBlock x:Name="PwdEcho" Text="Password = (空)" Style="{StaticResource SectionHint}"/>
+                        </StackPanel>
+
+                        <TextBlock Text="UI4CodeEditor（AvalonEdit + UI4ContextMenu，右键试试）" Style="{StaticResource SectionTitle}"/>
+                        <ui:UI4CodeEditor x:Name="CodeEditor" Height="220" Margin="0,0,0,10"/>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- ============ 3. 文本显示 ============ -->
+            <TabItem Header="文本显示">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="16" MaxWidth="760" HorizontalAlignment="Left">
+
+                        <TextBlock Text="UI4TextBlock" Style="{StaticResource SectionTitle}"/>
+                        <StackPanel>
+                            <ui:UI4TextBlock Text="这是一段普通文本" FontSize="24" Margin="0,0,0,10"/>
+                            <ui:UI4TextBlock Content="带阴影的文本" FontSize="26" ShadowDepth="8"
+                                             ShadowOpacity="0.5" ShadowBlurRadius="10" ShadowColor="Black" Margin="0,0,0,10"/>
+                            <ui:UI4TextBlock Text="渐变文本" FontSize="32" FontWeight="SemiBold" Margin="0,0,0,10">
+                                <ui:UI4TextBlock.Foreground>
+                                    <LinearGradientBrush EndPoint="1,0.5" StartPoint="0,0.5">
+                                        <GradientStop Color="#FF2762EB"/>
+                                        <GradientStop Color="#FFAD00FF" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </ui:UI4TextBlock.Foreground>
+                            </ui:UI4TextBlock>
+                        </StackPanel>
+
+                        <TextBlock Text="UI4FlipTextBlock" Style="{StaticResource SectionTitle}"/>
+                        <TextBlock Text="点击按钮翻转数字" Style="{StaticResource SectionHint}"/>
+                        <StackPanel Orientation="Horizontal">
+                            <ui:UI4FlipTextBlock x:Name="FlipText" Text="42" FontSize="64" Margin="0,0,16,0"/>
+                            <ui:UI4FlipTextBlock Text="7" FontSize="48" CardBackground="DarkGreen"
+                                                 CardForeground="Gold" FlipRate="0.5" Margin="0,0,16,0"/>
+                            <ui:UI4Button x:Name="FlipButton" Content="随机翻转" Width="110" Height="34"
+                                          VerticalAlignment="Center" Click="FlipButton_Click"/>
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- ============ 4. 选择器 ============ -->
+            <TabItem Header="选择器">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="16" MaxWidth="760" HorizontalAlignment="Left">
+
+                        <TextBlock Text="UI4ComboBox" Style="{StaticResource SectionTitle}"/>
+                        <StackPanel>
+                            <ui:UI4ComboBox Width="320" Height="36" SelectedIndex="0" Margin="0,0,0,10" HorizontalAlignment="Left">
+                                <ComboBoxItem>选项 1</ComboBoxItem>
+                                <ComboBoxItem>选项 2</ComboBoxItem>
+                                <ComboBoxItem>选项 3</ComboBoxItem>
+                            </ui:UI4ComboBox>
+                            <ui:UI4ComboBox Width="320" Height="36" CornerRadius="16" DropCornerRadius="10" HorizontalAlignment="Left">
+                                <ComboBoxItem>圆角下拉框</ComboBoxItem>
+                                <ComboBoxItem>另一项</ComboBoxItem>
+                            </ui:UI4ComboBox>
+                            <ui:UI4ComboBox Width="220" Height="36" SelectedIndex="1" Margin="0,10,0,0" HorizontalAlignment="Left">
+                                <ComboBoxItem>短选项</ComboBoxItem>
+                                <ComboBoxItem>这是一个非常非常长的选项文本，用于验证选中项不会溢出控件边界</ComboBoxItem>
+                            </ui:UI4ComboBox>
+                        </StackPanel>
+
+                        <TextBlock Text="UI4Slider" Style="{StaticResource SectionTitle}"/>
+                        <StackPanel>
+                            <ui:UI4Slider Value="50" Maximum="100" Minimum="0" Width="320" Margin="0,0,0,10" HorizontalAlignment="Left"/>
+                            <ui:UI4Slider Value="80" Maximum="200" Minimum="0" Width="320" IsValueVisible="False"
+                                          GradientStart="#FFFFF900" GradientEnd="Red" HorizontalAlignment="Left"/>
+                        </StackPanel>
+
+                        <TextBlock Text="UI4CircleSlider" Style="{StaticResource SectionTitle}"/>
+                        <StackPanel Orientation="Horizontal">
+                            <ui:UI4CircleSlider Width="160" Height="160" Value="60" Maximum="360"
+                                                RingThickness="12" ValueFontSize="34" ShowValueText="True" Margin="0,0,20,0"/>
+                            <ui:UI4CircleSlider Width="160" Height="160" Value="12" Maximum="24" RingThickness="12"
+                                                ValueFontSize="34" ShowValueText="True" Foreground="#FF2861EB">
+                                <ui:UI4CircleSlider.RingForeground>
+                                    <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
+                                        <GradientStop Color="#FFFFEC00"/>
+                                        <GradientStop Color="Red" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </ui:UI4CircleSlider.RingForeground>
+                            </ui:UI4CircleSlider>
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- ============ 5. 进度指示 ============ -->
+            <TabItem Header="进度指示">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="16" MaxWidth="760" HorizontalAlignment="Left">
+
+                        <TextBlock Text="UI4ProgressBar" Style="{StaticResource SectionTitle}"/>
+                        <StackPanel>
+                            <ui:UI4ProgressBar x:Name="Bar1" Value="50" Maximum="100" Width="320" Height="6" Margin="0,0,0,12" HorizontalAlignment="Left"/>
+                            <ui:UI4ProgressBar Value="50" Maximum="100" Width="320" Height="6" Background="Red" Margin="0,0,0,12" HorizontalAlignment="Left"/>
+                            <ui:UI4ProgressBar Value="75" Maximum="100" Width="320" Height="6"
+                                               GradientStart="#FF55FF00" GradientEnd="#FF0016FF" Margin="0,0,0,12" HorizontalAlignment="Left"/>
+                            <ui:UI4ProgressBar IsIndeterminate="True" Width="320" Height="6" HorizontalAlignment="Left"/>
+                            <ui:UI4Button Content="推进 Bar1" Width="120" Height="32" Margin="0,10,0,0" Click="AdvanceBar_Click"/>
+                        </StackPanel>
+
+                        <TextBlock Text="UI4ProgressRing" Style="{StaticResource SectionTitle}"/>
+                        <StackPanel Orientation="Horizontal">
+                            <ui:UI4ProgressRing IsActive="True" IsIndeterminate="True" Width="90" Height="90" Margin="0,0,24,0"/>
+                            <ui:UI4ProgressRing IsIndeterminate="False" IsActive="True" Value="50" Maximum="150"
+                                                Foreground="Red" ValueFontSize="20" ShowValueText="True"
+                                                Width="90" Height="90" Margin="0,0,24,0"/>
+                            <ui:UI4ProgressRing Width="140" Height="140" IsActive="True" IsIndeterminate="False"
+                                                RingThickness="12" Maximum="60" Value="36" ValueFontSize="34"
+                                                ShowValueText="True" Foreground="#FF8E17FA">
+                                <ui:UI4ProgressRing.RingForeground>
+                                    <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
+                                        <GradientStop Color="#FF2861EB"/>
+                                        <GradientStop Color="#FFAC01FF" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </ui:UI4ProgressRing.RingForeground>
+                            </ui:UI4ProgressRing>
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- ============ 6. 列表与网格 ============ -->
+            <TabItem Header="列表与网格">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="16" MaxWidth="900" HorizontalAlignment="Left">
+
+                        <TextBlock Text="UI4ListBox（三种列表样式）" Style="{StaticResource SectionTitle}"/>
+                        <StackPanel Orientation="Horizontal">
+                            <ui:UI4ListBox Width="180" Height="150" Margin="0,0,16,0">
+                                <ListBoxItem>普通项 1</ListBoxItem>
+                                <ListBoxItem>普通项 2</ListBoxItem>
+                                <ListBoxItem>普通项 3</ListBoxItem>
+                            </ui:UI4ListBox>
+                            <ui:UI4ListBox Width="180" Height="150" ListStyleType="Disc"
+                                           HoverForeground="Black" HoverBackground="#0C000000" Margin="0,0,16,0">
+                                <ListBoxItem>圆点项 1</ListBoxItem>
+                                <ListBoxItem>圆点项 2</ListBoxItem>
+                                <ListBoxItem>圆点项 3</ListBoxItem>
+                            </ui:UI4ListBox>
+                            <ui:UI4ListBox Width="180" Height="150" ListStyleType="Number" NumberCircleBackground="Green">
+                                <ListBoxItem>编号项 1</ListBoxItem>
+                                <ListBoxItem>编号项 2</ListBoxItem>
+                                <ListBoxItem>编号项 3</ListBoxItem>
+                            </ui:UI4ListBox>
+                        </StackPanel>
+
+                        <TextBlock Text="UI4ListView（数据绑定）" Style="{StaticResource SectionTitle}"/>
+                        <ui:UI4ListView ItemsSource="{Binding Cards}" Height="200" ItemBackground="White"
+                                        ShadowDepth="15" ShadowOpacity="0.2" HoverScale="1.01"
+                                        SelectionChanged="Cards_SelectionChanged">
+                            <ui:UI4ListView.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="LightYellow" CornerRadius="10">
+                                        <StackPanel Margin="16">
+                                            <ui:UI4TextBlock Content="{Binding Title}" Margin="0,4,0,4"/>
+                                            <ui:UI4TextBlock Content="{Binding Description}" TextWrapping="Wrap"/>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ui:UI4ListView.ItemTemplate>
+                        </ui:UI4ListView>
+
+                        <TextBlock Text="UI4GridView（自适应网格）" Style="{StaticResource SectionTitle}"/>
+                        <ui:UI4GridView ItemsSource="{Binding Cards}" ItemHeight="170" ItemWidth="230"
+                                        ShadowDepth="15" ShadowOpacity="0.3" HoverScale="1.06">
+                            <ui:UI4GridView.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="{Binding Background}" CornerRadius="10">
+                                        <StackPanel Margin="16">
+                                            <Ellipse Width="32" Height="32" Fill="{Binding IconColor}" HorizontalAlignment="Left"/>
+                                            <ui:UI4TextBlock Content="{Binding Title}" Margin="0,8,0,3"/>
+                                            <ui:UI4TextBlock Content="{Binding Description}" TextWrapping="Wrap"/>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ui:UI4GridView.ItemTemplate>
+                        </ui:UI4GridView>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- ============ 7. 导航与容器 ============ -->
+            <TabItem Header="导航容器">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="16" MaxWidth="900" HorizontalAlignment="Left">
+
+                        <TextBlock Text="UI4Pivot" Style="{StaticResource SectionTitle}"/>
+                        <ui:UI4Pivot Height="150" ItemFontSize="16" SelectedItemForeground="Black">
+                            <ui:UI4PivotItem Header="首页">
+                                <TextBlock Text="首页内容" Margin="10"/>
+                            </ui:UI4PivotItem>
+                            <ui:UI4PivotItem Header="设置">
+                                <TextBlock Text="设置内容" Margin="10"/>
+                            </ui:UI4PivotItem>
+                            <ui:UI4PivotItem Header="关于">
+                                <TextBlock Text="关于内容" Margin="10"/>
+                            </ui:UI4PivotItem>
+                        </ui:UI4Pivot>
+
+                        <TextBlock Text="UI4Tab（浏览器风格标签，可关闭 / 可新增）" Style="{StaticResource SectionTitle}"/>
+                        <ui:UI4Tab x:Name="BrowserTab" Height="190" AddTab="BrowserTab_AddTab" CloseTab="BrowserTab_CloseTab">
+                            <ui:UI4TabItem Header="主页" TextIcon="&#xE80F;" TextIconFontFamily="Segoe MDL2 Assets">
+                                <Grid Background="White"><TextBlock Text="主页内容" Margin="12"/></Grid>
+                            </ui:UI4TabItem>
+                            <ui:UI4TabItem Header="文档" TextIcon="&#xE723;" TextIconFontFamily="Segoe MDL2 Assets">
+                                <Grid Background="White"><TextBlock Text="文档内容" Margin="12"/></Grid>
+                            </ui:UI4TabItem>
+                            <ui:UI4TabItem Header="设置" TextIcon="&#xE713;" TextIconFontFamily="Segoe MDL2 Assets" IsClosable="False">
+                                <Grid Background="White"><TextBlock Text="设置内容（不可关闭）" Margin="12"/></Grid>
+                            </ui:UI4TabItem>
+                        </ui:UI4Tab>
+
+                        <TextBlock Text="UI4NavigationView" Style="{StaticResource SectionTitle}"/>
+                        <ui:UI4NavigationView x:Name="NavView" Height="260" Header="导航视图"
+                                              LeftPanelBackground="#FFEDF1F8" ItemBackground="Transparent"
+                                              SelectedItemBackground="White">
+                            <ui:UI4NavigationViewItem TextIcon="&#xE104;" TextIconFontFamily="Segoe MDL2 Assets" Header="代码">
+                                <TextBlock Text="代码页内容" Margin="16"/>
+                            </ui:UI4NavigationViewItem>
+                            <ui:UI4NavigationViewItem TextIcon="&#xE8F1;" TextIconFontFamily="Segoe MDL2 Assets" Header="属性">
+                                <TextBlock Text="属性页内容" Margin="16"/>
+                            </ui:UI4NavigationViewItem>
+                            <ui:UI4NavigationViewBottomItem TextIcon="&#xE713;" TextIconFontFamily="Segoe MDL2 Assets" Header="设置">
+                                <TextBlock Text="设置页内容" Margin="16"/>
+                            </ui:UI4NavigationViewBottomItem>
+                        </ui:UI4NavigationView>
+
+                        <TextBlock Text="UI4ScrollViewer（平滑滚动）" Style="{StaticResource SectionTitle}"/>
+                        <ui:UI4ScrollViewer Width="420" Height="150" IsSmoothScrollEnabled="True" Background="White">
+                            <StackPanel Margin="16">
+                                <ui:UI4TextBlock FontSize="16" TextWrapping="Wrap" FontWeight="Bold"
+                                                 Content="UI4ScrollViewer 美化了系统 ScrollViewer，使其更现代、更平滑。向下滚动查看效果。"/>
+                                <TextBlock Text="第 1 行" Margin="0,8,0,0"/><TextBlock Text="第 2 行" Margin="0,8,0,0"/>
+                                <TextBlock Text="第 3 行" Margin="0,8,0,0"/><TextBlock Text="第 4 行" Margin="0,8,0,0"/>
+                                <TextBlock Text="第 5 行" Margin="0,8,0,0"/><TextBlock Text="第 6 行" Margin="0,8,0,0"/>
+                                <TextBlock Text="第 7 行" Margin="0,8,0,0"/><TextBlock Text="第 8 行" Margin="0,8,0,0"/>
+                                <TextBlock Text="第 9 行" Margin="0,8,0,0"/><TextBlock Text="第 10 行" Margin="0,8,0,0"/>
+                            </StackPanel>
+                        </ui:UI4ScrollViewer>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- ============ 8. 布局面板 ============ -->
+            <TabItem Header="布局面板">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="16" MaxWidth="900" HorizontalAlignment="Left">
+
+                        <TextBlock Text="UI4Grid（默认渐变背景）" Style="{StaticResource SectionTitle}"/>
+                        <ui:UI4Grid Width="420" Height="140">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <ui:UI4Button Content="按钮 1" Grid.Column="0" Margin="12" Height="34" VerticalAlignment="Center"/>
+                            <ui:UI4Button Content="按钮 2" Grid.Column="1" Margin="12" Height="34" VerticalAlignment="Center"/>
+                        </ui:UI4Grid>
+
+                        <TextBlock Text="UI4Panel（阴影 + 悬停缩放）" Style="{StaticResource SectionTitle}"/>
+                        <StackPanel Orientation="Horizontal">
+                            <ui:UI4Panel Width="260" Height="150" ShadowDepth="15" ShadowOpacity="0.5"
+                                         HoverScale="1.05" Margin="0,0,20,0">
+                                <TextBlock Text="悬停我会放大" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </ui:UI4Panel>
+                            <ui:UI4Panel Width="260" Height="150" CornerRadius="16" BorderThickness="2"
+                                         HoverBorderBrush="Green" ShadowDepth="8" ShadowOpacity="0.3">
+                                <TextBlock Text="圆角 + 悬停描边" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </ui:UI4Panel>
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- ============ 9. 对话框 ============ -->
+            <TabItem Header="对话框">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="16" MaxWidth="760" HorizontalAlignment="Left">
+
+                        <TextBlock Text="UI4MessageBox" Style="{StaticResource SectionTitle}"/>
+                        <WrapPanel>
+                            <ui:UI4Button Content="仅确定" Width="130" Height="34" Margin="0,0,10,10" Click="MsgOk_Click"/>
+                            <ui:UI4Button Content="确定 / 取消" Width="130" Height="34" Margin="0,0,10,10" Click="MsgOkCancel_Click"/>
+                        </WrapPanel>
+                        <TextBlock x:Name="MsgResult" Text="返回值：（尚未点击）" Style="{StaticResource SectionHint}"/>
+
+                        <TextBlock Text="UI4ColorPicker" Style="{StaticResource SectionTitle}"/>
+                        <StackPanel Orientation="Horizontal">
+                            <ui:UI4Button Content="选择颜色..." Width="130" Height="34" Click="PickColor_Click"/>
+                            <Border x:Name="ColorSwatch" Width="90" Height="34" CornerRadius="6" Margin="12,0,0,0"
+                                    Background="#FF2861EB" BorderBrush="#FFCCCCCC" BorderThickness="1"/>
+                            <TextBlock x:Name="ColorText" Text="#FF2861EB" VerticalAlignment="Center" Margin="12,0,0,0"/>
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- ============ 10. 菜单 / 托盘 / 多语言 ============ -->
+            <TabItem Header="菜单与托盘">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="16" MaxWidth="760" HorizontalAlignment="Left">
+
+                        <TextBlock Text="UI4Menu" Style="{StaticResource SectionTitle}"/>
+                        <ui:UI4Menu Width="420">
+                            <ui:UI4MenuElementItem Header="文件" KeyTip="(F)">
+                                <ui:UI4MenuElementItem Header="新建" TextIcon="&#xE710;" IconFontFamily="Segoe MDL2 Assets" IconFontSize="14"/>
+                                <ui:UI4MenuElementItem Header="打开" TextIcon="&#xE8E5;" IconFontFamily="Segoe MDL2 Assets" IconFontSize="14"/>
+                                <ui:UI4MenuSeparatorElement/>
+                                <ui:UI4MenuElementItem Header="退出" TextIcon="&#xE7E8;" IconFontFamily="Segoe MDL2 Assets" IconFontSize="14"
+                                                       Click="MenuExit_Click"/>
+                            </ui:UI4MenuElementItem>
+                            <ui:UI4MenuElementItem Header="编辑" KeyTip="(E)">
+                                <ui:UI4MenuElementItem Header="撤销" TextIcon="&#xE7A7;" IconFontFamily="Segoe MDL2 Assets" IconFontSize="14"/>
+                                <ui:UI4MenuElementItem Header="重做" TextIcon="&#xE7A6;" IconFontFamily="Segoe MDL2 Assets" IconFontSize="14"/>
+                            </ui:UI4MenuElementItem>
+                        </ui:UI4Menu>
+
+                        <TextBlock Text="UI4ContextMenu" Style="{StaticResource SectionTitle}"/>
+                        <TextBlock Text="在下面这块区域点右键弹出自定义菜单" Style="{StaticResource SectionHint}"/>
+                        <Border x:Name="CtxHost" Width="420" Height="90" Background="White" CornerRadius="8"
+                                BorderBrush="#FFDDE3EE" BorderThickness="1">
+                            <TextBlock Text="右键点击这里" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#FF8A93A6"/>
+                        </Border>
+
+                        <TextBlock Text="UI4NotifyIcon（系统托盘）" Style="{StaticResource SectionTitle}"/>
+                        <StackPanel Orientation="Horizontal">
+                            <ui:UI4Switch x:Name="TraySwitch" IsOn="False" Toggled="TraySwitch_Toggled"/>
+                            <TextBlock Text="启用托盘图标（使用系统默认图标，左键/右键均有事件）" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                        </StackPanel>
+                        <TextBlock x:Name="TrayLog" Text="托盘事件：（无）" Style="{StaticResource SectionHint}"/>
+
+                        <TextBlock Text="UI4MultiLanguage" Style="{StaticResource SectionTitle}"/>
+                        <StackPanel Orientation="Horizontal">
+                            <ui:UI4ComboBox x:Name="LangCombo" Width="180" Height="34" SelectedIndex="0"
+                                            SelectionChanged="LangCombo_SelectionChanged">
+                                <ComboBoxItem>zh-CN</ComboBoxItem>
+                                <ComboBoxItem>en-US</ComboBoxItem>
+                            </ui:UI4ComboBox>
+                            <TextBlock x:Name="LangSample" Text="" VerticalAlignment="Center" Margin="12,0,0,0"/>
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+        </TabControl>
+
+        <Border Grid.Row="2" Background="White" Padding="16,8" BorderBrush="#FFE2E6F0" BorderThickness="0,1,0,0">
+            <TextBlock x:Name="StatusText" Text="就绪" Foreground="#FF6B7488" FontSize="12"/>
+        </Border>
+
+        <ui:UI4NotifyIcon x:Name="TrayIcon" Grid.Row="0" Visibility="Collapsed"
+                          ToolTipText="StartUI4 Demo (.NET 4.8)"
+                          TrayLeftMouseUp="TrayIcon_TrayLeftMouseUp"
+                          TrayRightMouseDown="TrayIcon_TrayRightMouseDown"/>
+    </Grid>
+</Window>

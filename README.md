@@ -1,465 +1,433 @@
-# StartUI4.WPF Control Library Documentation
+# StartUI4.WPF 控件库文档（.NET Framework 4.8 移植版）
 
-> A modern Modern Design UI control library based on WPF .NET 6
+> 一套现代风格（Modern Design）的 WPF UI 控件库，本仓库为 **.NET Framework 4.8 / C# 7.3** 的完整移植版本。
 
-[![Get From Microsoft](https://get.microsoft.com/images/en-us%20dark.svg)](https://apps.microsoft.com/detail/9nvb5kpdjwfg)
-
-> **Github**: [Github](https://github.com/KSSTU/StartUI4.WPF/)
-
-![Image](https://store-images.s-microsoft.com/image/apps.42489.14402085032895111.463f5ff2-a24d-4d73-83e3-8e6d121b5da1.9a9a7745-ec07-4973-8dfe-c0c9f4fc3e25)
+> **上游仓库**：<https://github.com/KSSTU/StartUI4.WPF>（net6.0-windows7.0）
+> **移植与差异说明**：见本仓库 [`PORTING.md`](PORTING.md)
 
 ---
 
-## Table of Contents
+## 目录
 
-- [Introduction](#introduction)
-- [Features](#features)
-- [Quick Start](#quick-start)
-- [Control List](#control-list)
-- [Control Details](#control-details)
-
----
-
-## Introduction
-
-**StartUI4.WPF** is a modern UI control library developed based on WPF .NET 6, perfectly aligned with the Modern Modern Design language. Easy to configure and use, supports Windows 7 / 10 / 11 operating systems.
-
-- **Version**: 1.0.20
-- **Author**: KS.STUDIO
-- **Target Framework**: .NET 6 (net6.0-windows7.0)
-- **NuGet Package**: StartUI4.WPF
-
-
-![Image](https://store-images.s-microsoft.com/image/apps.47354.14402085032895111.463f5ff2-a24d-4d73-83e3-8e6d121b5da1.06e9569f-f45a-4090-96d3-0843739dd367)
-
+- [一、简介](#一简介)
+- [二、特性](#二特性)
+- [三、快速开始](#三快速开始)
+- [四、控件一览](#四控件一览)
+- [五、控件详解](#五控件详解)
+- [六、完整使用教程：从零搭建一个应用](#六完整使用教程从零搭建一个应用)
+- [七、Demo 工程指南](#七demo-工程指南)
+- [八、与上游（net6 版）的差异与已知问题](#八与上游net6-版的差异与已知问题)
+- [九、附录](#九附录)
+- [许可证](#许可证)
 
 ---
 
-## Features
+## 一、简介
 
--  **Modern Design Style** - Perfectly aligned with Modern design language
--  **Gradient Color Support** - Multiple controls support gradient color configuration
--  **Rich Animation Effects** - Smooth animations for hover, switch, loading, etc.
--  **Highly Customizable** - Extensive dependency properties for external style adjustment
--  **Out of the Box** - Simple reference for immediate use
--  **Multi-platform Support** - Supports Windows 7 / 10 / 11
--  **Based on .NET 6** - High performance, cross-version compatibility
+**StartUI4.WPF** 是一套对齐现代设计语言的 WPF 控件库。本移植版将上游的 .NET 6 代码完整重写为
+**.NET Framework 4.8**，可在 VS2019 及更高版本、仅安装 .NET Framework 4.8  targeting pack 的环境中编译与运行。
+
+- **版本**：1.0.20
+- **原作者**：KS.STUDIO
+- **目标框架**：.NET Framework 4.8（`net48`）
+- **语言级别**：C# 7.3（net48 默认，不依赖任何高版本语法开关）
+- **NuGet 包名**：StartUI4.WPF
+- **支持系统**：Windows 7 / 8.1 / 10 / 11（.NET Framework 4.8 所支持的范围）
+- **运行时自检**：Demo 主窗口标题栏右侧实时显示 `RuntimeInformation.FrameworkDescription`，
+  用于确认程序确实运行在 .NET Framework 4.8 上
 
 ---
 
-## Quick Start
+## 二、特性
 
-### 1. Install NuGet Package
+- **现代设计风格** —— 圆角、渐变、阴影、悬浮动效，对齐现代设计语言
+- **渐变支持** —— 按钮、进度条、滑块、开关等均支持起止渐变色配置
+- **丰富动画** —— 悬浮缩放、开关滑动、加载旋转、数字翻转等平滑动画
+- **高度可定制** —— 250+ 个依赖属性对外开放，几乎每个视觉细节都可调
+- **开箱即用** —— 引用程序集或 NuGet 包后直接在 XAML 中使用，无需额外资源字典
+- **纯代码模板** —— 所有控件模板由代码构建，不依赖 Themes/generic.xaml，单 dll 即可分发
+- **.NET Framework 4.8 原生** —— 无 `IsExternalInit` 等 polyfill、无 LangVersion 开关，老工具链亦可编译
 
+---
+
+## 三、快速开始
+
+### 1. 环境要求
+
+| 项目 | 要求 |
+|---|---|
+| 操作系统 | Windows 7 SP1 及以上 |
+| 运行时 | .NET Framework 4.8 |
+| 编译工具 | Visual Studio 2019 16.8+ / VS2022 / .NET SDK（MSBuild）均可 |
+| 依赖包 | AvalonEdit 6.3.1.120、System.Data.SQLite 2.0.3（仅 `UI4CodeEditor` / 内部 `UI4DataGrid` 需要） |
+
+### 2. 方式一：源码构建
+
+```bash
+git clone <本仓库>
+dotnet build StartUI4Controls.sln
 ```
+
+产物：
+
+- `src/StartUI4Controls/bin/Debug/net48/StartUI4Controls.dll`
+- `src/StartUI4Controls/bin/Debug/StartUI4.WPF.1.0.20.nupkg`（构建时自动打包）
+
+### 3. 方式二：NuGet 引用
+
+```powershell
 Install-Package StartUI4.WPF
 ```
 
-Or via .NET CLI:
+或使用本地构建出的 nupkg：
 
+```powershell
+dotnet add package StartUI4.WPF --source ./src/StartUI4Controls/bin/Debug
 ```
-dotnet add package StartUI4.WPF
-```
 
-### 2. Import Namespace
+### 4. 引入命名空间
 
-Add the namespace reference in your XAML file:
+在任意 XAML 文件根节点添加：
 
 ```xml
 xmlns:ui="clr-namespace:StartUI4Controls;assembly=StartUI4Controls"
 ```
 
-### 3. Use Controls
+### 5. 第一个控件
 
 ```xml
-<ui:UI4Button Content="Click Me" Width="150" Height="40" />
+<ui:UI4Button Content="你好，StartUI4" Width="200" Height="40" />
 ```
 
----
+### 6. 验证运行环境
 
-## Control List
+启动 `samples/StartUI4Demo`，主窗口标题栏右侧会显示实际运行时，例如：
 
-| Control Name | Base Class | Description |
-|-------------|------------|-------------|
-| [UI4Button](#ui4button) | Button | Modern button with gradient and hover effects |
-| [UI4CheckBox](#ui4checkbox) | CheckBox | Custom styled checkbox |
-| [UI4Radio](#ui4radio) | RadioButton | Custom styled radio button |
-| [UI4Switch](#ui4switch) | ToggleButton | Modern toggle switch with gradient style |
-| [UI4TextBox](#ui4textbox) | TextBox | TextBox with focus gradient, clear button |
-| [UI4TextBlock](#ui4textblock) | ContentControl | Text display control with shadow effects |
-| [UI4FlipTextBlock](#ui4fliptextblock) | ContentControl | Flip animation text display with card styling |
-| [UI4ComboBox](#ui4combobox) | ComboBox | Custom styled dropdown selector |
-| [UI4ProgressBar](#ui4progressbar) | Control | Gradient progress bar with indeterminate mode |
-| [UI4ProgressRing](#ui4progressring) | ContentControl | Ring progress indicator (determinate/indeterminate) |
-| [UI4Slider](#ui4slider) | Slider | Gradient slider control with value display |
-| [UI4CircleSlider](#ui4circleslider) | ContentControl | Interactive circular slider |
-| [UI4ColorPicker](#ui4colorpicker) | Window | Color picker dialog with HSV picker, hex/RGB input |
-| [UI4Panel](#ui4panel) | ContentControl | Container panel with shadow and hover scale effects |
-| [UI4Pivot](#ui4pivot) | Selector | Tab control with slide transition animation |
-| [UI4Tab](#ui4tab) | Selector | Browser-style tab control with close and add buttons |
-| [UI4NavigationView](#ui4navigationview) | ItemsControl | Sidebar navigation control |
-| [UI4ListBox](#ui4listbox) | ListBox | Custom styled list, supports multiple list styles |
-| [UI4ListView](#ui4listview) | ListBox | Card-style list view |
-| [UI4GridView](#ui4gridview) | ListBox | Grid layout card view with adaptive columns |
-| [UI4ScrollViewer](#ui4scrollviewer) | ScrollViewer | Custom scrollbar with smooth scrolling animation |
-| [UI4MessageBox](#ui4messagebox) | Window | Custom message dialog box |
-| [UI4NotifyIcon](#ui4notifyicon) | TaskbarIcon | System tray icon with custom right-click menu |
-| [UI4Menu](#UI4Menu) | Menu | Menu can set TextIcon. |
-| [UI4PasswordBox](#ui4passwordbox) | TextBox | Password input with plaintext/reveal toggle, custom mask char, placeholder |
-| [UI4Grid](#ui4grid) | Grid | Grid container with default gradient background |
+```
+实际运行时： .NET Framework 4.8.9345.0
+```
+
+若误跑在 .NET Core / .NET 5+ 上，此处前缀会变为 `.NET Core` / `.NET`，可立即识别。
 
 ---
 
-## Control Details
+## 四、控件一览
+
+| 控件 | 基类 | 说明 |
+|---|---|---|
+| `UI4Button` | `Button` | 渐变 / 圆角 / 悬浮色按钮 |
+| `UI4CheckBox` | `CheckBox` | 自定义勾选框 |
+| `UI4Radio` | `RadioButton` | 自定义单选按钮 |
+| `UI4Switch` | `Control` | 现代滑动开关 |
+| `UI4TextBox` | `TextBox` | 聚焦描边、占位符、清除按钮输入框 |
+| `UI4PasswordBox` | `TextBox` | 密码框，支持明文切换与自定义掩码 |
+| `UI4TextBlock` | `ContentControl` | 带阴影 / 渐变 / 圆角面板的文本显示 |
+| `UI4FlipTextBlock` | `ContentControl` | 数字翻牌动画文本 |
+| `UI4ComboBox` | `ComboBox` | 自定义下拉框，弹出层宽度自适应 |
+| `UI4ProgressBar` | `Control` | 渐变进度条，支持不确定模式 |
+| `UI4ProgressRing` | `ContentControl` | 环形进度（确定 / 不确定） |
+| `UI4Slider` | `Slider` | 渐变滑块，带数值显示 |
+| `UI4CircleSlider` | `ContentControl` | 环形滑块 |
+| `UI4ColorPicker` | `Window` | HSV 取色对话框 |
+| `UI4Panel` | `ContentControl` | 阴影 + 悬浮缩放容器 |
+| `UI4Pivot` / `UI4PivotItem` | `Selector` / `HeaderedContentControl` | 滑动切换页签 |
+| `UI4Tab` / `UI4TabItem` | `Selector` / `HeaderedContentControl` | 浏览器风格标签页 |
+| `UI4NavigationView` 及 Item | `ItemsControl` / `ContentControl` | 侧边导航 |
+| `UI4ListBox` | `ListBox` | 支持普通 / 圆点 / 编号三种列表样式 |
+| `UI4ListView` | `ListBox` | 卡片式列表 |
+| `UI4GridView` | `ListBox` | 自适应列数网格卡片 |
+| `UI4ScrollViewer` | `ScrollViewer` | 美化滚动条 + 平滑滚动 |
+| `UI4MessageBox` | `Window` | 自定义消息对话框 |
+| `UI4NotifyIcon` | `FrameworkElement` | 系统托盘图标 + 自定义右键菜单 |
+| `UI4Menu` 及 Item | `Menu` / `MenuItem` | 支持文字图标与 KeyTip 的菜单栏 |
+| `UI4ContextMenu` | —（代码组件） | 自定义右键菜单 |
+| `UI4CodeEditor` | AvalonEdit `TextEditor` | 代码编辑器，内置 C# 高亮与右键菜单 |
+| `UI4Grid` | `Grid` | 默认渐变背景的 Grid |
+| `UI4MultiLanguage` | —（静态服务） | zh / en 多语言字符串 |
+
+> `UI4DataGrid`、`UI43DSphere` 在上游即为 `internal` 且无引用，本移植版保持 internal，不对外公开（见附录 C）。
+
+---
+
+## 五、控件详解
+
+> 约定：颜色默认值以 `#AARRGGBB` 表示；"继承属性"指基类自带、可直接使用的属性。
 
 ---
 
 ### UI4Button
 
-A modern button control with support for rounded corners, gradient colors, hover background, and other custom styles.
+现代按钮，支持圆角、渐变、悬浮背景与悬浮前景色。
 
-**Inherits from**: `Button`
+**继承自**：`Button`
 
-#### Settable Properties
+#### 可设置属性
 
-| Property Name | Type | Default Value | Description |
-|--------------|------|---------------|-------------|
-| `CornerRadius` | `CornerRadius` | `8` | Button corner radius |
-| `GradientStart` | `Color` | `#2563EB` (37,99,235) | Gradient start color |
-| `GradientEnd` | `Color` | `#9333EA` (147,51,234) | Gradient end color |
-| `HoverBackground` | `Brush` | `#1D4ED8` (29,78,216) | Background color on mouse hover |
+| 属性 | 类型 | 默认值 | 说明 |
+|---|---|---|---|
+| `CornerRadius` | `CornerRadius` | `6` | 圆角半径 |
+| `GradientStart` | `Color` | `#FF0078D4` | 渐变起始色 |
+| `GradientEnd` | `Color` | `#FF9333EA` | 渐变结束色 |
+| `HoverBackground` | `Brush` | `#FF0066B5` | 悬浮背景 |
+| `HoverBorderBrush` | `Brush` | `null` | 悬浮描边（null 表示不改变） |
+| `HoverForeground` | `Brush` | `White` | 悬浮前景色 |
 
-#### Inherited Properties
+#### 继承属性
 
-Also inherits all properties from `Button`, such as `Content`, `Background`, `Foreground`, `FontSize`, `FontWeight`, `Width`, `Height`, `Margin`, `Padding`, `Cursor`, etc.
+`Content`、`Background`、`Foreground`、`FontSize`、`FontWeight`、`Width`、`Height`、`Margin`、`Padding`、`Cursor` 等。
 
-#### Example Code
+#### 示例
 
 ```xml
-<!-- Basic button -->
-<ui:UI4Button Content="OK" Width="100" Height="30" />
+<ui:UI4Button Content="确定" Width="100" Height="30" />
 
-<!-- Custom color button -->
-<ui:UI4Button Content="Green Button" 
-              Background="Green" 
-              HoverBackground="DarkGreen" 
+<ui:UI4Button Content="绿色按钮" Background="Green" HoverBackground="DarkGreen"
               Width="200" Height="40" />
 
-<!-- Button with gradient -->
-<ui:UI4Button Content="Gradient Button" 
-              GradientStart="#FF0024FF" 
-              GradientEnd="#FFB400FF"
+<ui:UI4Button Content="渐变按钮" GradientStart="#FF0024FF" GradientEnd="#FFB400FF"
               Width="150" Height="40" />
 
-<!-- Rounded button -->
-<ui:UI4Button Content="Rounded Button" 
-              CornerRadius="20" 
-              Width="150" Height="40" />
+<ui:UI4Button Content="圆角按钮" CornerRadius="20" Width="150" Height="40" />
 ```
 
-#### Events
+#### 事件
 
-Supports all events from the `Button` base class, such as `Click`, `MouseEnter`, `MouseLeave`, etc.
+继承 `Button` 的全部事件：`Click`、`MouseEnter`、`MouseLeave` 等。
 
 ---
 
 ### UI4CheckBox
 
-A custom-styled checkbox control with adjustable check box size, color, corner radius, etc.
+自定义勾选框，勾选块颜色、尺寸、圆角、文字颜色均可调。
 
-**Inherits from**: `CheckBox`
+**继承自**：`CheckBox`
 
-#### Settable Properties
+#### 可设置属性
 
-| Property Name | Type | Default Value | Description |
-|--------------|------|---------------|-------------|
-| `BoxCornerRadius` | `CornerRadius` | `4` | Check box corner radius |
-| `CheckBackground` | `Color` | `#1D4ED8` (29,78,216) | Check box background color when selected |
-| `BorderNormalColor` | `Color` | `#B4B4C8` (180,180,200) | Border color when unselected |
-| `BoxSize` | `double` | `18` | Check box size (width and height) |
-| `TextColor` | `Color` | `LightGray` | Text color when unselected |
-| `TextMargin` | `Thickness` | `8,0,0,0` | Spacing between text and check box |
+| 属性 | 类型 | 默认值 | 说明 |
+|---|---|---|---|
+| `BoxCornerRadius` | `CornerRadius` | `6` | 勾选块圆角 |
+| `CheckBackground` | `Color` | `#FF0066B5` | 勾选态填充色 |
+| `BorderNormalColor` | `Color` | `#FFB4B4C8` | 未勾选边框色 |
+| `BoxSize` | `double` | `18` | 勾选块边长 |
+| `TextColor` | `Color` | `LightGray` | 文字颜色 |
+| `TextMargin` | `Thickness` | `8,0,0,0` | 文字与勾选块间距 |
 
-#### Inherited Properties
-
-Also inherits all properties from `CheckBox`, such as `Content`, `IsChecked`, `Foreground`, `FontSize`, etc.
-
-#### Example Code
+#### 示例
 
 ```xml
-<!-- Basic checkbox -->
-<ui:UI4CheckBox Content="Agree to terms" IsChecked="True" Margin="10" />
+<ui:UI4CheckBox Content="同意服务条款" IsChecked="True" Margin="10" />
 
-<!-- Custom color checkbox -->
-<ui:UI4CheckBox Content="Green Theme" 
-                CheckBackground="Green" 
-                BorderNormalColor="DarkGreen"
-                BoxSize="24"
-                BoxCornerRadius="6" />
+<ui:UI4CheckBox Content="绿色主题" CheckBackground="Green" BorderNormalColor="DarkGreen"
+                BoxSize="24" BoxCornerRadius="6" />
 
-<!-- Custom text color and spacing -->
-<ui:UI4CheckBox Content="Custom Style" 
-                TextColor="Black"
-                TextMargin="12,0,0,0"
-                FontSize="16" />
+<ui:UI4CheckBox Content="自定义文字" TextColor="Black" TextMargin="12,0,0,0" FontSize="16" />
 ```
 
-#### Notes
+#### 说明
 
-- Text color automatically uses the `Foreground` property when selected
-- Border color darkens on hover
-- Check mark is a white check shape
+`IsChecked`、`IsThreeState`、`Checked` / `Unchecked` / `Indeterminate` 事件均继承自 `CheckBox`。
 
 ---
 
 ### UI4Radio
 
-A custom-styled radio button control, consistent with UI4CheckBox style, supports group mutual exclusion.
+自定义单选按钮，样式属性与 `UI4CheckBox` 对应。
 
-**Inherits from**: `RadioButton`
+**继承自**：`RadioButton`
 
-#### Settable Properties
+#### 可设置属性
 
-| Property Name | Type | Default Value | Description |
-|--------------|------|---------------|-------------|
-| `CheckBackground` | `Color` | `#1D4ED8` (29,78,216) | Fill color when selected |
-| `BorderNormalColor` | `Color` | `#B4B4C8` (180,180,200) | Border color when unselected |
-| `DotColor` | `Color` | `White` | Inner dot color when selected |
-| `BoxSize` | `double` | `18` | Radio button size (diameter) |
-| `TextColor` | `Color` | `LightGray` | Text color when unselected |
-| `TextMargin` | `Thickness` | `8,0,0,0` | Spacing between text and radio button |
+| 属性 | 类型 | 默认值 | 说明 |
+|---|---|---|---|
+| `CheckBackground` | `Color` | `#FF0066B5` | 选中态圆环颜色 |
+| `BorderNormalColor` | `Color` | `#FFB4B4C8` | 未选中边框色 |
+| `DotColor` | `Color` | `White` | 选中圆点颜色 |
+| `BoxSize` | `double` | `18` | 圆圈直径 |
+| `TextColor` | `Color` | `Black` | 文字颜色 |
+| `TextMargin` | `Thickness` | `8,0,0,0` | 文字间距 |
 
-#### Inherited Properties
-
-Also inherits all properties from `RadioButton`, such as `Content`, `IsChecked`, `GroupName`, `Foreground`, `FontSize`, etc.
-
-#### Example Code
+#### 示例
 
 ```xml
-<!-- Basic radio buttons -->
-<ui:UI4Radio Content="Option 1" IsChecked="True" GroupName="Group1" Margin="5" />
-<ui:UI4Radio Content="Option 2" GroupName="Group1" Margin="5" />
-<ui:UI4Radio Content="Option 3" GroupName="Group1" Margin="5" />
-
-<!-- Custom color radio -->
-<ui:UI4Radio Content="Green Theme" 
-             CheckBackground="Green" 
-             BorderNormalColor="DarkGreen"
-             DotColor="White"
-             BoxSize="20" />
-
-<!-- Custom text color and spacing -->
-<ui:UI4Radio Content="Custom Style" 
-             TextColor="Black"
-             TextMargin="12,0,0,0"
-             FontSize="16" />
+<ui:UI4Radio Content="选项 1" IsChecked="True" GroupName="G1" Margin="5" />
+<ui:UI4Radio Content="选项 2" GroupName="G1" Margin="5" />
+<ui:UI4Radio Content="绿色主题" CheckBackground="Green" BorderNormalColor="DarkGreen"
+             DotColor="White" BoxSize="20" GroupName="G1" />
 ```
-
-#### Feature Notes
-
-- **Consistent Style**: Matches UI4CheckBox visual style (same color scheme)
-- **Group Mutual Exclusion**: Same `GroupName` only allows one selection
-- **Hover Effect**: Border color changes on mouse hover
-- **Keyboard Support**: Supports Tab navigation and Space key selection
-- **Three-state Support**: Supports `IsThreeState` tri-state mode
 
 ---
 
 ### UI4Switch
 
-A modern toggle switch control with gradient fill, smooth sliding animation, consistent with UI4Button color scheme.
+现代滑动开关。**支持双向绑定**（`IsOn` 为 `BindsTwoWayByDefault`）。
 
-**Inherits from**: `ToggleButton`
+**继承自**：`Control`
 
-#### Settable Properties
+#### 可设置属性
 
-| Property Name | Type | Default Value | Description |
-|--------------|------|---------------|-------------|
-| `IsOn` | `bool` | `false` | Switch state (same as `IsChecked`) |
-| `GradientStart` | `Color` | `#2563EB` (37,99,235) | Gradient start color when ON |
-| `GradientEnd` | `Color` | `#9333EA` (147,51,234) | Gradient end color when ON |
-| `OffBackground` | `Color` | `#C8C8D2` (200,200,210) | Background color when OFF |
-| `ThumbColor` | `Color` | `White` | Thumb (slider) color |
-| `SwitchWidth` | `double` | `50` | Switch width |
-| `SwitchHeight` | `double` | `28` | Switch height |
+| 属性 | 类型 | 默认值 | 说明 |
+|---|---|---|---|
+| `IsOn` | `bool` | `false` | 开关状态（双向绑定） |
+| `GradientStart` | `Color` | `#FF0078D4` | 开启态渐变起始色 |
+| `GradientEnd` | `Color` | `#FF0078D4` | 开启态渐变结束色 |
+| `OffBackground` | `Color` | `#FFC8C8D2` | 关闭态底色 |
+| `ThumbColor` | `Color` | `White` | 滑块颜色 |
+| `SwitchWidth` | `double` | `50` | 开关宽度 |
+| `SwitchHeight` | `double` | `28` | 开关高度 |
 
-#### Inherited Properties
+#### 事件
 
-Also inherits all properties from `ToggleButton`, such as `IsChecked`, `Content`, `Foreground`, `FontSize`, `IsEnabled`, etc.
+| 事件 | 签名 | 说明 |
+|---|---|---|
+| `Toggled` | `RoutedEventHandler` | 状态切换时触发（冒泡） |
 
-#### Example Code
+#### 示例
 
 ```xml
-<!-- Basic switch -->
-<ui:UI4Switch IsOn="True" />
+<ui:UI4Switch IsOn="True" Toggled="Switch_Toggled" />
 
-<!-- Custom size and color -->
-<ui:UI4Switch IsOn="True"
-              SwitchWidth="60"
-              SwitchHeight="32"
-              GradientStart="Green"
-              GradientEnd="DarkGreen"
-              OffBackground="LightGray" />
-
-<!-- With text label -->
-<StackPanel Orientation="Horizontal">
-    <ui:UI4Switch x:Name="themeSwitch" />
-    <TextBlock Text="Dark Mode" VerticalAlignment="Center" Margin="8,0,0,0"/>
-</StackPanel>
+<ui:UI4Switch IsOn="True" SwitchWidth="60" SwitchHeight="32"
+              GradientStart="Green" GradientEnd="DarkGreen" OffBackground="LightGray" />
 ```
 
-#### Events
+```csharp
+private void Switch_Toggled(object sender, RoutedEventArgs e)
+{
+    var sw = (UI4Switch)sender;
+    Debug.WriteLine("IsOn = " + sw.IsOn);
+}
+```
 
-| Event Name | EventArgs | Description |
-|-----------|-----------|-------------|
-| `Toggled` | `RoutedEventArgs` | Triggered when switch state changes |
+#### 说明
 
-Also supports all events from `ToggleButton`, such as `Click`, `Checked`, `Unchecked`, etc.
-
-#### Feature Notes
-
-- **Gradient Fill**: Uses UI4Button default gradient color scheme when ON
-- **Smooth Animation**: 200ms cubic ease slide animation when toggling
-- **Capsule Shape**: Fully rounded ends (pill shape)
-- **White Thumb**: White circular slider with shadow contrast
-- **Consistent Style**: Matches UI4Button default gradient theme
+- 控件在 `StackPanel` / `Grid` 中被拉伸时，开关本体会靠左摆放而不会被拉变形（移植版修复项）。
+- XAML 中写 `IsOn="True"` 会在加载期立即触发一次 `Toggled`，事件处理器需对未初始化的成员做判空。
 
 ---
 
 ### UI4TextBox
 
-A modern text input box with focus gradient border, clear button, custom context menu, auto-hide scrollbar, and more.
+带占位符、悬浮/聚焦描边、清除按钮的输入框，支持多行。
 
-**Inherits from**: `TextBox`
+**继承自**：`TextBox`
 
-#### Settable Properties
+#### 可设置属性
 
-| Property Name | Type | Default Value | Description |
-|--------------|------|---------------|-------------|
-| `CornerRadius` | `CornerRadius` | `8` | Input box corner radius |
-| `BorderNormalColor` | `Color` | `#C8C8DC` (200,200,220) | Default border color |
-| `FocusGradientStart` | `Color` | `#2563EB` (37,99,235) | Gradient start color when focused |
-| `FocusGradientEnd` | `Color` | `#9333EA` (147,51,234) | Gradient end color when focused |
-| `EditBackground` | `Brush` | `White` (255,255,255) | Input box background color |
-| `TextColor` | `Color` | `#1E1E1E` (30,30,30) | Text color |
-| `InnerPadding` | `Thickness` | `12,10,32,10` | Internal content padding |
-| `ShowClearButton` | `bool` | `false` | Whether to show the clear button |
-| `PlaceholderText` | `string` | `""` | Placeholder text displayed when text is empty |
-| `PlaceholderForeground` | `Brush` | `LightGray` | Placeholder text color |
+| 属性 | 类型 | 默认值 | 说明 |
+|---|---|---|---|
+| `CornerRadius` | `CornerRadius` | `6` | 圆角 |
+| `BorderNormalColor` | `Color` | `#FFC8C8DC` | 常态边框色 |
+| `HoverBorderColor` | `Color` | `#FF0078D4` | 悬浮边框色 |
+| `FocusBorderColor` | `Color` | `#FF0066B5` | 聚焦边框色 |
+| `EditBackground` | `Brush` | `White` | 编辑区背景 |
+| `TextColor` | `Color` | `#FF1E1E1E` | 文字颜色 |
+| `InnerPadding` | `Thickness` | `12,5,32,5` | 内边距（右侧预留按钮位） |
+| `ShowClearButton` | `bool` | `false` | 是否显示清除按钮 |
+| `PlaceholderText` | `string` | 空 | 占位符文本 |
+| `PlaceholderForeground` | `Brush` | `LightGray` | 占位符颜色 |
 
-#### Inherited Properties
+#### 继承属性
 
-Also inherits all properties from `TextBox`, such as `Text`, `FontSize`, `Foreground`, `Width`, `Height`, `AcceptsReturn`, `VerticalScrollBarVisibility`, `HorizontalScrollBarVisibility`, etc.
+`Text`、`AcceptsReturn`、`TextWrapping`、`VerticalScrollBarVisibility`、`MaxLength`、`IsReadOnly` 等。
 
-#### Public Fields
-
-| Field Name | Type | Default Value | Description |
-|-----------|------|---------------|-------------|
-| `MenuStrings` | `string[]` | `Undo, Cut, Copy, Paste, Delete, Select All` | Context menu item texts |
-
-#### Example Code
+#### 示例
 
 ```xml
-<!-- Basic single-line textbox -->
-<ui:UI4TextBox Width="260" Text="Enter text..." />
+<ui:UI4TextBox Width="260" Text="可编辑文本" />
 
-<!-- Textbox with clear button -->
-<ui:UI4TextBox Width="260" 
-               Text="Clearable text" 
-               ShowClearButton="True" />
+<ui:UI4TextBox Width="260" Text="带清除按钮" ShowClearButton="True" />
 
-<!-- Multi-line textbox -->
-<ui:UI4TextBox Width="450" 
-               Height="100" 
-               AcceptsReturn="True"
-               VerticalScrollBarVisibility="Auto"
-               ShowClearButton="True"
-               Text="Multi-line text input with clear button" />
+<ui:UI4TextBox Width="300" PlaceholderText="请输入用户名..." />
 
-<!-- Custom focus color -->
-<ui:UI4TextBox Width="300"
-               FocusGradientStart="Green"
-               FocusGradientEnd="LimeGreen"
-               Text="Green focus border" />
+<ui:UI4TextBox Width="300" PlaceholderText="请输入密码..." PlaceholderForeground="Gray" />
 
-<!-- Custom corner radius and background -->
-<ui:UI4TextBox Width="300"
-               CornerRadius="15"
-               EditBackground="#FFF8F8F8"
-               BorderNormalColor="#FFCCCCCC"
-               Text="Custom style" />
-
-<!-- Textbox with placeholder -->
-<ui:UI4TextBox Width="300"
-               PlaceholderText="Enter your username..." />
-
-<!-- Custom placeholder color -->
-<ui:UI4TextBox Width="300"
-               PlaceholderText="Enter password..."
-               PlaceholderForeground="Gray" />
+<ui:UI4TextBox Width="450" Height="100" AcceptsReturn="True" TextWrapping="Wrap"
+               VerticalScrollBarVisibility="Auto" ShowClearButton="True"
+               Text="多行文本" />
 ```
 
-#### Feature Notes
+#### 说明
 
-- **Focus Gradient Border**: Border becomes gradient colored when focused
-- **Clear Button**: Set `ShowClearButton="True"` to show one-click clear button
-- **Custom Context Menu**: Replaces system default menu with Undo, Cut, Copy, Paste, Delete, Select All, with icons and multi-language support
-- **Auto-hide Scrollbar**: Fades in when scrolling, fades out when stopped, 10px wide
-- **Hover Border**: Border color darkens on mouse hover
-- **Placeholder Support**: `PlaceholderText` + `PlaceholderForeground`, auto-hides when text is entered
+占位符在有文本时自动隐藏；清除按钮仅在 `ShowClearButton=True` 且有文本时出现。
+
+---
+
+### UI4PasswordBox
+
+密码输入框：自定义掩码字符、明文/密文切换按钮、占位符、双向绑定 `Password`。
+
+**继承自**：`TextBox`
+
+#### 可设置属性
+
+| 属性 | 类型 | 默认值 | 说明 |
+|---|---|---|---|
+| `CornerRadius` | `CornerRadius` | `6` | 圆角 |
+| `BorderNormalColor` | `Color` | `#FFC8C8DC` | 常态边框色 |
+| `HoverBorderColor` | `Color` | `#FF0078D4` | 悬浮边框色 |
+| `FocusBorderColor` | `Color` | `#FF0066B5` | 聚焦边框色 |
+| `EditBackground` | `Brush` | `White` | 编辑区背景 |
+| `TextColor` | `Color` | `#FF1E1E1E` | 文字颜色 |
+| `InnerPadding` | `Thickness` | `12,5,32,5` | 内边距 |
+| `ShowPasswordButton` | `bool` | `true` | 是否显示明文切换按钮 |
+| `PlaceholderText` | `string` | 空 | 占位符 |
+| `PlaceholderForeground` | `Brush` | `LightGray` | 占位符颜色 |
+| `Password` | `string` | 空 | 密码明文（可双向绑定） |
+| `PasswordChar` | `char` | `●` | 掩码字符 |
+| `IsPasswordMode` | `bool` | `true` | 当前是否密文显示 |
+
+#### 示例
+
+```xml
+<ui:UI4PasswordBox PlaceholderText="请输入密码" Width="260" Height="36" />
+
+<ui:UI4PasswordBox PasswordChar="*" ShowPasswordButton="True" Width="260" />
+
+<ui:UI4PasswordBox Password="{Binding UserPassword, Mode=TwoWay}" ShowClearButton="True" />
+```
+
+```csharp
+PwdBox.TextChanged += delegate { Trace.WriteLine("Password = " + PwdBox.Password); };
+```
 
 ---
 
 ### UI4TextBlock
 
-Enhanced text display control with text shadow effects, custom context menu, etc.
+文本显示控件：阴影、圆角背景面板、对齐方式、换行控制。
 
-**Inherits from**: `ContentControl`
+**继承自**：`ContentControl`
 
-#### Settable Properties
+#### 可设置属性
 
-| Property Name | Type | Default Value | Description |
-|--------------|------|---------------|-------------|
-| `Text` | `string` | `""` | Text content (higher priority than Content) |
-| `Foreground` | `Brush` | `null` | Foreground color (text color) |
-| `CornerRadius` | `CornerRadius` | `8` | Control corner radius |
-| `GradientStart` | `Color` | `#2563EB` (37,99,235) | Gradient start color (reserved for extension) |
-| `GradientEnd` | `Color` | `#9333EA` (147,51,234) | Gradient end color (reserved for extension) |
-| `PanelBackground` | `Brush` | `Transparent` | Panel background color |
-| `Padding` | `Thickness` | `8,6,8,6` | Padding |
-| `FontSize` | `double` | `15` | Font size |
-| `FontWeight` | `FontWeight` | `Normal` | Font weight |
-| `HorizontalContentAlign` | `HorizontalAlignment` | `Left` | Horizontal content alignment |
-| `VerticalContentAlign` | `VerticalAlignment` | `Center` | Vertical content alignment |
-| `TextWrapping` | `TextWrapping` | `NoWrap` | Text wrapping mode |
-| **Shadow Properties** | | | |
-| `ShadowDepth` | `double` | `8.0` | Shadow depth (offset) |
-| `ShadowBlurRadius` | `double` | `5.0` | Shadow blur radius |
-| `ShadowOpacity` | `double` | `0.2` | Shadow opacity |
-| `ShadowColor` | `Color` | `Black` | Shadow color |
+| 属性 | 类型 | 默认值 | 说明 |
+|---|---|---|---|
+| `Text` | `string` | 空 | 文本（与 `Content` 二选一） |
+| `Foreground` | `Brush` | `null` | 前景；传 `LinearGradientBrush` 即渐变字 |
+| `CornerRadius` | `CornerRadius` | `6` | 背景面板圆角 |
+| `PanelBackground` | `Brush` | `Transparent` | 背景面板颜色 |
+| `Padding` | `Thickness` | `8,6,8,6` | 内边距 |
+| `FontSize` | `double` | `15` | 字号 |
+| `FontWeight` | `FontWeight` | `Normal` | 字重 |
+| `HorizontalContentAlign` | `HorizontalAlignment` | `Left` | 水平对齐 |
+| `VerticalContentAlign` | `VerticalAlignment` | `Center` | 垂直对齐 |
+| `TextWrapping` | `TextWrapping` | `NoWrap` | 换行方式 |
+| `ShadowDepth` | `double` | `8` | 阴影深度 |
+| `ShadowBlurRadius` | `double` | `5` | 阴影模糊半径 |
+| `ShadowOpacity` | `double` | `0` | 阴影不透明度（0 = 无阴影） |
+| `ShadowColor` | `Color` | `Black` | 阴影颜色 |
 
-#### Public Fields
-
-| Field Name | Type | Default Value | Description |
-|-----------|------|---------------|-------------|
-| `MenuStrings` | `string[]` | `Copy, Select All` | Context menu item texts |
-
-#### Example Code
+#### 示例
 
 ```xml
-<!-- Basic text -->
-<ui:UI4TextBlock Text="This is a piece of text." FontSize="28" />
+<ui:UI4TextBlock Text="普通文本" FontSize="24" />
 
-<!-- Text with shadow effect -->
-<ui:UI4TextBlock Content="Text with shadow" 
-                 FontSize="28" 
-                 ShadowDepth="8" 
-                 ShadowOpacity="0.6" 
-                 ShadowBlurRadius="10" 
-                 ShadowColor="Black" />
+<ui:UI4TextBlock Content="带阴影的文本" FontSize="26"
+                 ShadowDepth="8" ShadowOpacity="0.6" ShadowBlurRadius="10" ShadowColor="Black" />
 
-<!-- Gradient text (via Foreground) -->
-<ui:UI4TextBlock Text="Gradient Text" FontSize="34" FontWeight="SemiBold">
+<!-- 渐变文本：通过 Foreground 传入渐变画笔 -->
+<ui:UI4TextBlock Text="渐变文本" FontSize="32" FontWeight="SemiBold">
     <ui:UI4TextBlock.Foreground>
         <LinearGradientBrush EndPoint="1,0.5" StartPoint="0,0.5">
             <GradientStop Color="#FF2762EB"/>
@@ -467,277 +435,169 @@ Enhanced text display control with text shadow effects, custom context menu, etc
         </LinearGradientBrush>
     </ui:UI4TextBlock.Foreground>
 </ui:UI4TextBlock>
-
-<!-- Heading text -->
-<ui:UI4TextBlock x:Name="HeroTextBlock" 
-                 FontSize="52" 
-                 FontWeight="Bold"  
-                 TextWrapping="Wrap"  
-                 Foreground="#111111" 
-                 Content="StartUI4.WPF" 
-                 ShadowOpacity="0"/>
 ```
 
-#### Feature Notes
+#### 说明
 
-- **Dual Content Properties**: Supports both `Text` and `Content`, with `Text` having higher priority
-- **Text Shadow**: Adjust text shadow effect via `Shadow*` series properties
-- **Custom Context Menu**: Supports Copy and Select All operations
-- **Gradient Foreground Support**: Gradient brushes can be set via `Foreground`
+`GradientStart` / `GradientEnd` 为上游遗留的未实现属性（声明但从未生效），渐变请一律使用 `Foreground`。
 
 ---
 
 ### UI4FlipTextBlock
 
-A flip animation text display control with card styling. When the text changes, it triggers a smooth flip animation using rendered bitmap snapshots.
+数字翻牌控件：文本变化时以卡片翻转动画过渡，适合计数器、时钟、指标看板。
 
-**Inherits from**: `ContentControl`
+**继承自**：`ContentControl`
 
-#### Settable Properties
+#### 可设置属性
 
-| Property Name | Type | Default Value | Description |
-|--------------|------|---------------|-------------|
-| `Text` | `string` | `"0"` | Display text content |
-| `FlipRate` | `double` | `0.3` | Flip animation duration (seconds) |
-| `CardBackground` | `Color` | `White` | Card background color |
-| `CardForeground` | `Color` | `Black` | Text foreground color |
-| `CardBorderBrush` | `Color` | `Gray` | Card border color |
-| `CardCornerRadius` | `CornerRadius` | `12` | Card corner radius |
-| `CardBorderThickness` | `Thickness` | `1` | Card border thickness |
-| **Shadow Properties** | | | |
-| `ShadowColor` | `Color` | `Black` | Shadow color |
-| `CardShadowDepth` | `double` | `10.0` | Shadow depth (offset) |
-| `CardShadowBlurRadius` | `double` | `15.0` | Shadow blur radius |
-| `CardShadowOpacity` | `double` | `0.1` | Shadow opacity |
+| 属性 | 类型 | 默认值 | 说明 |
+|---|---|---|---|
+| `Text` | `string` | `"0"` | 显示文本 |
+| `FlipRate` | `double` | `0.3` | 翻转动画速率（秒/字符段） |
+| `CardBackground` | `Color` | `White` | 卡片背景 |
+| `CardForeground` | `Color` | `Black` | 卡片文字色 |
+| `CardBorderBrush` | `Color` | `Gray` | 卡片边框色 |
+| `CardCornerRadius` | `CornerRadius` | `12` | 卡片圆角 |
+| `CardBorderThickness` | `Thickness` | `1` | 卡片边框厚度 |
+| `ShadowColor` | `Color` | `Black` | 阴影颜色 |
+| `CardShadowDepth` | `double` | `10` | 阴影深度 |
+| `CardShadowBlurRadius` | `double` | `15` | 阴影模糊 |
+| `CardShadowOpacity` | `double` | `0.1` | 阴影不透明度 |
 
-#### Inherited Properties
-
-Also inherits all properties from `ContentControl`, and forwards font properties to the inner text: `FontSize` (default `60`), `FontFamily`, `FontWeight`, `FontStyle`.
-
-#### Example Code
+#### 示例
 
 ```xml
-<!-- Basic flip text -->
-<ui:UI4FlipTextBlock Text="42" />
+<ui:UI4FlipTextBlock x:Name="FlipText" Text="42" FontSize="64" />
 
-<!-- Custom styling -->
-<ui:UI4FlipTextBlock Text="7" 
-                     FontSize="48"
-                     CardBackground="DarkGreen" 
-                     CardForeground="Gold"
-                     FlipRate="0.5" />
-
-<!-- All properties set -->
-<ui:UI4FlipTextBlock x:Name="flipText"
-            Text="42"
-            FontSize="160"
-            FontWeight="Bold"
-            FontStyle="Normal"
-            FontFamily="Segoe UI"
-            FlipRate="0.3"
-            CardBackground="White"
-            CardForeground="Black"
-            CardBorderBrush="Gray"
-            CardCornerRadius="12"
-            CardBorderThickness="1"
-            ShadowColor="Black"
-            CardShadowDepth="10"
-            CardShadowBlurRadius="15"
-            CardShadowOpacity="0.1" />
+<ui:UI4FlipTextBlock Text="7" FontSize="48" CardBackground="DarkGreen"
+                     CardForeground="Gold" FlipRate="0.5" />
 ```
-
-Code-behind:
 
 ```csharp
-// Programmatically update text (triggers flip animation)
-flipText.Text = "99";
+FlipText.Text = new Random().Next(0, 100).ToString();   // 赋值即触发翻转动画
 ```
-
-#### Feature Notes
-
-- **Flip Animation**: When the `Text` property changes, the control renders the current visual to a bitmap, splits it into top and bottom halves, and plays a scale-based flip animation
-- **Card Styling**: Uses `UI4Panel` internally for shadow, border, and corner radius support
-- **Center Divider**: A gradient center line provides visual separation between the top and bottom halves during animation
-- **Font Inheritance**: `FontSize` (default 60), `FontFamily`, `FontWeight`, `FontStyle` are forwarded to the inner text element
 
 ---
 
 ### UI4ComboBox
 
-Custom styled dropdown selector with focus gradient border, hover effects, etc.
+自定义下拉框：聚焦渐变描边、圆角、下拉面板圆角；**弹出层宽度随最宽选项自适应**，
+选中项超长时单行省略号截断并附完整文本 ToolTip。
 
-**Inherits from**: `ComboBox`
+**继承自**：`ComboBox`
 
-#### Settable Properties
+#### 可设置属性
 
-| Property Name | Type | Default Value | Description |
-|--------------|------|---------------|-------------|
-| `CornerRadius` | `CornerRadius` | `8` | Dropdown corner radius |
-| `BorderNormalColor` | `Color` | `#C8C8DC` (200,200,220) | Default border color |
-| `FocusGradientStart` | `Color` | `#2563EB` (37,99,235) | Gradient start color when focused |
-| `FocusGradientEnd` | `Color` | `#9333EA` (147,51,234) | Gradient end color when focused |
-| `EditBackground` | `Brush` | `White` (255,255,255) | Background color |
-| `TextColor` | `Color` | `#1E1E1E` (30,30,30) | Text color |
-| `InnerPadding` | `Thickness` | `12,10,30,10` | Internal padding |
-| `DropCornerRadius` | `CornerRadius` | `6` | Dropdown list corner radius |
+| 属性 | 类型 | 默认值 | 说明 |
+|---|---|---|---|
+| `CornerRadius` | `CornerRadius` | `6` | 控件圆角 |
+| `BorderNormalColor` | `Color` | `#FFC8C8DC` | 常态边框色 |
+| `FocusGradientStart` | `Color` | `#FF0078D4` | 聚焦渐变起始色 |
+| `FocusGradientEnd` | `Color` | `#FF9333EA` | 聚焦渐变结束色 |
+| `EditBackground` | `Brush` | `White` | 编辑区背景 |
+| `TextColor` | `Color` | `#FF1E1E1E` | 文字颜色 |
+| `InnerPadding` | `Thickness` | `12,10,30,10` | 内边距 |
+| `DropCornerRadius` | `CornerRadius` | `6` | 下拉面板圆角 |
 
-#### Inherited Properties
-
-Also inherits all properties from `ComboBox`, such as `Items`, `SelectedIndex`, `SelectedItem`, `IsEditable`, `Width`, `Height`, `FontSize`, etc.
-
-#### Example Code
+#### 示例
 
 ```xml
-<!-- Basic combobox -->
-<ui:UI4ComboBox Width="400" Height="40" SelectedIndex="0">
-    <ComboBoxItem>Option 1</ComboBoxItem>
-    <ComboBoxItem>Option 2</ComboBoxItem>
-    <ComboBoxItem>Option 3</ComboBoxItem>
+<ui:UI4ComboBox Width="300" Height="36" SelectedIndex="0">
+    <ComboBoxItem>选项 1</ComboBoxItem>
+    <ComboBoxItem>选项 2</ComboBoxItem>
 </ui:UI4ComboBox>
 
-<!-- Custom color -->
-<ui:UI4ComboBox Width="300" 
-                FocusGradientStart="Green"
-                FocusGradientEnd="LimeGreen"
-                SelectedIndex="0">
-    <ComboBoxItem>Red</ComboBoxItem>
-    <ComboBoxItem>Green</ComboBoxItem>
-    <ComboBoxItem>Blue</ComboBoxItem>
+<ui:UI4ComboBox Width="300" CornerRadius="16" DropCornerRadius="10"
+                FocusGradientStart="Green" FocusGradientEnd="LimeGreen">
+    <ComboBoxItem>圆角下拉框</ComboBoxItem>
 </ui:UI4ComboBox>
 
-<!-- Custom corner radius -->
-<ui:UI4ComboBox Width="300" 
-                CornerRadius="16"
-                DropCornerRadius="10">
-    <ComboBoxItem>Rounded Dropdown</ComboBoxItem>
+<!-- 长选项：闭合态省略号 + ToolTip，展开态弹出层自动加宽完整显示 -->
+<ui:UI4ComboBox Width="220" SelectedIndex="1">
+    <ComboBoxItem>短选项</ComboBoxItem>
+    <ComboBoxItem>这是一个非常非常长的选项文本，用于验证选中项不会溢出控件边界</ComboBoxItem>
 </ui:UI4ComboBox>
 ```
 
-#### Feature Notes
+#### 说明
 
-- **Focus Gradient Border**: Border becomes gradient colored when focused
-- **Dropdown Animation**: Dropdown list with fade-in animation
-- **Hover Effect**: Dropdown items with hover background color
-- **Editable Mode**: Supports `IsEditable="True"` edit mode
+- 下拉滚动时滚动条淡入、停止后淡出（内置行为）。
+- `IsEditable=True` 时切换为内嵌编辑框，样式同步应用。
 
 ---
 
 ### UI4ProgressBar
 
-Linear progress bar control with gradient colors and indeterminate mode.
+渐变进度条，支持不确定模式（往返动画）。
 
-**Inherits from**: `Control`
+**继承自**：`Control`
 
-#### Settable Properties
+#### 可设置属性
 
-| Property Name | Type | Default Value | Description |
-|--------------|------|---------------|-------------|
-| `CornerRadius` | `CornerRadius` | `5` | Progress bar corner radius |
-| `GradientStart` | `Color` | `#0096E6` (0,150,230) | Progress gradient start color |
-| `GradientEnd` | `Color` | `#0078D4` (0,120,212) | Progress gradient end color (matches ProgressRing) |
-| `TrackBackground` | `Color` | `#0A000000` (10,0,0,0) | Track background color (matches ProgressRing) |
-| `IsIndeterminate` | `bool` | `false` | Indeterminate mode (marquee animation) |
-| `Minimum` | `double` | `0` | Minimum value |
-| `Maximum` | `double` | `100` | Maximum value |
-| `Value` | `double` | `0` | Current progress value |
-| `Background` | `Brush` | `null` | If set, uses solid color instead of gradient |
+| 属性 | 类型 | 默认值 | 说明 |
+|---|---|---|---|
+| `CornerRadius` | `CornerRadius` | `5` | 圆角 |
+| `GradientStart` | `Color` | `#FF0096E6` | 渐变起始色 |
+| `GradientEnd` | `Color` | `#FF0078D4` | 渐变结束色 |
+| `TrackBackground` | `Color` | `#0A000000` | 轨道底色 |
+| `IsIndeterminate` | `bool` | `false` | 不确定模式 |
+| `Minimum` / `Maximum` | `double` | `0` / `100` | 取值范围 |
+| `Value` | `double` | `0` | 当前值 |
 
-#### Example Code
+#### 示例
 
 ```xml
-<!-- Basic progress bar -->
-<ui:UI4ProgressBar Value="50" Maximum="100" Minimum="0" 
-                   Width="200" Height="6" />
+<ui:UI4ProgressBar Value="50" Maximum="100" Width="200" Height="6" />
 
-<!-- Solid color progress bar (Background overrides gradient) -->
-<ui:UI4ProgressBar Value="50"  
-                   Maximum="100" Minimum="0" 
-                   Width="200" Height="6" 
-                   Background="Red" />
+<ui:UI4ProgressBar Value="50" Width="200" Height="6" Background="Red" />
 
-<!-- Custom gradient progress bar -->
-<ui:UI4ProgressBar Value="50"  
-                   Maximum="100" Minimum="0" 
-                   Width="200" Height="6" 
-                   GradientStart="#FF55FF00" 
-                   GradientEnd="#FF0016FF" />
+<ui:UI4ProgressBar Value="50" Width="200" Height="6"
+                   GradientStart="#FF55FF00" GradientEnd="#FF0016FF" />
 
-<!-- Custom track color -->
-<ui:UI4ProgressBar Value="75" 
-                   Maximum="100" 
-                   TrackBackground="#FFE0E0E0"
-                   Width="200" Height="6" />
-
-<!-- Indeterminate mode -->
-<ui:UI4ProgressBar IsIndeterminate="True" 
-                   Width="200" Height="6" />
+<ui:UI4ProgressBar IsIndeterminate="True" Width="200" Height="6" />
 ```
 
-#### Feature Notes
+#### 说明
 
-- **Horizontal Gradient Fill**: Progress fill uses left-to-right gradient color by default
-- **Background Override**: If `Background` property is set, solid color is used instead of gradient
-- **Rounded Appearance**: Track and progress are rounded, with proper corner clipping at boundaries
-- **Adjustable Height**: Adjust thickness via `Height` property
-- **Indeterminate Mode**: Set `IsIndeterminate="True"` for marquee-style sliding animation
-- **Color Consistency**: Default colors match UI4ProgressRing for visual uniformity
+设置 `Background` 会覆盖渐变，呈现纯色进度条。
 
 ---
 
 ### UI4ProgressRing
 
-Ring progress indicator, supporting determinate mode (display specific value) and indeterminate mode (rotation animation).
+环形进度指示器：不确定模式为旋转弧；确定模式显示进度弧与中心数值，支持启动动画。
 
-**Inherits from**: `ContentControl`
+**继承自**：`ContentControl`
 
-#### Settable Properties
+#### 可设置属性
 
-| Property Name | Type | Default Value | Description |
-|--------------|------|---------------|-------------|
-| `IsActive` | `bool` | `true` | Whether active (visible) |
-| `IsIndeterminate` | `bool` | `true` | Whether in indeterminate mode |
-| `Minimum` | `double` | `0.0` | Minimum value |
-| `Maximum` | `double` | `100.0` | Maximum value |
-| `Value` | `double` | `0.0` | Current value |
-| `RingBackground` | `Brush` | `#0A000000` (10,0,0,0) | Ring background color |
-| `RingForeground` | `Brush` | `#0078D4` (0,120,212) | Ring foreground color (progress color) |
-| `RingThickness` | `double` | `6.0` | Ring line thickness |
-| `ShowValueText` | `bool` | `true` | Whether to show value text |
-| `ValueFontSize` | `double` | `30.0` | Value text size |
-| **Animation Properties** | | | |
-| `AnimatedValue` | `double` | `0.0` | Internal animation-driven value |
-| `StartupAnimationDuration` | `double` | `0.5` | Startup animation duration (seconds) |
-| `EnableStartupAnimation` | `bool` | `true` | Whether to enable startup animation |
+| 属性 | 类型 | 默认值 | 说明 |
+|---|---|---|---|
+| `IsActive` | `bool` | `true` | 是否激活动画 |
+| `IsIndeterminate` | `bool` | `true` | 不确定（旋转）模式 |
+| `Minimum` / `Maximum` | `double` | `0` / `100` | 取值范围 |
+| `Value` | `double` | `0` | 当前值 |
+| `AnimatedValue` | `double` | `0` | 动画驱动值（内部使用） |
+| `RingBackground` | `Brush` | `#0A000000` 画笔 | 环底色 |
+| `RingForeground` | `Brush` | `#FF0078D4` 画笔 | 进度环颜色（可传渐变画笔） |
+| `RingThickness` | `double` | `6` | 环宽 |
+| `ShowValueText` | `bool` | `true` | 是否显示中心数值 |
+| `ValueFontSize` | `double` | `30` | 数值字号 |
+| `EnableStartupAnimation` | `bool` | `true` | 加载时从 0 转到当前值 |
+| `StartupAnimationDuration` | `double` | `0.5` | 启动动画秒数 |
 
-#### Inherited Properties
-
-Also inherits all properties from `ContentControl`, such as `Foreground`, `Width`, `Height`, etc.
-
-#### Example Code
+#### 示例
 
 ```xml
-<!-- Indeterminate mode (spin animation) -->
-<ui:UI4ProgressRing IsActive="True" 
-                    IsIndeterminate="True" 
-                    Width="80" Height="80" />
+<ui:UI4ProgressRing IsActive="True" IsIndeterminate="True" Width="80" Height="80" />
 
-<!-- Determinate mode (show value) -->
-<ui:UI4ProgressRing IsIndeterminate="False" 
-                    Foreground="Red" 
-                    ValueFontSize="20" 
-                    ShowValueText="True" 
-                    Value="50" 
-                    Maximum="150" />
+<ui:UI4ProgressRing IsIndeterminate="False" Value="50" Maximum="150"
+                    Foreground="Red" ValueFontSize="20" ShowValueText="True" />
 
-<!-- Gradient color progress ring -->
-<ui:UI4ProgressRing Width="150" Height="150"
-                    IsActive="True" 
-                    IsIndeterminate="False" 
-                    RingThickness="12" 
-                    Maximum="60" 
-                    ValueFontSize="60" 
-                    ShowValueText="True" 
-                    Foreground="#FF8E17FA">
+<ui:UI4ProgressRing Width="150" Height="150" IsIndeterminate="False"
+                    RingThickness="12" Maximum="60" Value="36"
+                    ValueFontSize="34" ShowValueText="True">
     <ui:UI4ProgressRing.RingForeground>
         <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
             <GradientStop Color="#FF2861EB"/>
@@ -747,712 +607,385 @@ Also inherits all properties from `ContentControl`, such as `Foreground`, `Width
 </ui:UI4ProgressRing>
 ```
 
-#### Feature Notes
-
-- **Dual Mode**: Supports `IsIndeterminate` indeterminate mode (spin animation) and determinate mode (value progress)
-- **Gradient Ring**: `RingForeground` supports `Brush`, gradient colors can be set
-- **Value Display**: Center can display current value
-- **Startup Animation**: Smooth transition from 0 to target value on load
-- **Round Caps**: Both ends of the ring are round-capped
-
 ---
 
 ### UI4Slider
 
-Slider control with gradient track and value display.
+渐变滑块，带最小/当前/最大数值显示。
 
-**Inherits from**: `Slider`
+**继承自**：`Slider`
 
-#### Settable Properties
+#### 可设置属性
 
-| Property Name | Type | Default Value | Description |
-|--------------|------|---------------|-------------|
-| `CornerRadius` | `CornerRadius` | `4` | Track corner radius |
-| `GradientStart` | `Color` | `#2563EB` (37,99,235) | Gradient start color |
-| `GradientEnd` | `Color` | `#9333EA` (147,51,234) | Gradient end color |
-| `TrackBackground` | `Color` | `White` (255,255,255) | Track background color |
-| `ThumbSize` | `double` | `16` | Slider thumb size |
-| `IsValueVisible` | `bool` | `true` | Whether to show bottom value labels |
+| 属性 | 类型 | 默认值 | 说明 |
+|---|---|---|---|
+| `CornerRadius` | `CornerRadius` | `6` | 圆角 |
+| `GradientStart` / `GradientEnd` | `Color` | `#FF0078D4` | 已选区渐变色 |
+| `TrackBackground` | `Color` | `White` | 未选轨道色 |
+| `ThumbSize` | `double` | `16` | 滑块直径 |
+| `IsValueVisible` | `bool` | `true` | 是否显示数值行 |
 
-#### Inherited Properties
-
-Also inherits all properties from `Slider`, such as `Value`, `Minimum`, `Maximum`, `Width`, `Height`, `IsDirectionReversed`, etc.
-
-#### Example Code
+#### 示例
 
 ```xml
-<!-- Basic slider -->
-<ui:UI4Slider Value="50" Maximum="100" Minimum="0" 
-              Width="200" Height="20" />
+<ui:UI4Slider Value="50" Maximum="100" Minimum="0" Width="200" Height="20" />
 
-<!-- Without value display -->
-<ui:UI4Slider Value="50" Maximum="200" Minimum="0" 
-              Width="200" Height="20" 
-              IsValueVisible="False" 
-              GradientStart="#FFFFF900" 
-              GradientEnd="Red" />
+<ui:UI4Slider Value="50" Maximum="200" Width="200" IsValueVisible="False"
+              GradientStart="#FFFFF900" GradientEnd="Red" />
 
-<!-- Custom thumb size -->
-<ui:UI4Slider Value="30" 
-              ThumbSize="20"
-              Width="300" />
+<ui:UI4Slider Value="30" ThumbSize="20" Width="300" />
 ```
-
-#### Feature Notes
-
-- **Gradient Track**: Filled portion uses gradient color
-- **Value Labels**: Bottom shows minimum, maximum, and current value (can be turned off via `IsValueVisible`)
-- **Thumb Tooltip**: Slider ToolTip shows current integer value
-- **Custom Thumb**: Adjust thumb size via `ThumbSize`
 
 ---
 
 ### UI4CircleSlider
 
-Interactive circular slider control, supports mouse drag to adjust value.
+环形滑块：拖拽圆环改变数值，中心显示数值。
 
-**Inherits from**: `ContentControl`
+**继承自**：`ContentControl`
 
-#### Settable Properties
+#### 可设置属性
 
-| Property Name | Type | Default Value | Description |
-|--------------|------|---------------|-------------|
-| `Value` | `double` | `0.0` | Current value |
-| `Minimum` | `double` | `0.0` | Minimum value |
-| `Maximum` | `double` | `100.0` | Maximum value |
-| `SmallChange` | `double` | `1.0` | Step (snap value) |
-| `RingThickness` | `double` | `8.0` | Ring line thickness |
-| `RingForeground` | `Brush` | `#0078D4` (0,120,212) | Ring foreground color (progress color) |
-| `RingBackground` | `Brush` | `#0A000000` (10,0,0,0) | Ring background color |
-| `ShowValueText` | `bool` | `false` | Whether to show value text |
-| `ValueFontSize` | `double` | `30.0` | Value text size |
-| `AnimationDuration` | `double` | `0.5` | Load animation duration (seconds) |
+| 属性 | 类型 | 默认值 | 说明 |
+|---|---|---|---|
+| `Value` | `double` | `0` | 当前值 |
+| `Minimum` / `Maximum` | `double` | `0` / `100` | 取值范围 |
+| `SmallChange` | `double` | `1` | 步进 |
+| `RingThickness` | `double` | `8` | 环宽 |
+| `RingForeground` | `Brush` | `#FF0078D4` 画笔 | 进度环颜色（可渐变） |
+| `RingBackground` | `Brush` | `#0A000000` 画笔 | 环底色 |
+| `ShowValueText` | `bool` | `false` | 是否显示中心数值 |
+| `ValueFontSize` | `double` | `30` | 数值字号 |
+| `AnimationDuration` | `double` | `0.5` | 动画秒数 |
 
-#### Inherited Properties
-
-Also inherits all properties from `ContentControl`, such as `Foreground`, `Width`, `Height`, `Background`, etc.
-
-#### Example Code
+#### 示例
 
 ```xml
-<!-- Basic circular slider -->
 <ui:UI4CircleSlider Value="60" ShowValueText="True" />
 
-<!-- Custom size and color -->
-<ui:UI4CircleSlider Width="200" Height="200" 
-                    RingThickness="12" 
-                    Maximum="360" 
-                    ValueFontSize="60" 
-                    Value="60" 
-                    ShowValueText="True" 
-                    Foreground="Green" />
-
-<!-- Gradient color circular slider -->
-<ui:UI4CircleSlider Width="150" Height="150" 
-                    RingThickness="12" 
-                    Maximum="24" 
-                    ValueFontSize="60" 
-                    ShowValueText="True" 
-                    Foreground="#FF2861EB">
-    <ui:UI4CircleSlider.RingForeground>
-        <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
-            <GradientStop Color="#FFFFEC00"/>
-            <GradientStop Color="Red" Offset="1"/>
-        </LinearGradientBrush>
-    </ui:UI4CircleSlider.RingForeground>
-</ui:UI4CircleSlider>
+<ui:UI4CircleSlider Width="200" Height="200" RingThickness="12" Maximum="360"
+                    ValueFontSize="60" Value="60" ShowValueText="True" Foreground="Green" />
 ```
-
-#### Feature Notes
-
-- **Interactive Dragging**: Left mouse button drag on ring slider to adjust value
-- **Step Snapping**: Automatically snaps to integer multiple of `SmallChange` after dragging ends
-- **Gradient Support**: `RingForeground` supports brush, gradient colors can be set
-- **Slider Thumb**: Circular slider with white stroke
-- **Load Animation**: Smooth transition from minimum to set value on initial load
-- **Round Caps**: Both ends of the ring are round-capped
 
 ---
 
 ### UI4ColorPicker
 
-A modern color picker dialog with HSV color map, hue bar, hex input, and ARGB value editing. Features animated open/close, resizable window, and multi-language support.
+HSV 取色对话框：二维色图 + 色相条 + HEX/ARGB 输入 + RGB/HSV 模式切换。
 
-**Inherits from**: `Window`
+**继承自**：`Window`
 
-#### Constructor
+#### 构造与静态方法
 
-```csharp
-new UI4ColorPicker(string title = null, Color? defaultColor = null)
-```
+| 成员 | 签名 | 说明 |
+|---|---|---|
+| 构造函数 | `UI4ColorPicker(string title = null, Color? defaultColor = null)` | 创建实例 |
+| `ShowDialog` | `static Color? ShowDialog(string title = null, Color? defaultColor = null, Window owner = null)` | 模态取色，取消返回 `null` |
+| `Show` | `bool? Show(Window owner = null)` | 实例方式显示 |
+| `SelectedColor` | `Color`（只读） | 确认后的颜色 |
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `title` | `string` | `null` | Window title (auto-localized if null) |
-| `defaultColor` | `Color?` | `null` | Initial selected color (defaults to Red if null) |
-
-#### Readonly Properties
-
-| Property Name | Type | Description |
-|--------------|------|-------------|
-| `SelectedColor` | `Color` | The currently selected color |
-
-#### Static Methods
-
-| Method | Return Type | Description |
-|--------|-------------|-------------|
-| `ShowDialog(string title = null, Color? defaultColor = null, Window owner = null)` | `Color?` | Opens the picker as a modal dialog. Returns the selected `Color` if OK is clicked, or `null` if cancelled. |
-
-> **Important**: Use the static `UI4ColorPicker.ShowDialog(...)` to avoid name conflict with `Window.ShowDialog()`.
-
-#### Instance Methods
-
-| Method | Return Type | Description |
-|--------|-------------|-------------|
-| `Show(Window owner = null)` | `bool?` | Shows the picker as a dialog. Use this when you need to access `SelectedColor` after closing. |
-
-#### UI Elements
-
-- **Color Map** (left): Saturation/Value picker, 280x200, 8px corner radius, crosshair cursor
-- **Hue Bar** (right): Vertical hue slider, 20x200, 4px corner radius, rainbow gradient
-- **Preview**: Small rectangle showing current selected color
-- **Hex Input**: Editable text box in `#AARRGGBB` format (compatible with 6-digit `#RRGGBB`)
-- **ARGB Inputs**: Editable text boxes with labels A (alpha), R (red), G (green), B (blue)
-- **OK / Cancel Buttons**: Confirm or cancel color selection
-
-#### Example Code
+#### 示例
 
 ```csharp
-// Simple usage - open picker and get selected color
+// 静态方式
 Color? result = UI4ColorPicker.ShowDialog();
 if (result.HasValue)
-{
     myPanel.Background = new SolidColorBrush(result.Value);
-}
 
-// Custom title and default color
-Color? color = UI4ColorPicker.ShowDialog(
-    title: "Choose Background Color",
-    defaultColor: Colors.CornflowerBlue
-);
+// 带标题与默认色
+Color? c = UI4ColorPicker.ShowDialog("选择背景色", Colors.CornflowerBlue);
 
-// With owner window
-Color? accentColor = UI4ColorPicker.ShowDialog(
-    "Pick Accent Color",
-    Colors.Blue,
-    owner: this
-);
-
-// Instance-based usage
-var picker = new UI4ColorPicker("Select Color", Colors.Green);
+// 实例方式
+var picker = new UI4ColorPicker("选择颜色", Colors.Green);
 if (picker.Show(this) == true)
-{
-    Color selected = picker.SelectedColor;
-    // use selected color...
-}
+    Apply(picker.SelectedColor);
 ```
 
-#### Feature Notes
+#### 说明
 
-- **HSV Color Model**: Uses HSV (Hue, Saturation, Value) for intuitive color picking
-- **Animated Open**: Slide up + scale + blur dissipation entrance animation (200ms, BackEase + CubicEase)
-- **Animated Close**: Slide down + shrink + blur + fade out exit animation (200ms)
-- **Resizable**: Window can be resized from all 8 directions (min 200x150)
-- **Draggable**: Drag the title area to move the window
-- **Borderless**: Custom window style with no system title bar, transparent background
-- **Multi-language**: Title and buttons auto-localized via `UI4MultiLanguage` (8 languages)
-- **Real-time Preview**: Color updates instantly as you interact with the picker
+对话框可拖拽边框八向调整大小；标题、按钮文字跟随 `UI4MultiLanguage` 当前语言。
 
 ---
 
 ### UI4Panel
 
-Container panel with shadow effects and hover scale animation, can wrap any content.
+容器面板：阴影、圆角、描边、悬浮缩放动画。
 
-**Inherits from**: `ContentControl`
+**继承自**：`ContentControl`
 
-#### Settable Properties
+#### 可设置属性
 
-| Property Name | Type | Default Value | Description |
-|--------------|------|---------------|-------------|
-| `CornerRadius` | `CornerRadius` | `12` | Panel corner radius |
-| `BorderBrush` | `Color` | `#3C788CC8` (60,120,140,200) | Border color |
-| `HoverBorderBrush` | `SolidColorBrush` | `#6366F1` | Border color on hover |
-| `BorderThickness` | `Thickness` | `1` | Border thickness |
-| `ContentPadding` | `Thickness` | `0` | Content padding |
-| `HoverAnimationDuration` | `Duration` | `00:00:00.200` | Hover animation duration |
-| `HoverScale` | `double` | `1.01` | Hover scale ratio |
-| **Shadow Properties** | | | |
-| `ShadowDepth` | `double` | `0.0` | Shadow depth (offset) |
-| `ShadowBlurRadius` | `double` | `15.0` | Shadow blur radius |
-| `ShadowOpacity` | `double` | `0.1` | Shadow opacity |
-| `ShadowColor` | `Color` | `Black` | Shadow color |
+| 属性 | 类型 | 默认值 | 说明 |
+|---|---|---|---|
+| `CornerRadius` | `CornerRadius` | `12` | 圆角 |
+| `BorderBrush` | `Color` | `#3C788CC8` | 常态描边色 |
+| `HoverBorderBrush` | `SolidColorBrush` | `#46788CC8` 画笔 | 悬浮描边 |
+| `BorderThickness` | `Thickness` | `1` | 描边厚度 |
+| `ShadowDepth` | `double` | `0` | 阴影深度 |
+| `ShadowBlurRadius` | `double` | `15` | 阴影模糊 |
+| `ShadowOpacity` | `double` | `0.1` | 阴影不透明度 |
+| `ShadowColor` | `Color` | `Black` | 阴影颜色 |
+| `ContentPadding` | `Thickness` | `0` | 内容内边距 |
+| `HoverAnimationDuration` | `Duration` | `200ms` | 悬浮动画时长 |
+| `HoverScale` | `double` | `1.005` | 悬浮缩放倍率 |
 
-#### Inherited Properties
-
-Also inherits all properties from `ContentControl`, such as `Background`, `Content`, `Width`, `Height`, `Margin`, `Padding`, etc.
-
-#### Example Code
+#### 示例
 
 ```xml
-<!-- Basic panel -->
 <ui:UI4Panel Width="300" Height="200">
-    <TextBlock Text="Panel Content" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+    <TextBlock Text="面板内容" HorizontalAlignment="Center" VerticalAlignment="Center"/>
 </ui:UI4Panel>
 
-<!-- Panel with shadow and hover scale -->
-<ui:UI4Panel Width="800" Height="600" 
-             ShadowDepth="15" 
-             ShadowOpacity="0.6" 
-             HoverScale="1.1">
-    <Grid Margin="20">
-        <TextBlock Text="Panel with shadow and hover effects"/>
-    </Grid>
-</ui:UI4Panel>
-
-<!-- Transparent background panel (as animation container only) -->
-<ui:UI4Panel ShadowDepth="8" 
-             ShadowOpacity="0.4" 
-             HoverScale="1.0" 
-             BorderThickness="0" 
-             Background="Transparent">
-    <!-- content -->
+<ui:UI4Panel Width="800" Height="600" ShadowDepth="15" ShadowOpacity="0.6" HoverScale="1.1">
+    <Grid Margin="20"><TextBlock Text="阴影 + 悬浮缩放"/></Grid>
 </ui:UI4Panel>
 ```
 
-#### Feature Notes
+#### 说明
 
-- **Shadow Effect**: Adjust drop shadow effect via `Shadow*` properties
-- **Hover Scale**: Smooth scale up on mouse hover (`HoverScale` controls scale ratio)
-- **Border Color Animation**: Smooth transition of border color on hover
-- **Center Scale**: Scaling is centered on the panel center
-- **Easing Function**: Uses Cubic EaseOut easing for more natural animation
+阴影与缩放分层实现（阴影层不含文字），因此悬浮缩放时文字保持清晰。
 
 ---
 
-### UI4Pivot
+### UI4Pivot / UI4PivotItem
 
-Tab/pivot control with smooth content slide transition animation.
+滑动切换页签，切换时内容平移过渡。
 
-**Contains two classes**:
-- `UI4Pivot` - Main pivot control
-- `UI4PivotItem` - Pivot item
+**继承自**：`Selector` / `HeaderedContentControl`
 
-#### UI4Pivot Settable Properties
+#### UI4Pivot 可设置属性
 
-| Property Name | Type | Default Value | Description |
-|--------------|------|---------------|-------------|
-| `SelectedItemForeground` | `Color` | `#2563EB` (37,99,235) | Selected item text color |
-| `ItemFontSize` | `double` | `20.0` | Unselected item font size |
-| `SelectedFontSize` | `double` | `25.0` | Selected item font size |
-| `BrandFontSize` | `double` | `22.0` | Brand item font size |
-| `ItemFontWeight` | `FontWeight` | `Normal` | Unselected item font weight |
-| `BrandFontWeight` | `FontWeight` | `SemiBold` | Brand item font weight |
-| `ItemForeground` | `Color` | `#DC000000` (220,0,0,0) | Unselected item text color |
-| `ItemHoverForeground` | `Color` | `#DC000000` (220,0,0,0) | Hover item text color |
-| `ItemPadding` | `Thickness` | `10,8,10,8` | Tab item padding |
-| `ItemMargin` | `Thickness` | `5,0,5,0` | Tab item margin |
+| 属性 | 类型 | 默认值 | 说明 |
+|---|---|---|---|
+| `IsBrand` | `bool` | `false` | 是否显示品牌文字 |
+| `SelectedItemForeground` | `Color` | `#FF0078D4` | 选中项颜色 |
+| `ItemFontSize` | `double` | `20` | 项字号 |
+| `SelectedFontSize` | `double` | `25` | 选中项字号 |
+| `BrandFontSize` | `double` | `22` | 品牌文字字号 |
+| `ItemFontWeight` | `FontWeight` | `Normal` | 项字重 |
+| `BrandFontWeight` | `FontWeight` | `SemiBold` | 品牌文字字重 |
+| `ItemForeground` | `Color` | `#DC000000` | 项颜色 |
+| `ItemHoverForeground` | `Color` | `#DC000000` | 项悬浮颜色 |
+| `ItemPadding` | `Thickness` | `10,8,10,8` | 项内边距 |
+| `ItemMargin` | `Thickness` | `5,0,5,0` | 项外边距 |
 
-#### UI4PivotItem Settable Properties
-
-| Property Name | Type | Default Value | Description |
-|--------------|------|---------------|-------------|
-| `Header` | `object` |  | Tab header |
-| `IsBrand` | `bool` | `false` | Whether it's a brand item (special style) |
-| `Content` | `object` |  | Tab content |
-
-#### Inherited Properties
-
-`UI4Pivot` inherits from `Selector`, supports `SelectedIndex`, `SelectedItem`, `Items`, `SelectionChanged` event, etc.
-
-#### Example Code
+#### 示例
 
 ```xml
-<!-- Basic pivot -->
-<ui:UI4Pivot x:Name="pivot" 
-             ItemFontSize="18" 
-             SelectionChanged="pivot_SelectionChanged">
-    <ui:UI4PivotItem Header="Home">
-        <TextBlock Text="Home Content"/>
-    </ui:UI4PivotItem>
-    <ui:UI4PivotItem Header="Settings">
-        <TextBlock Text="Settings Content"/>
-    </ui:UI4PivotItem>
-    <ui:UI4PivotItem Header="About">
-        <TextBlock Text="About Content"/>
-    </ui:UI4PivotItem>
-</ui:UI4Pivot>
-
-<!-- Custom selected color -->
-<ui:UI4Pivot SelectedItemForeground="Black" Margin="0,0,0,20">
-    <ui:UI4PivotItem Header="Option 1">
-        <TextBlock Text="Content 1"/>
-    </ui:UI4PivotItem>
-    <ui:UI4PivotItem Header="Option 2">
-        <TextBlock Text="Content 2"/>
-    </ui:UI4PivotItem>
+<ui:UI4Pivot ItemFontSize="18" SelectionChanged="Pivot_SelectionChanged">
+    <ui:UI4PivotItem Header="首页"><TextBlock Text="首页内容"/></ui:UI4PivotItem>
+    <ui:UI4PivotItem Header="设置"><TextBlock Text="设置内容"/></ui:UI4PivotItem>
+    <ui:UI4PivotItem Header="关于"><TextBlock Text="关于内容"/></ui:UI4PivotItem>
 </ui:UI4Pivot>
 ```
-
-#### Feature Notes
-
-- **Slide Transition Animation**: Left-right slide + fade in/out animation on content switch
-- **Selected Enlargement**: Selected item font automatically enlarges and boldens
-- **Brand Item**: Items with `IsBrand="True"` use brand style
-- **Horizontal Arrangement**: Tabs arranged horizontally at the top
-- **Scrollable Header**: Horizontal scrollbar (UI4ScrollViewer) appears when tabs exceed control width
 
 ---
 
-### UI4Tab
+### UI4Tab / UI4TabItem
 
-Browser-style tab control with close buttons, add button, icon support, and customizable header background.
+浏览器风格标签页：图标（文字图标或图片）、关闭按钮、新增按钮。
 
-**Contains two classes**:
-- `UI4Tab` - Main tab control
-- `UI4TabItem` - Tab item
+**继承自**：`Selector` / `HeaderedContentControl`
 
-#### UI4Tab Settable Properties
+#### UI4Tab 可设置属性
 
-| Property Name | Type | Default Value | Description |
-|--------------|------|---------------|-------------|
-| `HeaderBackground` | `Color` | `#E6E6EB` (230,230,235) | Top header area background color |
-| `TabBackground` | `Color` | `Transparent` | Unselected tab background |
-| `TabSelectedBackground` | `Color` | `White` | Selected tab background |
-| `TabHoverBackground` | `Color` | `#1E000000` | Hover tab background |
-| `TabForeground` | `Color` | `#C8000000` | Unselected tab text color |
-| `TabSelectedForeground` | `Color` | `#FF000000` | Selected tab text color |
-| `CloseButtonColor` | `Color` | `#96000000` | Close button color |
-| `TabFontSize` | `double` | `13` | Tab font size |
-| `TabPadding` | `Thickness` | `12,8,8,8` | Tab padding |
-| `ShowAddButton` | `bool` | `true` | Whether to show the add button on the right |
-| `AddButtonColor` | `Color` | `#96000000` | Add button color |
-| `TabCornerRadius` | `double` | `6` | Tab item corner radius |
+| 属性 | 类型 | 默认值 | 说明 |
+|---|---|---|---|
+| `HeaderBackground` | `Color` | `#0A000000` | 标签栏背景 |
+| `TabBackground` | `Color` | `Transparent` | 标签背景 |
+| `TabSelectedBackground` | `Color` | `White` | 选中标签背景 |
+| `TabHoverBackground` | `Color` | `#1E000000` | 标签悬浮背景 |
+| `TabForeground` | `Color` | `#C8000000` | 标签文字色 |
+| `TabSelectedForeground` | `Color` | `#FF000000` | 选中标签文字色 |
+| `CloseButtonColor` | `Color` | `#96000000` | 关闭按钮颜色 |
+| `TabFontSize` | `double` | `13` | 标签字号 |
+| `TabPadding` | `Thickness` | `12,8,8,8` | 标签内边距 |
+| `ShowAddButton` | `bool` | `true` | 是否显示新增按钮 |
+| `AddButtonColor` | `Color` | `#96000000` | 新增按钮颜色 |
+| `IsBrand` | `bool` | `false` | 是否显示品牌区 |
 
-#### UI4TabItem Settable Properties
+#### UI4TabItem 可设置属性
 
-| Property Name | Type | Default Value | Description |
-|--------------|------|---------------|-------------|
-| `Header` | `object` | | Tab header content |
-| `TextIcon` | `string` | `null` | Text icon character (e.g. Segoe MDL2 Assets) |
-| `TextIconFontFamily` | `FontFamily` | `Segoe MDL2 Assets` | Text icon font family |
-| `ImageSource` | `ImageSource` | `null` | Image icon (**takes priority** over TextIcon) |
-| `IconSize` | `double` | `16` | Icon size |
-| `IsClosable` | `bool` | `true` | Whether to show the close button |
-| `Content` | `object` | | Tab content |
+| 属性 | 类型 | 默认值 | 说明 |
+|---|---|---|---|
+| `TextIcon` | `string` | `null` | 文字图标（如 Segoe MDL2 Assets 码位） |
+| `TextIconFontFamily` | `FontFamily` | `Segoe MDL2 Assets` | 文字图标字体 |
+| `ImageSource` | `ImageSource` | `null` | 图片图标 |
+| `IconSize` | `double` | `16` | 图标尺寸 |
+| `IsClosable` | `bool` | `true` | 是否可关闭 |
 
-#### Events
+#### 事件
 
-| Event Name | EventArgs | Description |
-|-----------|-----------|-------------|
-| `AddTab` | `RoutedEventArgs` | Triggered when add button is clicked |
-| `CloseTab` | `TabCloseRoutedEventArgs` | Triggered when close button is clicked, `e.Handled = true` cancels close |
+| 事件 | 签名 | 说明 |
+|---|---|---|
+| `AddTab` | `RoutedEventHandler` | 点击新增按钮 |
+| `CloseTab` | `TabCloseRoutedEventHandler` | 请求关闭标签；`e.TabItem` 为被关标签。不置 `e.Handled` 时控件自行移除 |
 
-`TabCloseRoutedEventArgs` properties:
-- `TabItem` (`UI4TabItem`) - The tab item being closed
-
-#### Inherited Properties
-
-`UI4Tab` inherits from `Selector`, supports `SelectedIndex`, `SelectedItem`, `Items`, `SelectionChanged` event, etc.
-
-#### Example Code
+#### 示例
 
 ```xml
-<!-- Basic tab control -->
-<ui:UI4Tab x:Name="MyTab"
-           AddTab="MyTab_AddTab"
-           CloseTab="MyTab_CloseTab">
-    
-    <!-- Tab with text icon -->
-    <ui:UI4TabItem Header="Home" TextIcon="&#xE80F;">
-        <Grid Background="White">
-            <TextBlock Text="Home content"/>
-        </Grid>
+<ui:UI4Tab x:Name="MyTab" AddTab="MyTab_AddTab" CloseTab="MyTab_CloseTab">
+    <ui:UI4TabItem Header="主页" TextIcon="&#xE80F;">
+        <Grid Background="White"><TextBlock Text="主页内容"/></Grid>
     </ui:UI4TabItem>
-    
-    <!-- Tab with image icon -->
-    <ui:UI4TabItem Header="Document" ImageSource="/Images/doc.png">
-        <Grid Background="White">
-            <TextBlock Text="Document content"/>
-        </Grid>
+    <ui:UI4TabItem Header="设置" TextIcon="&#xE713;" IsClosable="False">
+        <Grid Background="White"><TextBlock Text="设置内容"/></Grid>
     </ui:UI4TabItem>
-    
-    <!-- Non-closable tab -->
-    <ui:UI4TabItem Header="Settings" TextIcon="&#xE713;" IsClosable="False">
-        <Grid Background="White">
-            <TextBlock Text="Settings content"/>
-        </Grid>
-    </ui:UI4TabItem>
-    
-</ui:UI4Tab>
-
-<!-- Custom colors -->
-<ui:UI4Tab HeaderBackground="#F0F0F0"
-           TabSelectedBackground="White"
-           CloseButtonColor="Red"
-           ShowAddButton="False">
-    ...
 </ui:UI4Tab>
 ```
-
-Code-behind example:
 
 ```csharp
-private int _tabCount = 3;
-
 private void MyTab_AddTab(object sender, RoutedEventArgs e)
 {
-    _tabCount++;
-    var newTab = new UI4TabItem
+    var item = new UI4TabItem
     {
-        Header = $"New Tab {_tabCount}",
-        TextIcon = "\uE80F",
-        Content = new TextBlock { Text = $"Tab {_tabCount} content" }
+        Header = "新标签",
+        TextIcon = "\uE723",
+        Content = new TextBlock { Text = "动态标签内容", Margin = new Thickness(12) }
     };
-    MyTab.Items.Add(newTab);
-    MyTab.SelectedIndex = MyTab.Items.Count - 1;
+    MyTab.Items.Add(item);
+    MyTab.SelectedItem = item;
 }
 
 private void MyTab_CloseTab(object sender, TabCloseRoutedEventArgs e)
 {
-    // Prevent closing the last tab
-    if (MyTab.Items.Count <= 1)
-    {
-        e.Handled = true; // Cancel close
-    }
+    // 不设置 e.Handled，UI4Tab 会自行移除该标签
+    StatusText.Text = "关闭：" + e.TabItem.Header;
 }
 ```
-
-#### Feature Notes
-
-- **Browser Style**: Browser tab design with rounded corners and close buttons
-- **Dual Icon Mode**: Image icon (`ImageSource`) takes priority, falls back to text icon (`TextIcon`)
-- **Add Button**: Right-side "+" button for adding new tabs (toggleable)
-- **Close Button**: Each tab has an ?? close button (toggleable per tab)
-- **Customizable Header**: `HeaderBackground` controls the top bar background color
-- **Content Switch Animation**: Slide + fade animation when switching tabs
-- **Scrollable Header**: Horizontal scrollbar appears when tabs exceed width
-- **Cancellable Close**: Set `e.Handled = true` in `CloseTab` event to prevent closing
 
 ---
 
 ### UI4NavigationView
 
-Sidebar navigation control with fixed-width icon items, a scrollable main item area, fixed bottom items, content switch animation, and a moving selection indicator.
+侧边导航视图：可滚动项 + 固定底部项，选中项内容显示在右侧。
 
-![1](https://store-images.s-microsoft.com/image/apps.53158.14402085032895111.4e651371-d0df-4a15-9e7b-7fa694cf7844.9d8e483a-32c9-433e-96b6-9f736e874cf1)
+**继承自**：`ItemsControl`
 
-**Contains three classes**:
-- `UI4NavigationView` - Main navigation view
-- `UI4NavigationViewItem` - Scrollable navigation item
-- `UI4NavigationViewBottomItem` - Fixed bottom navigation item, same style and properties as `UI4NavigationViewItem`
+#### 可设置属性
 
-#### UI4NavigationView Settable Properties
+| 属性 | 类型 | 默认值 | 说明 |
+|---|---|---|---|
+| `Header` | `string` | 空 | 顶部标题 |
+| `LeftPanelBackground` | `Brush` | `#0A000000` 画笔 | 左栏背景 |
+| `LeftPanelWidth` | `double` | `NaN`（自动） | 左栏宽度 |
+| `ItemFontSize` | `double` | `10` | 项字号 |
+| `ItemBackground` | `Brush` | `Transparent` | 项背景 |
+| `ItemHoverColor` | `Color` | `#0A000000` | 项悬浮色 |
+| `ItemPressedBackground` | `Color` | `White` | 项按下背景 |
+| `ItemPressedForeground` | `Color` | `Black` | 项按下文字色 |
+| `ItemHoverForeground` | `Color` | `Black` | 项悬浮文字色 |
+| `ItemForeground` | `Brush` | `Black` | 项文字色 |
+| `SelectedItemBackground` | `Brush` | `White` | 选中项背景 |
+| `SelectedItem` | `UI4NavigationViewItem` | `null` | 当前选中项 |
 
-| Property Name | Type | Default Value | Description |
-|--------------|------|---------------|-------------|
-| `LeftPanelBackground` | `Brush` | `LightGray` | Left panel background |
-| `LeftPanelWidth` | `double` | `double.NaN` | Left panel width. `NaN` means auto width based on item size |
-| `ItemFontSize` | `double` | `13.0` | Navigation item text font size |
-| `ItemBackground` | `Brush` | `Transparent` | Navigation item normal background |
-| `ItemHoverColor` | `Color` | `#0A000000` (10,0,0,0) | Navigation item hover background color |
-| `ItemPressedBackground` | `Color` | `White` | Reserved pressed background color |
-| `ItemPressedForeground` | `Color` | `Black` | Navigation item pressed foreground color |
-| `ItemHoverForeground` | `Color` | `Black` | Navigation item hover foreground color |
-| `ItemForeground` | `Brush` | `Black` | Navigation item normal foreground color |
-| `Header` | `string` | `null` | Navigation view header |
-| `SelectedItemBackground` | `Brush` | `White` | Selected item background |
-| `SelectedItem` | `UI4NavigationViewItem` | `null` | Currently selected item |
+#### Item 可设置属性（`UI4NavigationViewItem` / `UI4NavigationViewBottomItem`）
 
-#### UI4NavigationViewItem / UI4NavigationViewBottomItem Settable Properties
+| 属性 | 类型 | 说明 |
+|---|---|---|
+| `Header` | `string` | 项标题 |
+| `ImageSource` | `ImageSource` | 图片图标 |
+| `TextIcon` | `string` | 文字图标 |
+| `TextIconFontFamily` | `FontFamily` | 文字图标字体 |
 
-| Property Name | Type | Default Value | Description |
-|--------------|------|---------------|-------------|
-| `Header` | `string` |  | Navigation item header |
-| `ImageSource` | `ImageSource` |  | Icon image source |
-| `TextIcon` | `string` |  | Text icon (e.g., Segoe MDL2 Assets characters) |
-| `TextIconFontFamily` | `FontFamily` | `null` | Text icon font family |
-| `Content` | `object` |  | Navigation item content |
-
-#### Example Code
+#### 示例
 
 ```xml
-<!-- Navigation view with scrollable items and fixed bottom items -->
-<ui:UI4NavigationView Header="NavigationView"
-                      LeftPanelBackground="LightGray"
-                      ItemBackground="Transparent"
-                      SelectedItemBackground="White">
-    <ui:UI4NavigationViewItem ImageSource="/1.png" Header="Code">
-        <TextBlock Text="Code page content"/>
+<ui:UI4NavigationView Header="导航视图" LeftPanelBackground="#FFEDF1F8"
+                      ItemBackground="Transparent" SelectedItemBackground="White">
+    <ui:UI4NavigationViewItem TextIcon="&#xE104;" Header="代码">
+        <TextBlock Text="代码页内容" Margin="16"/>
     </ui:UI4NavigationViewItem>
-    <ui:UI4NavigationViewItem TextIcon="&#xE104;"
-                              TextIconFontFamily="Segoe MDL2 Assets"
-                              Header="Properties">
-        <TextBlock Text="Properties page content"/>
-    </ui:UI4NavigationViewItem>
-    <ui:UI4NavigationViewBottomItem TextIcon="&#xE713;"
-                                    TextIconFontFamily="Segoe MDL2 Assets"
-                                    Header="Settings">
-        <TextBlock Text="Settings page content"/>
+    <ui:UI4NavigationViewBottomItem TextIcon="&#xE713;" Header="设置">
+        <TextBlock Text="设置页内容" Margin="16"/>
     </ui:UI4NavigationViewBottomItem>
 </ui:UI4NavigationView>
 ```
-
-#### Feature Notes
-
-- **Fixed Sidebar**: The sidebar no longer has a title bar, menu button, or expand/collapse behavior
-- **Vertical Item Layout**: Item icon is displayed above the text and centered within the item area
-- **Scrollable Main Items**: `UI4NavigationViewItem` is placed in a `UI4ScrollViewer` area with custom scrollbar styling
-- **Fixed Bottom Items**: `UI4NavigationViewBottomItem` is fixed at the bottom and does not participate in scrolling
-- **Moving Selection Indicator**: A 4px-wide blue indicator moves vertically to the selected main item
-- **Dual Icon Mode**: Supports image icon (`ImageSource`) and text icon (`TextIcon`)
-- **Content Switch Animation**: Content slides up/down and fades in when switching navigation items
-- **Custom Item Colors**: Normal, hover, foreground, and selected backgrounds are configurable
-- **Built-in List**: Navigation lists are implemented based on `UI4ListBox`
 
 ---
 
 ### UI4ListBox
 
-Highly customizable listbox control, supports multiple list style types (none, disc, numbered).
+列表框，支持普通 / 圆点 / 编号三种列表样式。
 
-**Inherits from**: `ListBox`
+**继承自**：`ListBox`
 
-#### Settable Properties
+#### 可设置属性
 
-| Property Name | Type | Default Value | Description |
-|--------------|------|---------------|-------------|
-| `CornerRadius` | `CornerRadius` | `8` | List outer frame corner radius |
-| `BorderNormalColor` | `Color` | `#2563EB` (37,99,235) | Border color |
-| `PanelBackground` | `Brush` | `White` | List background color |
-| `TextColor` | `Color` | `#FF000000` (0,0,0) | Text color |
-| `ItemPadding` | `Thickness` | `12,8,12,8` | List item padding |
-| `ItemCornerRadius` | `CornerRadius` | `8` | List item corner radius |
-| `HoverBackground` | `Color` | `#0AF5FFFF` (10,245,255,255) | Hover item background color |
-| `HoverForeground` | `Color` | `#DC000000` (220,0,0,0) | Hover item text color |
-| `PressedBackground` | `Color` | `#2563EB` (37,99,235) | Selected/pressed item background color |
-| `PressedForeground` | `Color` | `#FFFFFF` (255,255,255) | Selected/pressed item text color |
-| `ListStyleType` | `ListStyleType` | `None` | List style type |
-| `NumberCircleBackground` | `Brush` | `#2563EB` (37,99,235) | Number circle background |
+| 属性 | 类型 | 默认值 | 说明 |
+|---|---|---|---|
+| `CornerRadius` | `CornerRadius` | `6` | 圆角 |
+| `BorderNormalColor` | `Color` | `#FF2563EB` | 边框色 |
+| `PanelBackground` | `Brush` | `White` | 面板背景 |
+| `TextColor` | `Color` | `Black` | 文字颜色 |
+| `ItemPadding` | `Thickness` | `12,8,12,8` | 项内边距 |
+| `ItemCornerRadius` | `CornerRadius` | `6` | 项圆角 |
+| `HoverBackground` | `Color` | `#0AF5FFFF` | 项悬浮背景 |
+| `HoverForeground` | `Color` | `#DC000000` | 项悬浮文字色 |
+| `PressedBackground` | `Color` | `#FF2563EB` | 项按下背景 |
+| `PressedForeground` | `Color` | `White` | 项按下文字色 |
+| `ListStyleType` | `ListStyleType` | `None` | 列表样式 |
+| `NumberCircleBackground` | `Brush` | 蓝色渐变 | 编号圆底（Number 样式） |
 
-#### Enum Type: ListStyleType
+#### 枚举 `ListStyleType`
 
-| Value | Description |
-|-------|-------------|
-| `None` | No style (default) |
-| `Disc` | Disc style |
-| `Number` | Numbered style (with circle background) |
+| 值 | 说明 |
+|---|---|
+| `None` | 普通列表 |
+| `Disc` | 圆点列表 |
+| `Number` | 编号列表 |
 
-#### Inherited Properties
-
-Also inherits all properties from `ListBox`, such as `Items`, `ItemsSource`, `SelectedIndex`, `SelectedItem`, `ItemTemplate`, `SelectionChanged` event, etc.
-
-#### Example Code
+#### 示例
 
 ```xml
-<!-- Normal list -->
 <ui:UI4ListBox Width="200" Height="220">
     <ListBoxItem>Item 1</ListBoxItem>
     <ListBoxItem>Item 2</ListBoxItem>
-    <ListBoxItem>Item 3</ListBoxItem>
 </ui:UI4ListBox>
 
-<!-- Disc style list -->
-<ui:UI4ListBox ListStyleType="Disc" 
-               HoverForeground="Black" 
-               HoverBackground="#0C000000"
+<ui:UI4ListBox ListStyleType="Disc" HoverForeground="Black" HoverBackground="#0C000000"
                Width="200" Height="220">
     <ListBoxItem>Item 1</ListBoxItem>
-    <ListBoxItem>Item 2</ListBoxItem>
-    <ListBoxItem>Item 3</ListBoxItem>
 </ui:UI4ListBox>
 
-<!-- Numbered list -->
-<ui:UI4ListBox ListStyleType="Number" 
-               NumberCircleBackground="Green"
-               Width="200" Height="220">
+<ui:UI4ListBox ListStyleType="Number" NumberCircleBackground="Green" Width="200" Height="220">
     <ListBoxItem>Item 1</ListBoxItem>
-    <ListBoxItem>Item 2</ListBoxItem>
-    <ListBoxItem>Item 3</ListBoxItem>
-</ui:UI4ListBox>
-
-<!-- Gradient number circle -->
-<ui:UI4ListBox ListStyleType="Number" Width="200" Height="220">
-    <ui:UI4ListBox.NumberCircleBackground>
-        <LinearGradientBrush EndPoint="1,0.5" StartPoint="0,0.5">
-            <GradientStop Color="#FF002BFF" Offset="0.003"/>
-            <GradientStop Color="#FFC800FF" Offset="1"/>
-        </LinearGradientBrush>
-    </ui:UI4ListBox.NumberCircleBackground>
-    <ListBoxItem>Item 1</ListBoxItem>
-</ui:UI4ListBox>
-
-<!-- List with custom data template -->
-<ui:UI4ListBox x:Name="list_picture" Width="200" Height="220" HoverBackground="#0C000000">
-    <ui:UI4ListBox.ItemTemplate>
-        <DataTemplate>
-            <StackPanel Orientation="Horizontal">
-                <Image Source="{Binding ImageSource}" Width="20" Height="20" Margin="0,0,8,0"/>
-                <TextBlock Text="{Binding Text}" VerticalAlignment="Center"/>
-            </StackPanel>
-        </DataTemplate>
-    </ui:UI4ListBox.ItemTemplate>
 </ui:UI4ListBox>
 ```
-
-#### Feature Notes
-
-- **Three List Styles**: None, Disc, Numbered
-- **Gradient Number Circle**: `NumberCircleBackground` supports `Brush`, gradient colors can be set
-- **Custom Scrollbar**: Built-in auto-hide scrollbar, 10px wide (wider and easier to use)
-- **Hover/Selected Effects**: Customizable background and text color for each state
-- **Data Template Support**: Supports `ItemTemplate` for custom item appearance
 
 ---
 
 ### UI4ListView
 
-Card-style list view, each item displayed as a card with shadow and hover scale animation.
+卡片式列表：每项为带阴影的圆角卡片，悬浮描边 + 轻微缩放（文字保持清晰）。
 
-![Image](https://store-images.s-microsoft.com/image/apps.26190.14402085032895111.463f5ff2-a24d-4d73-83e3-8e6d121b5da1.5955c1df-fb81-46ab-9bf8-f7aa2e275de3)
+**继承自**：`ListBox`
 
-**Inherits from**: `ListBox`
+#### 可设置属性
 
-#### Settable Properties
+| 属性 | 类型 | 默认值 | 说明 |
+|---|---|---|---|
+| `ItemWidth` / `ItemHeight` | `double` | `NaN` | 项尺寸（NaN = 自适应） |
+| `ItemCornerRadius` | `CornerRadius` | `12` | 卡片圆角 |
+| `ItemBackground` | `Brush` | `White` | 卡片背景 |
+| `ItemBorderBrush` | `Color` | `#3C788CC8` | 卡片边框色 |
+| `ItemHoverBorderBrush` | `Color` | `#FF0078D4` | 悬浮边框色 |
+| `ItemBorderThickness` | `Thickness` | `1` | 边框厚度 |
+| `ItemPadding` | `Thickness` | `0` | 卡片内边距 |
+| `ItemMargin` | `Thickness` | `5` | 卡片外边距 |
+| `HoverScale` | `double` | `1.01` | 悬浮缩放倍率 |
+| `HoverAnimationDuration` | `Duration` | `200ms` | 悬浮动画时长 |
+| `ShadowColor` | `Color` | `#23000000` | 阴影颜色 |
+| `ShadowBlurRadius` | `double` | `12` | 阴影模糊 |
+| `ShadowDepth` | `double` | `0` | 阴影深度 |
+| `ShadowOpacity` | `double` | `0` | 阴影不透明度 |
 
-| Property Name | Type | Default Value | Description |
-|--------------|------|---------------|-------------|
-| `ItemWidth` | `double` | `NaN` | Card item width |
-| `ItemHeight` | `double` | `NaN` | Card item height |
-| `ItemCornerRadius` | `CornerRadius` | `12` | Card corner radius |
-| `ItemBackground` | `Brush` | `#0AFFFFFF` (10,255,255,255) | Card background color |
-| `ItemBorderBrush` | `Color` | `#3C788CC8` (60,120,140,200) | Card border color |
-| `ItemHoverBorderBrush` | `Color` | `#3CDCF5` (60,220,255) | Border color on hover |
-| `ItemBorderThickness` | `Thickness` | `1` | Card border thickness |
-| `ItemPadding` | `Thickness` | `0` | Card content padding |
-| `ItemMargin` | `Thickness` | `10` | Card margin |
-| `HoverAnimationDuration` | `Duration` | `00:00:00.200` | Hover animation duration |
-| `HoverScale` | `double` | `1.03` | Hover scale ratio |
-| **Shadow Properties** | | | |
-| `ShadowColor` | `Color` | `#23000000` (35,0,0,0) | Shadow color |
-| `ShadowBlurRadius` | `double` | `12.0` | Shadow blur radius |
-| `ShadowDepth` | `double` | `0.0` | Shadow depth |
-| `ShadowOpacity` | `double` | `0.35` | Shadow opacity |
-
-#### Inherited Properties
-
-Also inherits all properties from `ListBox`, such as `ItemsSource`, `ItemTemplate`, `SelectedIndex`, `SelectionChanged` event, etc.
-
-#### Example Code
+#### 示例
 
 ```xml
-<!-- Data-bound list view -->
-<ui:UI4ListView ItemsSource="{Binding Items}" 
-                SelectionChanged="ListView_SelectionChanged"
-                ItemBackground="White" 
-                ShadowDepth="15" 
-                ShadowOpacity="0.2"
-                HoverScale="1.01">
+<ui:UI4ListView ItemsSource="{Binding Cards}" ItemBackground="White"
+                ShadowDepth="15" ShadowOpacity="0.2" HoverScale="1.01"
+                SelectionChanged="Cards_SelectionChanged">
     <ui:UI4ListView.ItemTemplate>
         <DataTemplate>
             <Border Background="LightYellow" CornerRadius="10">
@@ -1466,60 +999,28 @@ Also inherits all properties from `ListBox`, such as `ItemsSource`, `ItemTemplat
 </ui:UI4ListView>
 ```
 
-#### Feature Notes
-
-- **Card-style Layout**: Each item is a card with shadow
-- **Hover Animation**: Card border color changes + scales on hover
-- **Shadow Effect**: Each card has drop shadow effect
-- **Custom Scrollbar**: Built-in auto-hide scrollbar, 10px wide
-- **Full Data Binding Support**: Supports `ItemsSource` and `ItemTemplate`
-
 ---
 
 ### UI4GridView
 
-Grid layout card view, automatically calculates column count, responsive layout.
+网格卡片视图：按可用宽度自适应列数，卡片悬浮缩放。
 
-![1](https://store-images.s-microsoft.com/image/apps.56425.14402085032895111.92211ece-02cd-474f-a3b1-9dec5d75adbe.adbe738a-aa09-4828-8924-8cb12290feae)
+**继承自**：`ListBox`
 
-**Inherits from**: `ListBox`
+#### 可设置属性
 
-#### Settable Properties
+与 `UI4ListView` 相同，另含：
 
-| Property Name | Type | Default Value | Description |
-|--------------|------|---------------|-------------|
-| `ItemWidth` | `double` | `300.0` | Card item width |
-| `ItemHeight` | `double` | `220.0` | Card item height |
-| `ItemCornerRadius` | `CornerRadius` | `12` | Card corner radius |
-| `ItemBackground` | `Brush` | `White` (255,255,255) | Card background color |
-| `ItemBorderBrush` | `Color` | `#3C788CC8` (60,120,140,200) | Card border color |
-| `ItemHoverBorderBrush` | `Color` | `#3CDCF5` (60,220,255) | Border color on hover |
-| `ItemBorderThickness` | `Thickness` | `1` | Card border thickness |
-| `ItemPadding` | `Thickness` | `0` | Card content padding |
-| `ItemMargin` | `Thickness` | `10` | Card margin |
-| `HoverAnimationDuration` | `Duration` | `00:00:00.200` | Hover animation duration |
-| `HoverScale` | `double` | `1.03` | Hover scale ratio |
-| **Shadow Properties** | | | |
-| `ShadowColor` | `Color` | `#23000000` (35,0,0,0) | Shadow color |
-| `ShadowBlurRadius` | `double` | `12.0` | Shadow blur radius |
-| `ShadowDepth` | `double` | `0.0` | Shadow depth |
-| `ShadowOpacity` | `double` | `0.35` | Shadow opacity |
+| 属性 | 类型 | 默认值 | 说明 |
+|---|---|---|---|
+| `ItemWidth` | `double` | `300` | 卡片宽度（决定列数） |
+| `ItemHeight` | `double` | `220` | 卡片高度 |
 
-#### Inherited Properties
-
-Also inherits all properties from `ListBox`, such as `ItemsSource`, `ItemTemplate`, `SelectedIndex`, `SelectionChanged` event, etc.
-
-#### Example Code
+#### 示例
 
 ```xml
-<!-- Data-bound grid view -->
-<ui:UI4GridView ItemsSource="{Binding Items}" 
-                ItemHeight="200" 
-                ItemWidth="250"
-                SelectionChanged="GridView_SelectionChanged"
-                ShadowDepth="15" 
-                ShadowOpacity="0.3"  
-                HoverScale="1.1">
+<ui:UI4GridView ItemsSource="{Binding Cards}" ItemHeight="200" ItemWidth="250"
+                ShadowDepth="15" ShadowOpacity="0.3" HoverScale="1.1">
     <ui:UI4GridView.ItemTemplate>
         <DataTemplate>
             <Border Background="{Binding Background}" CornerRadius="10">
@@ -1532,29 +1033,387 @@ Also inherits all properties from `ListBox`, such as `ItemsSource`, `ItemTemplat
         </DataTemplate>
     </ui:UI4GridView.ItemTemplate>
 </ui:UI4GridView>
+```
 
-<!-- Home feature cards example -->
-<ui:UI4GridView ItemHeight="200" 
-                ItemsSource="{Binding Items1}" 
-                Background="{x:Null}" 
-                ItemBorderBrush="White" 
-                HoverAnimationDuration="00:00:00.2000000" 
-                ItemBackground="White" 
-                ShadowOpacity="0.1" 
-                HoverScale="1.05">
+---
+
+### UI4ScrollViewer
+
+美化滚动条的 ScrollViewer，可选平滑滚动动画。
+
+**继承自**：`ScrollViewer`
+
+#### 可设置属性
+
+| 属性 | 类型 | 默认值 | 说明 |
+|---|---|---|---|
+| `IsSmoothScrollEnabled` | `bool` | `true` | 滚轮平滑滚动动画 |
+
+#### 示例
+
+```xml
+<ui:UI4ScrollViewer Width="400" Height="200" IsSmoothScrollEnabled="True">
+    <StackPanel Margin="20" Height="600">
+        <TextBlock Text="滚动内容..."/>
+    </StackPanel>
+</ui:UI4ScrollViewer>
+```
+
+#### 说明
+
+滚动时滚动条淡入、静止后淡出；`ScrollToTop` / `ScrollToEnd` 等基类方法均可用。
+
+---
+
+### UI4NotifyIcon
+
+系统托盘图标：P/Invoke 实现（非 WinForms），自定义右键菜单、悬浮提示、三种鼠标事件。
+
+**继承自**：`FrameworkElement`，实现 `IDisposable`
+
+#### 可设置属性
+
+| 属性 | 类型 | 默认值 | 说明 |
+|---|---|---|---|
+| `MenuActivation` | `PopupActivationMode` | `RightClick` | 菜单触发方式 |
+| `IconSource` | `ImageSource` | `null`（回退系统默认图标） | 托盘图标 |
+| `ToolTipText` | `string` | 空 | 悬浮提示 |
+| `MenuWidth` | `double` | `160` | 右键菜单宽度 |
+| `MenuItemPadding` | `Thickness` | `12,8,12,8` | 菜单项内边距 |
+| `MenuBorderColor` | `Color` | 浅灰 | 菜单边框色 |
+| `MenuBackground` | `Brush` | `White` | 菜单背景 |
+| `MenuHoverBg` | `Color` | `#0A000000` | 菜单悬浮色 |
+| `MenuCornerRadius` | `CornerRadius` | `6` | 菜单圆角 |
+
+#### 事件
+
+`TrayLeftMouseUp`、`TrayRightMouseDown`、`TrayMouseDoubleClick`（均为 `RoutedEventHandler`）
+
+#### 示例
+
+```xml
+<ui:UI4NotifyIcon x:Name="TrayIcon" Visibility="Collapsed"
+                  ToolTipText="My App"
+                  TrayLeftMouseUp="TrayIcon_TrayLeftMouseUp"
+                  TrayRightMouseDown="TrayIcon_TrayRightMouseDown"/>
+```
+
+```csharp
+TrayIcon.Visibility = Visibility.Visible;   // 显示即注册托盘图标
+// 关闭窗口时：
+TrayIcon.Visibility = Visibility.Collapsed;
+TrayIcon.Dispose();
+```
+
+#### 说明
+
+- `IconSource` 支持 pack / 文件路径；解析失败自动回退 `SystemIcons.Application`。
+- Windows 10/11 默认把新托盘图标收进溢出区，需在任务栏设置中拖出。
+
+---
+
+### UI4Menu / UI4MenuElementItem / UI4MenuSeparatorElement
+
+菜单栏：支持文字图标、图标字体、KeyTip 提示与分隔符。
+
+**继承自**：`Menu` / `MenuItem` / `Separator`
+
+#### UI4Menu 可设置属性
+
+| 属性 | 类型 | 默认值 | 说明 |
+|---|---|---|---|
+| `BarBackground` | `Brush` | 浅灰 | 菜单栏背景 |
+| `ItemHoverBrush` | `Brush` | `#14000000` 画笔 | 项悬浮背景 |
+| `PopupCornerRadius` | `CornerRadius` | `6` | 下拉面板圆角 |
+| `TextForeground` | `Brush` | 深灰 | 文字颜色 |
+| `SeparatorColor` | `Brush` | 浅灰 | 分隔符颜色 |
+
+#### UI4MenuElementItem 可设置属性
+
+| 属性 | 类型 | 默认值 | 说明 |
+|---|---|---|---|
+| `TextIcon` | `string` | 空 | 文字图标 |
+| `IconFontFamily` | `FontFamily` | `Segoe UI Symbol` | 图标字体 |
+| `IconFontSize` | `double` | `14` | 图标字号 |
+| `IconForeground` | `Brush` | `null` | 图标颜色 |
+| `KeyTip` | `string` | 空 | 键提示（如 `(F)`） |
+
+#### 示例
+
+```xml
+<ui:UI4Menu>
+    <ui:UI4MenuElementItem Header="文件" KeyTip="(F)">
+        <ui:UI4MenuElementItem Header="新建" TextIcon="&#xE710;"
+                               IconFontFamily="Segoe MDL2 Assets" IconFontSize="14"
+                               Click="New_Click"/>
+        <ui:UI4MenuSeparatorElement/>
+        <ui:UI4MenuElementItem Header="退出" TextIcon="&#xE7E8;" Click="Exit_Click"/>
+    </ui:UI4MenuElementItem>
+    <ui:UI4MenuElementItem Header="编辑" KeyTip="(E)">
+        <ui:UI4MenuElementItem Header="撤销" TextIcon="&#xE7A7;"/>
+        <ui:UI4MenuElementItem Header="重做" TextIcon="&#xE7A6;"/>
+    </ui:UI4MenuElementItem>
+</ui:UI4Menu>
+```
+
+---
+
+### UI4Grid
+
+默认带渐变背景的 `Grid`，其余与 `Grid` 完全一致。
+
+**继承自**：`Grid`
+
+#### 示例
+
+```xml
+<ui:UI4Grid Margin="20">
+    <Grid.RowDefinitions>
+        <RowDefinition Height="Auto"/>
+        <RowDefinition Height="*"/>
+    </Grid.RowDefinitions>
+    <ui:UI4TextBlock Text="标题" Grid.Row="0" FontSize="24"/>
+    <ui:UI4ListBox Grid.Row="1" Width="300" Height="200">
+        <ListBoxItem>Item 1</ListBoxItem>
+    </ui:UI4ListBox>
+</ui:UI4Grid>
+
+<!-- 覆盖默认背景 -->
+<ui:UI4Grid Background="White"/>
+```
+
+---
+
+### UI4MessageBox
+
+自定义消息对话框：圆角卡片、图标、可拖拽边框八向缩放。
+
+**继承自**：`Window`
+
+#### 枚举 `UI4MessageBoxButtons`
+
+| 值 | 说明 |
+|---|---|
+| `OK` | 仅确定 |
+| `OKCancel` | 确定 / 取消 |
+
+#### 静态方法
+
+```csharp
+public static bool? Show(string content,
+                         string title = null,
+                         UI4MessageBoxButtons buttons = UI4MessageBoxButtons.OK,
+                         double width = 460)
+```
+
+返回 `true`（确定）/ `false`（取消）/ `null`（关闭）。
+
+#### 构造函数
+
+```csharp
+public UI4MessageBox(string title, string content,
+                     UI4MessageBoxButtons buttonMode = UI4MessageBoxButtons.OK)
+```
+
+#### 示例
+
+```csharp
+bool? r = UI4MessageBox.Show("这是内容。", "提示", UI4MessageBoxButtons.OK);
+
+bool? r2 = UI4MessageBox.Show("确认执行该操作吗？", "请确认", UI4MessageBoxButtons.OKCancel);
+if (r2 == true) { /* 执行 */ }
+```
+
+#### 说明
+
+标题缺省取 `UI4MultiLanguage.Get(UI4LanguageKey.Notice)`；按钮文字跟随当前语言。
+
+---
+
+### UI4ContextMenu
+
+代码组件形式的右键菜单：图标 + 文字 + 命令 + 可用性判断。
+
+#### 成员
+
+| 成员 | 说明 |
+|---|---|
+| `Width` / `ItemPadding` / `BorderColor` / `Background` / `HoverBackground` | 外观属性 |
+| `IsOpen` | 是否打开（只读） |
+| `AddItem(UI4MenuItem item)` | 添加自定义项 |
+| `AddItem(UI4MenuItemType type, Action command, Func<bool> canExecute = null)` | 按内置类型添加（自动取图标与多语言文本） |
+| `Attach(UIElement target)` / `Detach()` | 绑定 / 解绑右键目标 |
+| `Open()` / `Close()` | 手动开合 |
+
+#### 示例
+
+```csharp
+var menu = new UI4ContextMenu
+{
+    Width = 190,
+    Background = Brushes.White,
+    BorderColor = Color.FromRgb(200, 200, 210),
+    HoverBackground = Color.FromArgb(14, 0, 0, 0)
+};
+
+menu.AddItem(new UI4MenuItem(UI4MenuItemType.Copy, "复制文本", UI4MenuIcons.Copy,
+                             () => DoCopy()));
+menu.AddItem(UI4MenuItemType.SelectAll, () => DoSelectAll());
+menu.Attach(myControl);          // 在 myControl 上右键弹出
+```
+
+> `UI4CodeEditor` 内置了该菜单（撤销/重做/剪切/复制/粘贴/删除/全选），右键即可体验。
+
+---
+
+### UI4CodeEditor
+
+基于 AvalonEdit 的代码编辑器：默认 C# 语法高亮、行号、自动换行、Consolas 字体，
+并内置 `UI4ContextMenu` 右键菜单与美化滚动条。
+
+**继承自**：`ICSharpCode.AvalonEdit.TextEditor`
+
+#### 示例
+
+```xml
+<ui:UI4CodeEditor x:Name="CodeEditor" Height="220"/>
+```
+
+```csharp
+CodeEditor.Text = "public class Sample { }";
+CodeEditor.SyntaxHighlighting =
+    ICSharpCode.AvalonEdit.Highlighting.HighlightingManager.Instance.GetDefinition("XML");
+```
+
+---
+
+### UI4MultiLanguage
+
+zh / en 双语字符串服务，供 `UI4MessageBox`、`UI4ColorPicker`、`UI4ContextMenu` 等内部使用，也可在业务代码中调用。
+
+#### 成员
+
+| 成员 | 说明 |
+|---|---|
+| `Current` | 当前语言字典（按 `CurrentUICulture` 解析） |
+| `Get(UI4LanguageKey key)` | 取字符串 |
+| `Refresh()` | 切换语言后刷新缓存 |
+| `GetStrings(string lang)` | 取指定语言字典（`"zh"` / 其余为 en） |
+
+`UI4LanguageKey`：`OK`、`Cancel`、`Notice`、`ColorPicker`、`Undo`、`Redo`、`Cut`、`Copy`、`Paste`、`Delete`、`SelectAll`
+
+#### 示例
+
+```csharp
+CultureInfo.CurrentUICulture = new CultureInfo("en-US");
+UI4MultiLanguage.Refresh();
+UI4ContextMenuLanguage.Refresh();
+string ok = UI4MultiLanguage.Get(UI4LanguageKey.OK);   // "OK"
+```
+
+---
+
+## 六、完整使用教程：从零搭建一个应用
+
+以下以 Visual Studio 2022 + .NET Framework 4.8 为例，从零搭一个使用本库的应用。
+
+### 步骤 1：新建项目
+
+新建「WPF 应用（.NET Framework）」项目，或在 SDK 风格 csproj 中写：
+
+```xml
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <LangVersion>7.3</LangVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\StartUI4Controls\StartUI4Controls.csproj" />
+    <!-- 或 <PackageReference Include="StartUI4.WPF" Version="1.0.20" /> -->
+  </ItemGroup>
+</Project>
+```
+
+### 步骤 2：MainWindow.xaml 骨架
+
+```xml
+<Window x:Class="MyApp.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="clr-namespace:StartUI4Controls;assembly=StartUI4Controls"
+        Title="MyApp" Width="900" Height="600" Background="#FFF4F6FB">
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <ui:UI4TextBlock Text="我的应用" FontSize="30" FontWeight="Bold"/>
+
+        <ui:UI4Panel Grid.Row="1" Margin="0,16,0,0" ShadowDepth="12" ShadowOpacity="0.35"
+                     HoverScale="1.0" CornerRadius="14">
+            <StackPanel Margin="24">
+                <ui:UI4TextBox x:Name="NameBox" Width="320" PlaceholderText="请输入名称"
+                               ShowClearButton="True" HorizontalAlignment="Left"/>
+                <ui:UI4PasswordBox Width="320" Margin="0,10,0,0" PlaceholderText="请输入密码"
+                                   HorizontalAlignment="Left"/>
+                <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
+                    <ui:UI4Switch x:Name="RememberSwitch"/>
+                    <TextBlock Text="记住我" VerticalAlignment="Center" Margin="10,0,24,0"/>
+                    <ui:UI4Button Content="登录" Width="120" Height="36" Click="Login_Click"/>
+                </StackPanel>
+            </StackPanel>
+        </ui:UI4Panel>
+    </Grid>
+</Window>
+```
+
+### 步骤 3：代码behind
+
+```csharp
+private void Login_Click(object sender, RoutedEventArgs e)
+{
+    if (string.IsNullOrEmpty(NameBox.Text))
+    {
+        UI4MessageBox.Show("名称不能为空", "提示", UI4MessageBoxButtons.OK);
+        return;
+    }
+
+    bool? ok = UI4MessageBox.Show(
+        string.Format("以 {0} 登录？", NameBox.Text),
+        "确认", UI4MessageBoxButtons.OKCancel);
+
+    if (ok == true)
+        Title = "已登录：" + NameBox.Text + (RememberSwitch.IsOn ? "（记住我）" : "");
+}
+```
+
+### 步骤 4：数据绑定列表
+
+```csharp
+public class CardItem
+{
+    public string Title { get; set; }
+    public string Description { get; set; }
+    public Brush Background { get; set; }
+    public Brush IconColor { get; set; }
+}
+
+DataContext = new { Cards = new List<CardItem> { /* ... */ } };
+```
+
+```xml
+<ui:UI4GridView ItemsSource="{Binding Cards}" ItemWidth="240" ItemHeight="180"
+                HoverScale="1.05" ShadowOpacity="0.25">
     <ui:UI4GridView.ItemTemplate>
         <DataTemplate>
-            <Border>
-                <StackPanel Margin="20">
-                    <ui:UI4TextBlock Content="{Binding Title}" 
-                                     FontSize="22" 
-                                     Foreground="Blue" 
-                                     VerticalAlignment="Center" 
-                                     FontWeight="Bold" 
-                                     Margin="0,8,0,20"/>
-                    <ui:UI4TextBlock Content="{Binding Description}" 
-                                     Foreground="Black" 
-                                     TextWrapping="Wrap"/>
+            <Border Background="{Binding Background}" CornerRadius="10">
+                <StackPanel Margin="16">
+                    <Ellipse Width="32" Height="32" Fill="{Binding IconColor}" HorizontalAlignment="Left"/>
+                    <ui:UI4TextBlock Content="{Binding Title}" Margin="0,8,0,3"/>
+                    <ui:UI4TextBlock Content="{Binding Description}" TextWrapping="Wrap"/>
                 </StackPanel>
             </Border>
         </DataTemplate>
@@ -1562,328 +1421,105 @@ Also inherits all properties from `ListBox`, such as `ItemsSource`, `ItemTemplat
 </ui:UI4GridView>
 ```
 
-#### Feature Notes
+### 步骤 5：托盘图标与退出清理
 
-- **Responsive Grid**: Automatically calculates column count based on container width
-- **Card-style Layout**: Each item is a card with shadow
-- **Hover Animation**: Card border color changes + scales on hover
-- **Shadow Effect**: Each card has drop shadow effect
-- **Custom Scrollbar**: Built-in auto-hide scrollbar, 10px wide
-- **Based on UniformGrid**: Uses uniform grid layout
-
----
-
-### UI4ScrollViewer
-
-Custom styled scroll viewer control with built-in auto-hide scrollbar and smooth scrolling animation.
-
-**Inherits from**: `ScrollViewer`
-
-#### Settable Properties
-
-| Property Name | Type | Default Value | Description |
-|--------------|------|---------------|-------------|
-| `IsSmoothScrollEnabled` | `bool` | `true` | Whether to enable smooth scrolling animation |
-
-#### Public Methods
-
-| Method Name | Return Value | Description |
-|------------|--------------|-------------|
-| `SmoothScrollToVerticalOffset(double offset)` | `void` | Smooth scroll to specified vertical position |
-| `SmoothScrollToHorizontalOffset(double offset)` | `void` | Smooth scroll to specified horizontal position |
-
-#### Feature Notes
-
-- **Auto-hide Scrollbar**: Fades in when scrolling, fades out 1.5 seconds after stopping
-- **Rounded Thumb**: Scrollbar thumb is rounded rectangle
-- **Wider Scrollbar**: 10px wide (5px original + 5px increase), easier to click and drag
-- **Hover Show**: Stays visible when mouse hovers over scrollbar
-- **Smooth Scrolling**: Mouse wheel scrolling uses cubic ease-out animation (200ms) for smoother feel
-- **Smooth Scroll API**: `SmoothScrollToVerticalOffset` / `SmoothScrollToHorizontalOffset` for programmatic smooth scrolling
-
-#### Example Code
-
-```xml
-<!-- Basic scroll viewer -->
-<ui:UI4ScrollViewer Width="400" Height="200">
-    <StackPanel Margin="20" Height="300">
-        <TextBlock Text="Scroll content..."/>
-    </StackPanel>
-</ui:UI4ScrollViewer>
-
-<!-- Scroll viewer with text -->
-<ui:UI4ScrollViewer>
-    <StackPanel VerticalAlignment="Top">
-        <ui:UI4TextBlock FontSize="20" TextWrapping="Wrap" 
-                         FontWeight="Bold" 
-                         Content="UI4ScrollViewer beautifies the system ScrollViewer, making it more modern and smooth."/>
-        <!-- more content -->
-    </StackPanel>
-</ui:UI4ScrollViewer>
-```
-
-#### Inherited Properties
-
-Also inherits all properties from `ScrollViewer`, such as `Content`, `HorizontalScrollBarVisibility`, `VerticalScrollBarVisibility`, `Width`, `Height`, `Padding`, etc.
-
----
-
-# UI4MessageBox Message Box
-Custom styled message dialog with enter/exit animation, window drag, and resizable borders.
-
-**Inherits from**: `Window`
-
-## Enum
-### UI4MessageBoxButtons
-Button layout enum for message box
-| Value | Description |
-|--------|------|
-| OK | Single OK button (Default) |
-| OKCancel | OK + Cancel dual buttons |
-
-## Static Methods
-| Method | Return Type | Description |
-|-------|--------|------|
-| `Show(string content, string title = "Notice", UI4MessageBoxButtons buttons = UI4MessageBoxButtons.OK, double width = 480, double height = 280)` | `bool?` | Pop up message box. Returns `true` if OK clicked, `false` if Cancel clicked. |
-
-## Constructors
-| Constructor | Description |
-|---------|------|
-| `UI4MessageBox(string title, string content, UI4MessageBoxButtons buttonMode = UI4MessageBoxButtons.OK)` | Create message box instance with customizable button layout |
-
-## Code Examples
 ```csharp
-// Default single OK button (simplest usage)
-UI4MessageBox.Show("Operation Succeeded!", "Tip");
-
-// Dual buttons: OK + Cancel
-UI4MessageBox.Show("Are you sure to delete data?", "Confirm Delete", UI4MessageBoxButtons.OKCancel);
-
-// Custom window size with single OK button
-UI4MessageBox.Show("This is a message content", "Notification", UI4MessageBoxButtons.OK, 520, 320);
-
-// Get user click result (dual button mode)
-bool? result = UI4MessageBox.Show("Are you sure to delete?", "Confirm", UI4MessageBoxButtons.OKCancel);
-if (result == true)
+protected override void OnClosed(EventArgs e)
 {
-    // User clicked OK
-}
-else
-{
-    // User clicked Cancel
+    TrayIcon.Visibility = Visibility.Collapsed;
+    TrayIcon.Dispose();
+    base.OnClosed(e);
 }
 ```
 
-#### Feature Notes
+### 步骤 6：运行并确认运行时
 
-- **Entry Animation**: Slide in from bottom + scale + blur dissipation
-- **Exit Animation**: Slide down + shrink + blur + fade out
-- **Borderless Window**: Custom window style, no system title bar
-- **Draggable**: Drag title bar to move window
-- **Resizable**: Resizable from all 8 directions
-- **OK / Cancel Buttons**: Two action buttons: OK and Cancel
+启动后查看窗口中自行显示的 `RuntimeInformation.FrameworkDescription`，
+或临时加一行 `MessageBox.Show(System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription);`
+确认输出为 `.NET Framework 4.8.x`。
 
 ---
 
-### UI4NotifyIcon
+## 七、Demo 工程指南
 
-System tray icon control, with a custom right-click menu rendered using `UI4ListBox` ??? visually consistent with `UI4ContextMenu`. Supports icons, multi-language, and `CanExecute` disabled state.
+仓库自带完整演示工程 `samples/StartUI4Demo`（net48），覆盖全部公开控件。
 
-**Contains two classes**:
-- `UI4NotifyIcon` - Tray icon control
-- `UI4TrayMenuItem` - Tray menu item data model
+### 构建与运行
 
-#### Settable Properties
-
-| Property Name | Type | Default Value | Description |
-|--------------|------|---------------|-------------|
-| `MenuWidth` | `double` | `160` | Menu width |
-| `MenuItemPadding` | `Thickness` | `12,8,12,8` | Menu item padding |
-| `MenuBorderColor` | `Color` | `#FFC8C8DC` (200,200,220) | Menu border color |
-| `MenuBackground` | `Brush` | `White` | Menu background color |
-| `MenuHoverBg` | `Color` | `#0A000000` (10,0,0,0) | Menu item hover background color |
-| `MenuCornerRadius` | `CornerRadius` | `8` | Menu corner radius |
-
-#### UI4TrayMenuItem Properties
-
-| Property Name | Type | Description |
-|--------------|------|-------------|
-| `Type` | `UI4MenuItemType` | Menu item type (Undo, Redo, Cut, Copy, Paste, Delete, SelectAll) |
-| `Text` | `string` | Menu item display text |
-| `Icon` | `ImageSource` or `Text` | Menu item icon |
-| `Command` | `Action` | Command to execute on click |
-| `CanExecute` | `Func<bool>` | Availability check; returns `false` to show item in disabled state (semi-transparent) |
-
-#### Public Methods
-
-| Method Name | Return Value | Description |
-|------------|--------------|-------------|
-| `AddItem(UI4TrayMenuItem item)` | `void` | Add a custom menu item |
-| `AddItem(UI4MenuItemType type, Action command, Func<bool> canExecute = null)` | `void` | Add a built-in type menu item (auto-gets localized text and icon) |
-| `ClearMenuItems()` | `void` | Clear all menu items |
-| `OpenMenu()` | `void` | Manually open the menu (pops up at current mouse position) |
-| `CloseMenu()` | `void` | Close the menu |
-| `Dispose()` | `void` | Release resources (unsubscribes events, closes menu, hides icon) |
-
-#### Example Code
-
-```xml
-<!-- Declare tray icon in XAML -->
-<ui:UI4NotifyIcon x:Name="trayIcon"
-                  ToolTipText="My App"
-                  IconSource="/Icons/app.ico"
-                  Visibility="Visible" />
+```bash
+dotnet build StartUI4Controls.sln
+dotnet run --project samples/StartUI4Demo
 ```
 
-```csharp
-// Add built-in type menu items (auto localized + icon)
-trayIcon.AddItem(UI4MenuItemType.Copy, () => Clipboard.SetText("Copied"));
-trayIcon.AddItem(UI4MenuItemType.Delete, 
-    () => DeleteItem(), 
-    () => HasSelection);  // CanExecute: disabled when no selection
+或在 Visual Studio 中：**右键 `StartUI4Demo` → 设为启动项目** 后 F5
+（解决方案默认启动项目已设为 Demo；若仍提示"无法启动类库项目"，说明 VS 读取了旧的 per-user 启动项设置，手动设一次即可）。
 
-// Add a custom menu item
-trayIcon.AddItem(new UI4TrayMenuItem(
-    UI4MenuItemType.Cut,      // Type
-    "Open Homepage1",            // Text
-    "????",  // Icon
-    () => OpenHomePage()        // Command
-));
-trayIcon.AddItem(new UI4TrayMenuItem(
-    UI4MenuItemType.Copy,      // Type
-    "Open Homepage2",            // Text
-    UI4MenuIcons.GetIcon(UI4MenuItemType.Copy),  // Icon
-    () => OpenHomePage()        // Command
-));
+### 分页结构
 
-// Manually open / close menu
-trayIcon.OpenMenu();
-trayIcon.CloseMenu();
+| 页 | 内容 |
+|---|---|
+| 按钮与开关 | UI4Button / UI4CheckBox / UI4Radio / UI4Switch |
+| 文本输入 | UI4TextBox / UI4PasswordBox / UI4CodeEditor |
+| 文本显示 | UI4TextBlock / UI4FlipTextBlock |
+| 选择器 | UI4ComboBox（含长文本用例）/ UI4Slider / UI4CircleSlider |
+| 进度指示 | UI4ProgressBar / UI4ProgressRing |
+| 列表与网格 | UI4ListBox / UI4ListView / UI4GridView |
+| 导航容器 | UI4Pivot / UI4Tab / UI4NavigationView / UI4ScrollViewer |
+| 布局面板 | UI4Grid / UI4Panel |
+| 对话框 | UI4MessageBox / UI4ColorPicker |
+| 菜单与托盘 | UI4Menu / UI4ContextMenu / UI4NotifyIcon / UI4MultiLanguage |
 
-// Clear menu
-trayIcon.ClearMenuItems();
+### 命令行参数
+
+```bash
+StartUI4Demo.exe --tab=5     # 直接打开第 5 页（0 起），便于自动化逐页验证
 ```
 
-### UI4Menu Menu Bar
-**Inherits from**: `Menu`
-Support sub-controls: `UI4MenuElementItem` (menu item), `UI4MenuSeparatorElement` (menu separator)
+### 自动化验证脚本
 
-#### Settable Properties
-##### Root UI4Menu
-| Property Name | Type | Default Value | Description |
-|--------------|------|---------------|-------------|
-| BarBackground | `Brush` | `#F8F8F8` | Background of top menu bar |
-| ItemHoverBrush | `Brush` | `#20000000` | Hover background for menu items |
-| PopupCornerRadius | `CornerRadius` | `6` | Corner radius of submenu popup window |
-| TextForeground | `Brush` | `#141414` | Global text color for all menu text |
+| 脚本 | 用途 |
+|---|---|
+| `shot.ps1 -Tab N` | 启动 Demo 打开第 N 页并用 `PrintWindow` 截图到 `shots/tabN.png` |
+| `interact.ps1 -Scenario msgbox` | 打开/关闭 UI4MessageBox 并校验返回值 |
+| `interact.ps1 -Scenario color` | 打开 UI4ColorPicker 截图 |
+| `interact.ps1 -Scenario menu` | 展开 UI4Menu 下拉 |
+| `interact.ps1 -Scenario ctx` | 右键弹出 UI4ContextMenu |
+| `interact.ps1 -Scenario tabadd` | 点击加号动态新增标签 |
+| `interact.ps1 -Scenario tray` | 启用托盘图标并截取任务栏溢出区 |
+| `interact.ps1 -Scenario hover` | 悬浮 UI4ListView 卡片，验证文字不模糊 |
+| `interact.ps1 -Scenario combo` | 长文本下拉框闭合/展开态截图 |
 
-##### UI4MenuElementItem Menu Item
-| Property Name | Type | Default Value | Description |
-|--------------|------|---------------|-------------|
-| TextIcon | `string` | `""` | Vector icon glyph (Segoe UI Symbol) |
-| IconFontFamily | `FontFamily` | `Segoe UI Symbol` | Icon font family |
-| IconFontSize | `double` | `14` | Icon size |
-| IconForeground | `Brush` | `null` | Separate icon color; inherits text color if null |
-| KeyTip | `string` | `""` | Shortcut hint text on right side |
-
-##### UI4MenuSeparatorElement Separator
-| Property Name | Type | Default Value | Description |
-|--------------|------|---------------|-------------|
-| SeparatorColor | `Brush` | `#DCDC DC` | Separator line color |
-
-### UI4PasswordBox
-
-A password input control supporting mask toggle, custom mask character, placeholder, and reveal button.
-
-**Inherits from**: `TextBox`
-
-#### Settable Properties
-
-| Property Name | Type | Default Value | Description |
-|--------------|------|---------------|-------------|
-| `Password` | `string` | `""` | Plaintext password content (two-way bindable) |
-| `PasswordChar` | `char` | `???` | Mask character |
-| `IsPasswordMode` | `bool` | `true` | Whether to enable password mode (`false` shows plaintext) |
-| `CornerRadius` | `CornerRadius` | `8` | Input box corner radius |
-| `BorderNormalColor` | `Color` | `#C8C8DC` (200,200,220) | Default border color |
-| `FocusGradientStart` | `Color` | `#2563EB` (37,99,235) | Gradient start color when focused |
-| `FocusGradientEnd` | `Color` | `#9333EA` (147,51,234) | Gradient end color when focused |
-| `EditBackground` | `Brush` | `White` | Input box background color |
-| `TextColor` | `Color` | `#1E1E1E` (30,30,30) | Text color |
-| `InnerPadding` | `Thickness` | `12,5,32,5` | Internal content padding |
-| `ShowClearButton` | `bool` | `false` | Whether to show the reveal/hide password button (eye icon) |
-| `PlaceholderText` | `string` | `""` | Placeholder text |
-| `PlaceholderForeground` | `Brush` | `LightGray` | Placeholder text color |
-
-#### Inherited Properties
-
-Also inherits all properties from `TextBox`, such as `Text`, `FontSize`, `Foreground`, `Width`, `Height`, `AcceptsReturn`, `VerticalScrollBarVisibility`, `HorizontalScrollBarVisibility`, etc.
-
-#### Example Code
-
-```xml
-<!-- Basic password box -->
-<ui:UI4PasswordBox PlaceholderText="Enter password" Width="260" Height="36" />
-
-<!-- With reveal button -->
-<ui:UI4PasswordBox ShowClearButton="True" PlaceholderText="Password" Width="260" />
-
-<!-- Custom mask char -->
-<ui:UI4PasswordBox PasswordChar="*" ShowClearButton="True" Width="260" />
-
-<!-- Data binding -->
-<ui:UI4PasswordBox Password="{Binding UserPassword, Mode=TwoWay}" ShowClearButton="True" />
-```
-
-#### Features
-- Horizontal top-level menu, vertical submenu layout with slide-in popup animation
-- Shared highlight background for mouse hover and opened submenu
-- Auto collapse icon / keytip area when value is empty or null
-- Disabled items auto set opacity to 0.4
-- Submenu popup with drop shadow, rounded corner and transparency
-- Different text alignment for top headers and submenu headers
-
-#### Example Code
-```xml
-<ui:UI4Menu>
-    <ui:UI4MenuElementItem Header="File" KeyTip="(F)">
-        <ui:UI4MenuElementItem Header="New" TextIcon="???" IconFontFamily="Segoe UI Symbol" IconFontSize="15" Click="New_Click"/>
-        <ui:UI4MenuSeparatorElement/>
-        <ui:UI4MenuElementItem Header="Exit" TextIcon="??"/>
-    </ui:UI4MenuElementItem>
-    <ui:UI4MenuElementItem Header="Edit" KeyTip="(E)">
-        <ui:UI4MenuElementItem Header="Undo" TextIcon="???"/>
-        <ui:UI4MenuElementItem Header="Redo" TextIcon="???"/>
-    </ui:UI4MenuElementItem>
-</ui:UI4Menu>
-```
-
-
-#### Feature Notes
-
-- **Right-click Menu**: Right-clicking the tray icon pops up a custom menu at the mouse position using `PlacementMode.AbsolutePoint` for precise positioning
-- **UI4ListBox Rendering**: The menu uses `UI4ListBox` internally, visually identical to `UI4ContextMenu` (rounded border, hover highlight, pressed state, custom scrollbar)
-- **Built-in Icons**: Auto-gets vector icons via `UI4MenuIcons` (Undo, Redo, Cut, Copy, Paste, Delete, Select All)
-- **Multi-language**: Auto-matches system language via `UI4ContextMenuLanguage` (Chinese/English/Japanese/Korean/German/French/Spanish/Russian)
-- **Disabled State**: When `CanExecute` returns `false`, the item icon opacity drops to 0.3 and text to 0.4; clicks are ignored
-- **Fade-in Animation**: Menu pops up with a 150ms fade-in animation
-- **Click-outside to Close**: `StaysOpen=false` ??? clicking outside the menu closes it automatically
-- **High DPI Support**: Uses P/Invoke `GetCursorPos` to get physical screen coordinates and converts to WPF device-independent pixels for accurate positioning under high DPI scaling
+所有截图存于 `shots/`；运行期异常会写入 Demo 输出目录的 `demo-errors.log` 并弹窗。
 
 ---
 
-## Appendix: Namespace Reference
+## 八、与上游（net6 版）的差异与已知问题
 
-Before using in any XAML file, make sure the namespace is imported:
+完整清单见 [`PORTING.md`](PORTING.md)，摘要：
+
+1. **目标框架**：`net6.0-windows7.0` → `net48`；语言级别锁定 C# 7.3。
+2. **依赖**：移除源码中从未使用的 `Microsoft.Data.Sqlite`；保留 `AvalonEdit`、`System.Data.SQLite`。
+3. **本移植版修复的上游缺陷**：
+   - `UI4Switch` 被拉伸时轨道与滑块分离；
+   - `UI4ListView` / `UI4GridView` 悬浮缩放导致文字模糊（Effect 与 ScaleTransform 同层）；
+   - `UI4ComboBox` 选中项长文本溢出、下拉弹出层裁切长选项；
+   - 重定义依赖属性缺少 `new` 关键字产生的 CS0108 警告。
+4. **上游遗留、未改动**：
+   - `UI4TextBlock.GradientStart/End` 为未实现的死属性（渐变请用 `Foreground`）；
+   - 5 个只写不读的私有字段（CS0414 警告保留）；
+   - `UI4DataGrid` / `UI43DSphere` 为 internal 死代码，且 SQLite 原生 `SQLite.Interop.dll` 不随类库部署。
+
+---
+
+## 九、附录
+
+### A. 命名空间引用
 
 ```xml
-<Window xmlns:ui="clr-namespace:StartUI4Controls;assembly=StartUI4Controls"
-        ...>
-    <!-- control usage -->
-</Window>
+<Window xmlns:ui="clr-namespace:StartUI4Controls;assembly=StartUI4Controls" ...>
 ```
 
-Complete example:
+完整示例：
 
 ```xml
 <Window x:Class="YourApp.MainWindow"
@@ -1897,63 +1533,23 @@ Complete example:
 </Window>
 ```
 
----
+### B. 解决方案配置与 4.8 的关系
+
+`.sln` 中**不含**任何 4.8 字样：编译期 4.8 来自各 csproj 的 `<TargetFramework>net48</TargetFramework>`，
+运行期 4.8 来自自动生成的 `exe.config` 中 `<supportedRuntime sku=".NETFramework,Version=v4.8"/>`。
+sln 的 `Debug/Release × Any CPU/x64/x86` 只决定构建配置与平台映射（x64/x86 均映射到 Any CPU），
+不影响目标框架。详见 `PORTING.md` 第 7 节。
+
+### C. 未公开类型
+
+| 类型 | 状态 |
+|---|---|
+| `UI4DataGrid` | `internal`，SQLite 分页加载表格，上游即无引用 |
+| `UI43DSphere` | `internal`，Media3D 纹理球体，上游即无引用 |
+| 各类 `*Converter` | `internal` / `public` 工具转换器，随库导出但一般无需直接使用 |
 
 ---
 
-### UI4Grid
+## 许可证
 
-Grid container control with a default gradient background, providing a clean modern look out of the box.
-
-**Inherits from**: `Grid`
-
-#### Settable Properties
-
-No additional dependency properties. Inherits all properties from `Grid`, such as `Rows`, `Columns`, `Children`, `Background`, `Width`, `Height`, `Margin`, `Padding`, etc.
-
-#### Default Background
-
-The control sets a default `LinearGradientBrush` background in its constructor:
-- Start color: `#FFEEF4F8` (238, 244, 248) at offset 0.0
-- End color: `#FFF3F3F3` (243, 243, 243) at offset 1.0
-- Gradient direction: Top to bottom
-
-#### Example Code
-
-```xml
-<!-- Basic grid with default gradient background -->
-<ui:UI4Grid Width="400" Height="300">
-    <ui:UI4Button Content="Button 1" Grid.Row="0" Grid.Column="0" Margin="10"/>
-    <ui:UI4Button Content="Button 2" Grid.Row="0" Grid.Column="1" Margin="10"/>
-</ui:UI4Grid>
-
-<!-- Override background color -->
-<ui:UI4Grid Width="400" Height="300" Background="White">
-    <ui:UI4TextBox Width="200" Text="Custom background"/>
-</ui:UI4Grid>
-
-<!-- Use as layout container -->
-<ui:UI4Grid Margin="20">
-    <Grid.RowDefinitions>
-        <RowDefinition Height="Auto"/>
-        <RowDefinition Height="*"/>
-    </Grid.RowDefinitions>
-    <ui:UI4TextBlock Text="Header" Grid.Row="0" FontSize="24"/>
-    <ui:UI4ListBox Grid.Row="1" Width="300" Height="200">
-        <ListBoxItem>Item 1</ListBoxItem>
-        <ListBoxItem>Item 2</ListBoxItem>
-    </ui:UI4ListBox>
-</ui:UI4Grid>
-```
-
-#### Feature Notes
-
-- **Default Gradient Background**: Provides a subtle gradient background without any configuration
-- **Full Grid Functionality**: Supports all standard Grid features like row/column definitions, spanning, etc.
-- **Customizable Background**: Background can be overridden by setting the `Background` property
-
----
-
-## License
-
-?? KS.STUDIO - StartUI4.WPF v1.0.20
+MIT License —— 见 [`LICENSE.txt`](LICENSE.txt)。上游作者 KS.STUDIO，本移植版改动见 `PORTING.md`。
