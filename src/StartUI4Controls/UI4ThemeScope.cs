@@ -146,6 +146,9 @@ namespace StartUI4Controls
         {
             // 撤销时 scopeKey 为 null：只刷新「向上已找不到任何作用域」的控件，外层/嵌套作用域各自保持不变
             string scopeKey = theme == null ? null : GetTheme(scopeRoot);
+            // 作用域根若是整窗，标题栏（非客户区）也要跟着换
+            Window scopeWindow = scopeRoot as Window;
+            if (scopeWindow != null) UI4WindowTitleBar.Apply(scopeWindow);
             RefreshDescendants(scopeRoot, theme, scopeKey);
         }
 

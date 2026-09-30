@@ -46,7 +46,7 @@
 - **丰富动画** —— 悬浮缩放、开关滑动、加载旋转、数字翻转等平滑动画
 - **高度可定制** —— 250+ 个依赖属性对外开放，几乎每个视觉细节都可调
 - **开箱即用** —— 引用程序集或 NuGet 包后直接在 XAML 中使用，无需额外资源字典
-- **主题系统** —— 亮/暗/跟随系统/高对比度一键切换，30 个颜色令牌经 `DynamicResource` 桥接到宿主；`UI4ThemeScope` 可对单张卡片或整个窗口局部换肤（详见第十节）
+- **主题系统** —— 亮/暗/跟随系统/高对比度一键切换，30 个颜色令牌经 `DynamicResource` 桥接到宿主；`UI4ThemeScope` 可对单张卡片或整个窗口局部换肤；`UI4WindowTitleBar` 经 DWM 让**系统标题栏**同步跟随（详见第十节）
 - **纯代码模板** —— 所有控件模板由代码构建，不依赖 Themes/generic.xaml，单 dll 即可分发
 - **.NET Framework 4.8 原生** —— 无 `IsExternalInit` 等 polyfill、无 LangVersion 开关，老工具链亦可编译
 
@@ -148,6 +148,7 @@ xmlns:ui="clr-namespace:StartUI4Controls;assembly=StartUI4Controls"
 | `UI4MultiLanguage` | —（静态服务） | zh / en 多语言字符串 |
 | `UI4Theme` | —（静态服务） | 全局主题：亮/暗/跟随系统/高对比度、令牌资源桥、`SetAccent`、自定义主题注册、持久化 |
 | `UI4ThemeScope` | —（附加属性） | 局部/每窗口主题：`ui:UI4ThemeScope.Theme="dark"`，子树独立换肤（见第十节） |
+| `UI4WindowTitleBar` | —（附加属性 + 静态方法） | 系统标题栏跟随主题：DWM 深/浅 + 标题栏底色/文字/边框染色，默认全自动，`ui:UI4WindowTitleBar.Enabled="False"` 可豁免（见第十节） |
 
 > `UI4DataGrid`、`UI43DSphere` 在上游即为 `internal` 且无引用，本移植版保持 internal，不对外公开（见附录 C）。
 
@@ -1499,6 +1500,8 @@ StartUI4Demo.exe --tab=5     # 直接打开第 5 页（0 起），便于自动�
 | `p2verify.ps1` | **进程内值断言**：STA 加载已构建 dll，离屏窗口承载 CheckBox/Radio/TextBox/PasswordBox，`Template.FindName` 读解析后的画刷色，深/浅各 16 项 + 显式覆盖 + `Style` 不重建 |
 | `p3verify.ps1` | **进程内值断言**：局部作用域（G1 资源 / G2 换入 / G3 令牌化三组控件）、全局切换不串味、作用域可撤销、高对比度 30 令牌齐备、System 解析、持久化往返、`SetAccent` 传播、H 组：ComboBox/ListBox 选中框与面板底色及焦点渐变在三主题下跟随令牌（共 83 项） |
 | `scopewalk.ps1` | UIA 走查 Demo 第 11 页：作用域键切换、全局高对比度/跟随系统不污染作用域、撤销作用域、打开 `ScopeWindow` 并读其自证文本 |
+| `titlebar.ps1` | **进程内值断言**：用自备 `DwmGetWindowAttribute` 回读标题栏深色标志，覆盖全局切换、`Enabled=false` 豁免、窗口级作用域、三主题 COLORREF 计算、能力探测一致性、三条染色通路（手动 `Apply` / 控件加载补染 / `ThemeChanged` 清扫），共 31 项 |
+| `titlebar-live.ps1` | **跨进程证据**：启动真实 Demo，由本脚本独立读 DWM 属性 —— 亮色启动标志 0 → 打开 `ScopeWindow`（异主题）其标题栏 1 而主窗仍 0 → 点「全局高对比度」主窗变 1，共 9 项 |
 
 > 本机对 WPF 窗口的屏幕抓取（`PrintWindow` 与 `CopyFromScreen`）返回全白，且未修改的基线同样全白，属环境限制；
 > 因此主题相关验证一律用 `p2verify.ps1` / `p3verify.ps1` 的进程内取值断言 + `theme.ps1` / `scopewalk.ps1` 的 UIA 走查，
@@ -1684,10 +1687,82 @@ UI4Theme.Save();
 UI4Theme.ApplyPersisted();
 ```
 
-### 5. 已知限制
+### 5. 窗口标题栏跟随主题（`UI4WindowTitleBar`）
 
+**需求**：切到深色/高对比度后，客户区已整片变暗，但窗口顶部那条系统标题栏仍是亮色白条——
+标题栏属于**非客户区**，由 DWM 绘制，WPF 的属性、`DynamicResource`、控件模板全都够不着它。
+
+**概念补充：DWM 是什么**。DWM = Desktop Window Manager（桌面窗口管理器），Windows Vista 起引入的桌面合成组件：
+它把每个窗口的内容当作一张纹理取到 GPU 上合成后再输出，因此才有透明/毛玻璃、动画与贴边分屏。
+关键在于**一个窗口由两部分组成**——
+
+- **客户区（client area）**：程序自己画的区域，WPF 的内容、`Window.Background` 都落在这里；
+- **非客户区（non-client area）**：标题栏、边框、圆角、投影，**由 DWM 画，不由程序画**。
+
+普通窗口通过处理 `WM_NCPAINT` 自绘非客户区，而 DWM 合成后这条通路对标准窗口基本失效，程序只能改用
+DWM 开放的窗口属性接口 `DwmSetWindowAttribute`（`dwmapi.dll`）来表达意图：
+
+| 属性 | 编号 | 含义 | 可用性 |
+|---|---|---|---|
+| `DWMWA_USE_IMMERSIVE_DARK_MODE` | 20（20H1 前为 19） | 深/浅标题栏开关 | Win10 起 |
+| `DWMWA_CAPTION_COLOR` | 35 | 标题栏底色 | Win11 起 |
+| `DWMWA_TEXT_COLOR` | 36 | 标题文字色 | Win11 起 |
+| `DWMWA_BORDER_COLOR` | 34 | 边框色 | Win11 起 |
+
+值按 COLORREF `0x00BBGGRR` 传入，`0x01000000`（`DWMWA_COLOR_DEFAULT`）表示交还系统默认。
+其中深/浅标志（19/20）**可被 `DwmGetWindowAttribute` 从外部进程回读**，是本特性唯一的硬证据；
+配色三色（34/35/36）能写但**拒绝回读**（`0x80070057`）。这也解释了为什么只能拿到
+「深/浅 + 底色/文字/边框」这四个维度，做不到像素级自定义——要突破就得自绘标题栏（下表方案 ②）。
+
+**三条候选方案**：
+
+| 方案 | 做法 | 代价 | 结论 |
+|---|---|---|---|
+| ① 宿主每窗口手写 P/Invoke | 宿主在各窗口 `SourceInitialized` 里自己调 `DwmSetWindowAttribute` | 每个窗口都要写代码；主题切换后不会自动重染；作用域/自定义主题得宿主自己算有效主题；库升级后宿主还得再改一遍 | 与「宿主零改动」的库定位相悖，放弃 |
+| ② `WindowChrome` 自绘标题栏 | 把标题栏搬进客户区，自己画颜色、按钮 | 拖拽、双击、最大化还原、Aero Snap、贴边分屏、系统菜单、高 DPI、无障碍与键盘焦点全部要重写并保持与原生一致；`WindowStyle=None` 还会破坏辅助功能与第三方窗口管理 | 观感可控但行为风险远大于收益，放弃 |
+| ③ 库内集中式 DWM 染色器 | 新增静态类 `UI4WindowTitleBar`，用 DWM 属性染色原生标题栏，并挂上自动通路 | 只能拿到 DWM 开放的颜色维度（深/浅标志 + 底色/文字/边框三色），做不到像素级自定义 | **采用**：零宿主改动、原生窗口行为一分不失、能读回证据 |
+
+**用法**（默认全自动，宿主无需调用任何 API）：
+
+```csharp
+UI4Theme.SetTheme(UI4ThemeMode.Dark);   // 标题栏随之变深，无需其他代码
+
+UI4WindowTitleBar.Apply(myWindow);      // 立即按该窗口的「有效主题」染色（窗口内没有任何 UI4 控件时用它兜底）
+UI4WindowTitleBar.ApplyOpenWindows();   // 重染本进程全部已打开窗口
+bool canTint = UI4WindowTitleBar.SupportsCaptionColors;   // 系统是否允许自定义标题栏配色
+int  cref    = UI4WindowTitleBar.ToColorRef(color);       // Color -> DWM COLORREF(0x00BBGGRR)，宿主自调 dwmapi 时口径一致
+```
+
+```xml
+<!-- 个别窗口豁免（例如截图/投屏窗口要保持系统原样） -->
+<Window ui:UI4WindowTitleBar.Enabled="False" .../>
+```
+
+**染色内容**：先按底色亮度（0.299R+0.587G+0.114B < 128）判定深/浅，写 `DWMWA_USE_IMMERSIVE_DARK_MODE`；
+再尝试把底色染成 `Background` 令牌、标题文字染成 `TextForeground`、边框染成 `BorderNormal`。
+因此 `dark` 是深底浅字、`highcontrast` 是纯黑底白字白框，自定义主题同样按其令牌取值，无需枚举主题键。
+
+**四条生效通路**（前三条自动，第四条兜底）：
+
+- ① **清扫**：`UI4Theme.ThemeChanged` 触发后遍历 `Application.Windows` 重染全部已打开窗口——覆盖运行中的主题切换、`SetAccent`、跟随系统；
+- ② **补染**：任一 UI4 控件 `Loaded` 时染它所属的窗口——覆盖「主题已是深色、窗口之后才打开」，同一 `ThemeVersion` 内每窗口只调一次 dwmapi；
+- ③ **作用域**：`UI4ThemeScope` 的根若是整个 `Window`，其变更与撤销都直接按该作用域染色，异主题窗口的标题栏与内容一致；
+- ④ **手动**：不含任何 UI4 控件的纯窗口自行调用一次 `Apply`（否则要等下一次主题切换被 ① 扫到）。
+
+**兼容与探测**：不做版本号判断（未 manifest 声明的进程里 `Environment.OSVersion` 会虚报 6.3），
+一律「先试 `DwmSetWindowAttribute`，失败即认定不支持」并缓存结论：深/浅标志先试属性 20，失败退旧编号 19；
+配色属性（34/35/36）仅 Windows 11 起可用，在早期 Windows 10 上自动退化为「只有深/浅标题栏」。
+
+> 代码改动清单（库内 4 处挂钩 + 1 个新文件）、`Apply` 的执行序列、四条通路的时序表、失败降级矩阵与断言↔实现对应关系，
+> 见 `主题方案分析与改进.md` 第十二节；选型过程见同文档第十一节。
+
+### 6. 已知限制
+
+- 标题栏染色维度由系统给出：Windows 10 1903~2004 只认深/浅标志（标题栏变深但底色仍是系统深色，非主题 `Background`）；
+  配色属性在更早系统与 Windows Server 上会静默失败，此时只保留深/浅标志。圆角、阴影与动画由 DWM 掌控，库不改。
+- **不含任何 UI4 控件**的窗口没有加载钩子可挂，需自行调用一次 `UI4WindowTitleBar.Apply(this)`（否则要等到下一次主题切换才被清扫）。
 - 命令式控件（`UI4Button`/`UI4ComboBox`/`UI4Menu`/`UI4ListBox`/`UI4NavigationView`/`UI4DataGrid` 等）在
-  **作用域子树内**切换时仍会重建 `Style`；待 P2 把这些模板逐批改用令牌引用后，该开销归零（见 `PORTING.md` 第 11、12、13 节）。
+  **作用域子树内**切换时仍会重建 `Style`；待 P2 把这些模板逐批改用令牌引用后，该开销归零（见 `PORTING.md` 第 11、12、13、14 节）。
 - `UI4ComboBox`（含闭合选中框背景、焦点渐变）、`UI4ListBox`（面板背景、悬浮色）的背景**已跟随主题**，
   深色与高对比度下文字与底面对比度成立（`p3verify.ps1` H 组逐主题断言）。浅色主题下有一处**有意的观感变化**：
   `UI4ListBox` 项悬浮色由上游遗留的青色 `#0AF5FFFF` 改为主题令牌 `HoverOverlay`（浅色即 `#14000000` 半透黑）。

@@ -87,6 +87,9 @@ StartUI4.WPF_net48/
 ├── PORTING.md                    本文件
 ├── 主题方案分析与改进.md          主题切换方案的不足分析与 P0–P3 改进方案
 ├── shot.ps1 / interact.ps1       运行时验证脚本（截图 / UI 自动化交互）
+├── theme.ps1 / scopewalk.ps1     UIA 走查（主题切换 / 局部作用域页）
+├── p2verify.ps1 / p3verify.ps1   进程内色值断言（P2 引用式模板 / P3 作用域+高对比度+H 组）
+├── titlebar.ps1 / titlebar-live.ps1  标题栏染色断言（进程内回读 / 跨进程读真实 Demo）
 ├── shots/                        验证截图（10 个分页 + 对话框/菜单/托盘）
 ├── upstream/                     上游原始源码（对照用）
 ├── src/StartUI4Controls/         net48 控件库（32 个 .cs，产出 nupkg）
@@ -331,3 +334,43 @@ P2 剩余批次（按同一改法逐批推进，每批构建 + 进程内断言�
 
 
 
+## 14. 修复：深色模式下窗口标题栏不跟随主题（2026-09-30）
+
+现象：`SetTheme(Dark)` / `Apply("highcontrast")` 后客户区整片变暗，窗口顶部标题栏仍是亮色白条。
+根因不是漏了某个 setter，而是**够不着**：标题栏属非客户区，由 DWM 绘制，WPF 的 DP、`DynamicResource`、
+`FrameworkElementFactory` 模板全部无效——库内前三批主题改造从未覆盖过这条边界。
+
+概念：DWM（Desktop Window Manager）是 Vista 起的桌面合成组件，把各窗口内容作为纹理在 GPU 合成后输出。
+一个窗口因此分两块——**客户区**由程序自己画（WPF 视觉树、`Window.Background`），**非客户区**（标题栏、边框、圆角、
+投影）由 DWM 画。DWM 合成后传统的 `WM_NCPAINT` 自绘通路对标准窗口失效，程序只能用 `DwmSetWindowAttribute`
+（`dwmapi.dll`）设置它开放的属性：深浅标志 20（旧系统 19）、底色 35 / 文字 36 / 边框 34（Win11 起），
+撤销写哨兵 `DWMWA_COLOR_DEFAULT=0x01000000`，颜色按 COLORREF `0x00BBGGRR`（非 WPF 的 `0xAARRGGBB`）。
+能力面就是这四项，且**只有深浅标志可被 `DwmGetWindowAttribute` 回读**——这既限定了观感上限，也决定了验证手段。
+
+三个方案对比（详见 `主题方案分析与改进.md` 第十一节）：① 宿主每窗口手写 `DwmSetWindowAttribute` —— 零库改动但
+每窗要写码、切主题不重染、作用域/自定义主题要宿主自己算，违背「宿主零改动」定位；② `WindowChrome` 自绘标题栏 ——
+观感可控到像素，但拖拽/双击/最大化/Aero Snap/系统菜单/高 DPI/无障碍全要自己保住，风险远大于收益；
+③ 库内集中式 DWM 染色器 —— 只拿系统开放的颜色维度，换来零宿主改动 + 原生行为不损 + 可回读证据。**选 ③**。
+
+落地 `src/StartUI4Controls/UI4WindowTitleBar.cs`（新增，静态类 + `Enabled` 附加属性）：
+- 深浅判定按底色亮度 `0.299R+0.587G+0.114B < 128`，不枚举主题键，自定义主题天然适用；
+- 先写 `DWMWA_USE_IMMERSIVE_DARK_MODE`（属性 20，失败退 19），再尝试 `CAPTION_COLOR=Background` /
+  `TEXT_COLOR=TextForeground` / `BORDER_COLOR=BorderNormal`（34/35/36，Win11 起）；
+- **能力探测不用版本号**：未 manifest 声明的进程里 `Environment.OSVersion` 会虚报 6.3，一律「先试、按 HRESULT 定论」并缓存；
+- 四条生效通路（A/B/C 自动 + D 兜底）：**A** `UI4Theme.ThemeChanged` 后清扫 `Application.Windows`；
+  **B** UI4 控件 `Loaded` 时补染所属窗口（`UI4Theme.OnTrackedControlLoaded → NotifyContentLoaded`，
+  以新增 `internal UI4Theme.ThemeVersion` 去重，每窗口每代号一次）；**C** `UI4ThemeScope` 的作用域根若是 `Window`，
+  `RefreshSubtree` 直接按该作用域染色；**D** 宿主手动 `Apply`（给不含 UI4 控件的纯窗口）。
+
+改动清单（1 个新文件 + 库内 4 处挂钩）、`Apply` 的执行序列、四条通路的时序表与失败降级矩阵见
+`主题方案分析与改进.md` 第十二节。
+
+一条被否掉的通路：`EventManager.RegisterClassHandler(typeof(Window), LoadedEvent, …)` 在本机 STA 承载下实测**从不触发**
+（隔离探针：安装后计数恒为 0，而实例 `Add_Loaded` 正常），故未依赖它；改由控件加载钩子覆盖「深色状态下新开的窗口」。
+
+验证（`titlebar.ps1` 31 项 PASS / 0 FAIL，`titlebar-live.ps1` 9 项 PASS / 0 FAIL）：DWM 的 19/20 标志**可被外部回读**，
+这是本主题系列里唯一能拿到硬证据的观感项——`titlebar-live.ps1` 起真实 Demo，由另一进程独立读属性：亮色启动 flag=0 →
+打开 `ScopeWindow`（异主题）其标题栏 flag=1 而主窗仍 0 → 点「全局高对比度」主窗 flag=1。
+配色属性 34/35/36 系统**拒绝回读**（`0x80070057`），只能断言送进 DWM 的 COLORREF 计算与探测结论一致，本机抓屏仍全白。
+回归：`dotnet build` 0 错误；`p3verify.ps1` 83 项、`p2verify.ps1` 色值对全匹配、`theme.ps1`（改用标题栏 flag 作为状态探针）、
+`scopewalk.ps1` 19 项、`interact.ps1 -Scenario combo|msgbox|menu|ctx` 均无运行时错误。

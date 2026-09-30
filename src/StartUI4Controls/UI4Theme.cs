@@ -60,6 +60,18 @@ namespace StartUI4Controls
         /// </summary>
         private static readonly Stack<UI4Theme> _themeStack = new Stack<UI4Theme>();
 
+        /// <summary>主题代号，每次全局主题重写（切换 / 设置强调色）自增。供标题栏等外部染色器判断是否需要重染。</summary>
+        internal static int ThemeVersion
+        {
+            get { return _themeVersion; }
+        }
+
+        static UI4Theme()
+        {
+            // 标题栏不属于 WPF 客户区，只能由 DWM 染色；主题引擎一被触碰就挂上窗口钩子
+            UI4WindowTitleBar.Install();
+        }
+
         /// <summary>获取当前主题实例。首次访问时自动初始化为 Light 主题。</summary>
         public static UI4Theme Current
         {
@@ -382,13 +394,15 @@ namespace StartUI4Controls
             FrameworkElement control;
             if (!entry.Reference.TryGetTarget(out control))
                 return;
-            // 控件在失联期间主题若已切换（或它落在了某个 UI4ThemeScope 内），重新挂载时补齐到「有效主题」
+            // 标题栏在窗口内容加载时按有效主题补染（同一主题代号内只做一次）
+            UI4WindowTitleBar.NotifyContentLoaded(control);
             IThemeAware aware = control as IThemeAware;
             if (aware == null) return;
 
             UI4Theme effective;
             lock (_trackLock)
             {
+                // 失联期间主题若已切换（或控件落在了某个 UI4ThemeScope 内），重新挂载时补齐到「有效主题」
                 bool versionStale = entry.SyncedVersion != _themeVersion;
                 effective = EffectiveThemeFor(control);
                 bool themeStale = entry.AppliedTheme != null && !ReferenceEquals(effective, entry.AppliedTheme);
