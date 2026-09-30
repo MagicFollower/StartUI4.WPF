@@ -23,8 +23,8 @@ namespace StartUI4Controls
 
         private const int WriteAttempts = 30;
         private const int WriteRetryDelayMs = 100;
-        private const int ReadAttempts = 10;
-        private const int ReadRetryDelayMs = 50;
+        private const int ReadAttempts = 20;
+        private const int ReadRetryDelayMs = 100;
 
         [DllImport("user32.dll", SetLastError = true)]
         private static extern bool OpenClipboard(IntPtr hWndNewOwner);
@@ -98,7 +98,7 @@ namespace StartUI4Controls
             thread.Start();
         }
 
-        /// <summary>在后台线程读取剪贴板文本，最多重试约 0.5 秒，结果回到调用方线程回调（读不到时回调 null）。</summary>
+        /// <summary>在后台线程读取剪贴板文本，最多重试约 2 秒，结果回到调用方线程回调（读不到时回调 null）。</summary>
         public static void TryGetTextAsync(Action<string> onDone)
         {
             if (onDone == null) return;
