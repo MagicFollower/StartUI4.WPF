@@ -139,6 +139,7 @@ namespace StartUI4Controls
             VerticalContentAlignment = VerticalAlignment.Center;
 
             AutoGeneratingColumn += OnAutoGeneratingColumn;
+            PreparingCellForEdit += OnPreparingCellForEdit;
 
             if (_scrollBarStyle != null)
             {
@@ -179,6 +180,12 @@ namespace StartUI4Controls
             }
         }
 
+        private void OnPreparingCellForEdit(object sender, DataGridPreparingCellForEditEventArgs e)
+        {
+            var editingBox = e.EditingElement as TextBox;
+            if (editingBox != null) ClipboardCommandTakeover.Install(editingBox);
+        }
+
         private void OnUnloaded(object sender, RoutedEventArgs e)
         {
             DeleteSelfOldDb();
@@ -194,7 +201,7 @@ namespace StartUI4Controls
             };
 
             _contextMenu.AddItem(UI4MenuItemType.Copy,
-                () => { if (SelectedItem != null) Clipboard.SetDataObject(SelectedCellsToString()); },
+                () => { if (SelectedItem != null) UI4Clipboard.TrySetTextAsync(SelectedCellsToString()); },
                 () => SelectedItem != null);
 
             _contextMenu.AddItem(UI4MenuItemType.SelectAll,

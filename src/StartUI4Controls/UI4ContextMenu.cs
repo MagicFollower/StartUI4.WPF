@@ -239,7 +239,7 @@ namespace StartUI4Controls
         private List<UI4MenuItem> _menuItems;
         private UIElement _placementTarget;
 
-        public double Width { get; set; } = 160;
+        public double Width { get; set; } = 180;
         public Thickness ItemPadding { get; set; } = new Thickness(12, 8, 12, 8);
 
         /// <summary>边框色；显式赋值后主题切换不再覆盖。</summary>
@@ -378,6 +378,7 @@ namespace StartUI4Controls
             {
                 Width = this.Width,
                 ItemPadding = this.ItemPadding,
+                FontFamily = new FontFamily("Microsoft YaHei UI, Segoe UI, sans-serif"),
                 BorderNormalColor = this.BorderColor,
                 PanelBackground = this.Background,
                 HoverBackground = this.HoverBackground,
@@ -407,6 +408,9 @@ namespace StartUI4Controls
                 var textBlock = new TextBlock
                 {
                     Text = item.Text,
+                    // Popup 逻辑树挂在 PlacementTarget 上会继承其 FontFamily（可能是图标字体），必须显式指定
+                    FontFamily = new FontFamily("Microsoft YaHei UI, Segoe UI, sans-serif"),
+                    FontSize = 14,
                     VerticalAlignment = VerticalAlignment.Center,
                     Margin = new Thickness(6, 0, 0, 0),
                     Opacity = item.CanExecute?.Invoke() ?? true ? 1.0 : 0.4

@@ -162,6 +162,8 @@ namespace StartUI4Controls
             Cursor = Cursors.IBeam;
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto;
 
+            ClipboardCommandTakeover.Install(this);
+
             ScrollBarResources.MergeInto(Resources);
 
             Style = BuildEditStyle();
@@ -307,16 +309,16 @@ namespace StartUI4Controls
                 () => CanUndo);
 
             _contextMenu.AddItem(UI4MenuItemType.Cut,
-                () => { if (!string.IsNullOrEmpty(SelectedText)) Cut(); },
+                () => ClipboardCommandTakeover.Cut(this),
                 () => !string.IsNullOrEmpty(SelectedText));
 
             _contextMenu.AddItem(UI4MenuItemType.Copy,
-                () => { if (!string.IsNullOrEmpty(SelectedText)) Copy(); },
+                () => ClipboardCommandTakeover.Copy(this),
                 () => !string.IsNullOrEmpty(SelectedText));
 
             _contextMenu.AddItem(UI4MenuItemType.Paste,
-                () => { if (Clipboard.ContainsText()) Paste(); },
-                () => Clipboard.ContainsText());
+                () => ClipboardCommandTakeover.Paste(this),
+                () => UI4Clipboard.ContainsText());
 
             _contextMenu.AddItem(UI4MenuItemType.Delete,
                 () => { if (!string.IsNullOrEmpty(SelectedText)) SelectedText = string.Empty; },

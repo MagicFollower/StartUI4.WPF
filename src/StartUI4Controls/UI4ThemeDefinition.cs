@@ -19,7 +19,7 @@ namespace StartUI4Controls
         }
 
         /// <summary>主题标识，如 "light" / "dark" / 自定义键。</summary>
-        public string Key { get; private set; }
+        public string Key { get; set; }
 
         /// <summary>取令牌颜色；未定义时抛 <see cref="KeyNotFoundException"/>。</summary>
         public Color GetColor(UI4ThemeToken token)

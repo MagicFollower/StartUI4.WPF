@@ -45,6 +45,8 @@ namespace StartUI4Controls
             };
 
             var editor = this;
+            ClipboardCommandTakeover.Install(editor);
+
             var menu = new UI4ContextMenu
             {
                 Width = 200
@@ -52,9 +54,9 @@ namespace StartUI4Controls
 
             menu.AddItem(UI4MenuItemType.Undo, () => editor.Undo(), () => editor.CanUndo);
             menu.AddItem(UI4MenuItemType.Redo, () => editor.Redo(), () => editor.CanRedo);
-            menu.AddItem(UI4MenuItemType.Cut, () => editor.Cut(), () => !string.IsNullOrEmpty(editor.SelectedText));
-            menu.AddItem(UI4MenuItemType.Copy, () => editor.Copy(), () => !string.IsNullOrEmpty(editor.SelectedText));
-            menu.AddItem(UI4MenuItemType.Paste, () => editor.Paste(), () => Clipboard.ContainsText());
+            menu.AddItem(UI4MenuItemType.Cut, () => ClipboardCommandTakeover.Cut(editor), () => !string.IsNullOrEmpty(editor.SelectedText));
+            menu.AddItem(UI4MenuItemType.Copy, () => ClipboardCommandTakeover.Copy(editor), () => !string.IsNullOrEmpty(editor.SelectedText));
+            menu.AddItem(UI4MenuItemType.Paste, () => ClipboardCommandTakeover.Paste(editor), () => UI4Clipboard.ContainsText());
             menu.AddItem(UI4MenuItemType.Delete, () => editor.SelectedText = "", () => !string.IsNullOrEmpty(editor.SelectedText));
             menu.AddItem(UI4MenuItemType.SelectAll, () => editor.SelectAll(), () => editor.Text.Length > 0);
 

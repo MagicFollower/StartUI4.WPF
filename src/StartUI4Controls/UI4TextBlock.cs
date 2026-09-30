@@ -8,6 +8,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Effects;
+using StartUI4Controls.Internal;
 
 namespace StartUI4Controls
 {
@@ -307,12 +308,14 @@ namespace StartUI4Controls
                 () =>
                 {
                     if (!string.IsNullOrEmpty(_textBox.SelectedText))
-                        Clipboard.SetText(_textBox.SelectedText);
+                        UI4Clipboard.TrySetTextAsync(_textBox.SelectedText);
                 },
                 () => !string.IsNullOrEmpty(_textBox.SelectedText));
 
             _contextMenu.AddItem(UI4MenuItemType.SelectAll,
                 () => _textBox.SelectAll());
+
+            ClipboardCommandTakeover.Install(_textBox);
 
             _textBox.ContextMenu = null;
             _contextMenu.Attach(_textBox);

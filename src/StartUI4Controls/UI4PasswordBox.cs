@@ -473,14 +473,13 @@ namespace StartUI4Controls
 
         private void PasteClipboard()
         {
-            if (Clipboard.ContainsText())
+            UI4Clipboard.TryGetTextAsync(delegate(string text)
             {
-                string text = Clipboard.GetText();
                 if (!string.IsNullOrEmpty(text))
                 {
                     ProcessTextInput(text);
                 }
-            }
+            });
         }
 
         private void UpdateDisplay()
@@ -602,8 +601,12 @@ namespace StartUI4Controls
             if (IsPasswordMode)
             {
                 PasteClipboard();
-                e.Handled = true;
             }
+            else
+            {
+                ClipboardCommandTakeover.Paste(this);
+            }
+            e.Handled = true;
         }
 
         private void OnPasteCanExecute(object sender, CanExecuteRoutedEventArgs e)
@@ -615,7 +618,13 @@ namespace StartUI4Controls
         private void OnCopyExecuted(object sender, ExecutedRoutedEventArgs e)
         {
             if (IsPasswordMode)
+            {
                 e.Handled = true;
+                return;
+            }
+
+            ClipboardCommandTakeover.Copy(this);
+            e.Handled = true;
         }
 
         private void OnCopyCanExecute(object sender, CanExecuteRoutedEventArgs e)
@@ -627,7 +636,13 @@ namespace StartUI4Controls
         private void OnCutExecuted(object sender, ExecutedRoutedEventArgs e)
         {
             if (IsPasswordMode)
+            {
                 e.Handled = true;
+                return;
+            }
+
+            ClipboardCommandTakeover.Cut(this);
+            e.Handled = true;
         }
 
         private void OnCutCanExecute(object sender, CanExecuteRoutedEventArgs e)
@@ -660,21 +675,21 @@ namespace StartUI4Controls
             {
                 _contextMenu.AddItem(UI4MenuItemType.Paste,
                     () => PasteClipboard(),
-                    () => Clipboard.ContainsText());
+                    () => UI4Clipboard.ContainsText());
                 _contextMenu.AddItem(UI4MenuItemType.SelectAll,
                     () => SelectAll());
             }
             else
             {
                 _contextMenu.AddItem(UI4MenuItemType.Cut,
-                    () => { if (!string.IsNullOrEmpty(SelectedText)) Cut(); },
+                    () => ClipboardCommandTakeover.Cut(this),
                     () => !string.IsNullOrEmpty(SelectedText));
                 _contextMenu.AddItem(UI4MenuItemType.Copy,
-                    () => { if (!string.IsNullOrEmpty(SelectedText)) Copy(); },
+                    () => ClipboardCommandTakeover.Copy(this),
                     () => !string.IsNullOrEmpty(SelectedText));
                 _contextMenu.AddItem(UI4MenuItemType.Paste,
-                    () => { if (Clipboard.ContainsText()) Paste(); },
-                    () => Clipboard.ContainsText());
+                    () => ClipboardCommandTakeover.Paste(this),
+                    () => UI4Clipboard.ContainsText());
                 _contextMenu.AddItem(UI4MenuItemType.Delete,
                     () => { if (!string.IsNullOrEmpty(SelectedText)) SelectedText = string.Empty; },
                     () => !string.IsNullOrEmpty(SelectedText));
