@@ -130,7 +130,7 @@ namespace StartUI4Controls
         private Style BuildPrimaryStyle()
         {
             Style style = new Style(typeof(Button));
-            style.Setters.Add(new Setter(ForegroundProperty, UI4Theme.Current.OnWhiteBrush));
+            style.Setters.Add(new Setter(ForegroundProperty, ForegroundFor(Blend(GradientStart, GradientEnd))));
             style.Setters.Add(new Setter(PaddingProperty, new Thickness(10, 0, 10, 0)));
             style.Setters.Add(new Setter(BorderThicknessProperty, new Thickness(0)));
             style.Setters.Add(new Setter(FontSizeProperty, 15d));
@@ -197,7 +197,7 @@ namespace StartUI4Controls
             FrameworkElementFactory cpDisabled = new FrameworkElementFactory(typeof(ContentPresenter));
             cpDisabled.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Center);
             cpDisabled.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center);
-            cpDisabled.SetValue(TextElement.ForegroundProperty, UI4Theme.Current.PlaceholderBrush);
+            cpDisabled.SetValue(TextElement.ForegroundProperty, ForegroundFor(UI4Theme.Current.BorderNormalColor));
             borderDisabled.AppendChild(cpDisabled);
             disabledTemplate.VisualTree = borderDisabled;
 
@@ -210,6 +210,36 @@ namespace StartUI4Controls
             style.Triggers.Add(disabledTrigger);
 
             return style;
+        }
+
+        /// <summary>
+        /// 前景色跟随背景亮度：深色底用白字，浅色底（禁用态、中性灰按钮等）用主题正文色。
+        /// 只是样式 Setter 的默认值，使用方本地显式设置的 Foreground 仍然优先。
+        /// </summary>
+        private static SolidColorBrush ForegroundFor(Color background)
+        {
+            return Luminance(background) < 0.45
+                ? UI4Theme.Current.OnWhiteBrush
+                : UI4Theme.Current.TextForegroundBrush;
+        }
+
+        private static Color Blend(Color a, Color b)
+        {
+            return Color.FromRgb(
+                (byte)((a.R + b.R) / 2),
+                (byte)((a.G + b.G) / 2),
+                (byte)((a.B + b.B) / 2));
+        }
+
+        private static double Luminance(Color c)
+        {
+            return 0.2126 * Channel(c.R) + 0.7152 * Channel(c.G) + 0.0722 * Channel(c.B);
+        }
+
+        private static double Channel(byte value)
+        {
+            double s = value / 255.0;
+            return s <= 0.03928 ? s / 12.92 : System.Math.Pow((s + 0.055) / 1.055, 2.4);
         }
     }
 }

@@ -202,6 +202,24 @@ xmlns:ui="clr-namespace:StartUI4Controls;assembly=StartUI4Controls"
 
 继承 `Button` 的全部事件：`Click`、`MouseEnter`、`MouseLeave` 等。
 
+#### 前景色与禁用态
+
+前景色**跟随背景亮度**：样式构建时按 `GradientStart`/`GradientEnd` 混合色的 WCAG 相对亮度选色——深色底（亮度 < 0.45）用白字，浅色底用主题正文色 `TextForeground`。这只是样式默认值，使用方本地显式设置的 `Foreground` 仍然优先。
+
+`IsEnabled="False"`（或绑定的 `Command.CanExecute` 返回 false）时整块替换 `Template`：背景取主题令牌 `BorderNormal`，前景按同一亮度规则自动变深，跟随主题切换，使用方无需自己刷颜色。
+
+实现上禁用态必须**换 `Template`** 而不是设 `Background`/`GradientStart`——使用方在 XAML 里本地设置过渐变值后，样式 Setter 无法覆盖本地值（这正是"复制按钮禁用却仍是蓝色"的成因）。
+
+实测对比度（背景 vs 实际渲染的文字色）：
+
+| 状态 | 背景 | 文字 | 对比度 |
+|---|---|---|---|
+| 强调色按钮（`#3D9BD9`） | `#3D9BD9` | `#FFFFFF` | 3.05 |
+| 禁用态 | `#C8C8DC` | `#1E1E1E` | 10.12 |
+| 中性灰按钮（`#C8C8D2`） | `#C8C8D2` | `#1E1E1E` | 10.04 |
+
+修复前禁用态与中性灰按钮都是"浅灰底 + 硬编码白字"，对比度只有 1.10 / 1.66，文字几乎不可读。
+
 ---
 
 ### UI4CheckBox
