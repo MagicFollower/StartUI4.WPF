@@ -383,7 +383,11 @@ namespace StartUI4Controls
 
         private void OnPreviewKeyDown(object sender, KeyEventArgs e)
         {
-            if (!IsPasswordMode) return;
+            if (!IsPasswordMode)
+            {
+                if (ClipboardCommandTakeover.TryHandleKey(this, e)) e.Handled = true;
+                return;
+            }
 
             if (e.Key == Key.Back)
             {

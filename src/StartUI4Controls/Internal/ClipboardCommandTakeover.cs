@@ -17,34 +17,43 @@ namespace StartUI4Controls.Internal
     /// </remarks>
     static class ClipboardCommandTakeover
     {
+        /// <summary>
+        /// 在按键隧道阶段处理 Ctrl+C / Ctrl+X / Ctrl+V，返回是否已接管。
+        /// 控件自带的框架级处理（WPF OLE 剪贴板通道）因此不会被触发；已自行接管 Ctrl+X 的控件可直接调用本方法。
+        /// </summary>
+        public static bool TryHandleKey(TextBox box, KeyEventArgs e)
+        {
+            if (e.Handled || e.KeyboardDevice.Modifiers != ModifierKeys.Control) return false;
+
+            if (e.Key == Key.C)
+            {
+                if (box.SelectionLength <= 0) return false;
+                Copy(box);
+            }
+            else if (e.Key == Key.X)
+            {
+                if (box.IsReadOnly || box.SelectionLength <= 0) return false;
+                Cut(box);
+            }
+            else if (e.Key == Key.V)
+            {
+                if (box.IsReadOnly || !UI4Clipboard.ContainsText()) return false;
+                Paste(box);
+            }
+            else
+            {
+                return false;
+            }
+
+            return true;
+        }
+
         public static void Install(TextBox box)
         {
             // 按键隧道阶段先于控件内部的剪贴板处理，框架自带的 Copy/Cut/Paste 处理因此不会被触发。
             box.PreviewKeyDown += delegate(object s, KeyEventArgs e)
             {
-                if (e.Handled || e.KeyboardDevice.Modifiers != ModifierKeys.Control) return;
-
-                if (e.Key == Key.C)
-                {
-                    if (box.SelectionLength <= 0) return;
-                    Copy(box);
-                }
-                else if (e.Key == Key.X)
-                {
-                    if (box.IsReadOnly || box.SelectionLength <= 0) return;
-                    Cut(box);
-                }
-                else if (e.Key == Key.V)
-                {
-                    if (box.IsReadOnly || !UI4Clipboard.ContainsText()) return;
-                    Paste(box);
-                }
-                else
-                {
-                    return;
-                }
-
-                e.Handled = true;
+                if (TryHandleKey(box, e)) e.Handled = true;
             };
 
             box.CommandBindings.Add(MakeBinding(ApplicationCommands.Copy,

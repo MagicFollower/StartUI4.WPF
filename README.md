@@ -144,6 +144,7 @@ xmlns:ui="clr-namespace:StartUI4Controls;assembly=StartUI4Controls"
 | `UI4Menu` 及 Item | `Menu` / `MenuItem` | 支持文字图标与 KeyTip 的菜单栏 |
 | `UI4ContextMenu` | —（代码组件） | 自定义右键菜单 |
 | `UI4CodeEditor` | AvalonEdit `TextEditor` | 代码编辑器，内置 C# 高亮与右键菜单 |
+| `UI4Clipboard` | —（静态服务） | 原生 Win32 剪贴板读写，库内文本控件的复制/剪切/粘贴均走此通道（见第八节 E） |
 | `UI4Grid` | `Grid` | 默认渐变背景的 Grid |
 | `UI4MultiLanguage` | —（静态服务） | zh / en 多语言字符串 |
 | `UI4Theme` | —（静态服务） | 全局主题：亮/暗/跟随系统/高对比度、令牌资源桥、`SetAccent`、自定义主题注册、持久化 |
@@ -1604,6 +1605,31 @@ sln 的 `Debug/Release × Any CPU/x64/x86` 只决定构建配置与平台映射�
 .NET Framework 改用 Fusion/GAC + `app.config`；未生成 `*.xml` 文档文件（`GenerateDocumentationFile`
 默认 false）；无本地化资源故无卫星程序集；原生 `SQLite.Interop.dll` 也未被复制（见上表说明）。
 其余中间产物（`.g.cs`、`.baml`、`.Up2Date`、各类 `.cache`）全部留在 `obj/`，不进入 `bin/`。
+
+### E. 剪贴板通道：库内改用原生 Win32（`UI4Clipboard`）
+
+WPF 的 `System.Windows.Clipboard` 走 OLE 通道（写入前 `OleFlushClipboard`，抢锁失败在调用线程重试）。
+剪贴板是全局单锁资源，当截图 / 剪贴板历史类程序反复打开剪贴板时，可编辑控件的 Ctrl+C / Ctrl+X / Ctrl+V
+会在 UI 线程上卡顿秒级，甚至抛 `CLIPBRD_E_CANT_OPEN`。库内现已统一改用 Win32 原生通道，使用者无需配合：
+
+- 控件侧：`Internal/ClipboardCommandTakeover` 在**按键隧道（`PreviewKeyDown`）**阶段接管 Ctrl+C/X/V，
+  `UI4TextBox` / `UI4PasswordBox`（明文模式）/ `UI4CodeEditor` / `UI4TextBlock` / `UI4DataGrid` 编辑单元
+  构造或准备编辑时自动安装；右键菜单项与快捷键共用同一实现。
+- 需要自行写剪贴板时（例如"一键复制"按钮）直接调用：
+
+```csharp
+UI4Clipboard.TrySetTextAsync(text, ok => { if (!ok) { /* 提示 */ } });  // 后台线程重试写入，回投调用线程
+UI4Clipboard.TryGetTextAsync(text => { /* text 为 null 表示未读到 */ });  // 后台线程读取
+if (UI4Clipboard.ContainsText()) { /* 不打开剪贴板，不参与抢锁 */ }
+```
+
+两条要点（踩过的坑，细节与实测数据见 [`../剪贴板卡顿问题报告.md`](../剪贴板卡顿问题报告.md)）：
+
+- 只在 `CommandBinding.PreviewExecuted` 上接管**拦不住真实按键**（实测仍阻塞约 2 秒），必须在 `PreviewKeyDown`。
+- Notepad 式"所有权 + 延迟渲染"（`SetClipboardData(CF_UNICODETEXT, NULL)` + `WM_RENDERFORMAT`）在装有剪贴板历史工具的
+  机器上不可靠：实测取锁与获得所有权均成功，但延迟渲染声明固定失败且从不收到渲染消息；同路径 eager 写入则正常。
+- 回归验证：`dotnet build tools/clipboard-lock-check/clipboard-lock-check.csproj -p:GeneratePackageOnBuild=false`
+  后直接运行 exe，结果写入同目录 `results.txt`（10 条用例，含框架 `TextBox` 基线）。
 
 ---
 
