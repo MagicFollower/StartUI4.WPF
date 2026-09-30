@@ -10,9 +10,22 @@ using System.Windows.Markup;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
+using StartUI4Controls.Internal;
 
 namespace StartUI4Controls
 {
+    /// <summary>
+    /// 现代风格的文本输入控件，支持圆角、占位符文本、自定义边框和滚动条样式。
+    /// </summary>
+    /// <remarks>
+    /// <para>继承自 <see cref="System.Windows.Controls.TextBox"/>，提供以下自定义属性：</para>
+    /// <list type="bullet">
+    ///   <item><see cref="CornerRadius"/> — 圆角半径</item>
+    ///   <item><see cref="BorderNormalColor"/> / <see cref="HoverBorderColor"/> / <see cref="FocusBorderColor"/> — 边框颜色状态</item>
+    ///   <item><see cref="PlaceholderText"/> / <see cref="PlaceholderForeground"/> — 占位符</item>
+    ///   <item><see cref="TextColor"/> — 文字颜色</item>
+    /// </list>
+    /// </remarks>
     public class UI4TextBox : TextBox
     {
         public static readonly DependencyProperty CornerRadiusProperty =
@@ -26,7 +39,7 @@ namespace StartUI4Controls
 
         public static readonly DependencyProperty BorderNormalColorProperty =
             DependencyProperty.Register(nameof(BorderNormalColor), typeof(Color), typeof(UI4TextBox),
-                new PropertyMetadata(Color.FromRgb(200, 200, 220), OnStyleRefresh));
+                new PropertyMetadata(Color.FromRgb(200, 200, 220)));
         public Color BorderNormalColor
         {
             get => (Color)GetValue(BorderNormalColorProperty);
@@ -35,7 +48,7 @@ namespace StartUI4Controls
 
         public static readonly DependencyProperty HoverBorderColorProperty =
             DependencyProperty.Register(nameof(HoverBorderColor), typeof(Color), typeof(UI4TextBox),
-                new PropertyMetadata(Color.FromRgb(0, 120, 212), OnStyleRefresh));
+                new PropertyMetadata(Color.FromRgb(0, 120, 212)));
         public Color HoverBorderColor
         {
             get => (Color)GetValue(HoverBorderColorProperty);
@@ -44,7 +57,7 @@ namespace StartUI4Controls
 
         public static readonly DependencyProperty FocusBorderColorProperty =
             DependencyProperty.Register(nameof(FocusBorderColor), typeof(Color), typeof(UI4TextBox),
-                new PropertyMetadata(Color.FromRgb(0, 102, 181), OnStyleRefresh));
+                new PropertyMetadata(Color.FromRgb(0, 102, 181)));
         public Color FocusBorderColor
         {
             get => (Color)GetValue(FocusBorderColorProperty);
@@ -53,7 +66,7 @@ namespace StartUI4Controls
 
         public static readonly DependencyProperty EditBackgroundProperty =
             DependencyProperty.Register(nameof(EditBackground), typeof(Brush), typeof(UI4TextBox),
-                new PropertyMetadata(new SolidColorBrush(Color.FromRgb(255, 255, 255)), OnStyleRefresh));
+                new PropertyMetadata(new SolidColorBrush(Color.FromRgb(255, 255, 255))));
         public Brush EditBackground
         {
             get => (Brush)GetValue(EditBackgroundProperty);
@@ -62,7 +75,7 @@ namespace StartUI4Controls
 
         public static readonly DependencyProperty TextColorProperty =
             DependencyProperty.Register(nameof(TextColor), typeof(Color), typeof(UI4TextBox),
-                new PropertyMetadata(Color.FromRgb(30, 30, 30), OnStyleRefresh));
+                new PropertyMetadata(Color.FromRgb(30, 30, 30)));
         public Color TextColor
         {
             get => (Color)GetValue(TextColorProperty);
@@ -98,11 +111,31 @@ namespace StartUI4Controls
 
         public static readonly DependencyProperty PlaceholderForegroundProperty =
             DependencyProperty.Register(nameof(PlaceholderForeground), typeof(Brush), typeof(UI4TextBox),
-                new PropertyMetadata(new SolidColorBrush(Colors.LightGray), OnStyleRefresh));
+                new PropertyMetadata(new SolidColorBrush(Colors.LightGray)));
         public Brush PlaceholderForeground
         {
             get => (Brush)GetValue(PlaceholderForegroundProperty);
             set => SetValue(PlaceholderForegroundProperty, value);
+        }
+
+        /// <summary>清除按钮常态色，跟随主题令牌 UI4.Color.Icon。</summary>
+        private static readonly DependencyProperty ClearIconColorProperty =
+            DependencyProperty.Register(nameof(ClearIconColor), typeof(Color), typeof(UI4TextBox),
+                new PropertyMetadata(Color.FromRgb(110, 110, 120)));
+        private Color ClearIconColor
+        {
+            get => (Color)GetValue(ClearIconColorProperty);
+            set => SetValue(ClearIconColorProperty, value);
+        }
+
+        /// <summary>清除按钮悬停色，跟随主题令牌 UI4.Color.IconHover。</summary>
+        private static readonly DependencyProperty ClearIconHoverColorProperty =
+            DependencyProperty.Register(nameof(ClearIconHoverColor), typeof(Color), typeof(UI4TextBox),
+                new PropertyMetadata(Color.FromRgb(0, 102, 181)));
+        private Color ClearIconHoverColor
+        {
+            get => (Color)GetValue(ClearIconHoverColorProperty);
+            set => SetValue(ClearIconHoverColorProperty, value);
         }
 
         private static void OnStyleRefresh(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -110,7 +143,6 @@ namespace StartUI4Controls
             if (d is UI4TextBox edit) edit.Style = edit.BuildEditStyle();
         }
 
-        private static string _scrollBarResourcesXaml;
         private ScrollViewer _scrollViewer;
         private ScrollBar _verticalScrollBar;
         private DispatcherTimer _fadeTimer;
@@ -118,161 +150,9 @@ namespace StartUI4Controls
 
         static UI4TextBox()
         {
-            _scrollBarResourcesXaml = GetScrollBarResourcesXaml();
             DefaultStyleKeyProperty.OverrideMetadata(typeof(UI4TextBox),
                 new FrameworkPropertyMetadata(typeof(UI4TextBox)));
         }
-
-        private static string GetScrollBarResourcesXaml()
-        {
-            return @"
-<ResourceDictionary xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation'
-                    xmlns:x='http://schemas.microsoft.com/winfx/2006/xaml'>
-    <Style x:Key='ScrollBarThumb' TargetType='{x:Type Thumb}'>
-        <Setter Property='OverridesDefaultStyle' Value='true'/>
-        <Setter Property='IsTabStop' Value='false'/>
-        <Setter Property='Template'>
-            <Setter.Value>
-                <ControlTemplate TargetType='{x:Type Thumb}'>
-                    <Rectangle Fill='#90000000' RadiusX='3' RadiusY='3'/>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-    <Style x:Key='HorizontalScrollBarPageButton' TargetType='{x:Type RepeatButton}'>
-        <Setter Property='OverridesDefaultStyle' Value='true'/>
-        <Setter Property='Background' Value='Transparent'/>
-        <Setter Property='Focusable' Value='false'/>
-        <Setter Property='IsTabStop' Value='false'/>
-        <Setter Property='Opacity' Value='0'/>
-        <Setter Property='Template'>
-            <Setter.Value>
-                <ControlTemplate TargetType='{x:Type RepeatButton}'>
-                    <Rectangle Fill='{TemplateBinding Background}'
-                               Width='{TemplateBinding Width}'
-                               Height='{TemplateBinding Height}'/>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-    <Style x:Key='VerticalScrollBarPageButton' TargetType='{x:Type RepeatButton}'>
-        <Setter Property='OverridesDefaultStyle' Value='true'/>
-        <Setter Property='Background' Value='Transparent'/>
-        <Setter Property='Focusable' Value='false'/>
-        <Setter Property='IsTabStop' Value='false'/>
-        <Setter Property='Opacity' Value='0'/>
-        <Setter Property='Template'>
-            <Setter.Value>
-                <ControlTemplate TargetType='{x:Type RepeatButton}'>
-                    <Rectangle Fill='{TemplateBinding Background}'
-                               Width='{TemplateBinding Width}'
-                               Height='{TemplateBinding Height}'/>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-    <Style TargetType='{x:Type ScrollBar}'>
-        <Setter Property='Stylus.IsPressAndHoldEnabled' Value='false'/>
-        <Setter Property='Stylus.IsFlicksEnabled' Value='false'/>
-        <Setter Property='Background' Value='Transparent'/>
-        <Setter Property='Margin' Value='0,1,2,6'/>
-        <Setter Property='Width' Value='6'/>
-        <Setter Property='MinWidth' Value='6'/>
-        <Setter Property='Opacity' Value='0'/>
-        <Setter Property='Template'>
-            <Setter.Value>
-                <ControlTemplate TargetType='{x:Type ScrollBar}'>
-                    <Grid x:Name='Bg' SnapsToDevicePixels='true'>
-                        <Track x:Name='PART_Track' IsDirectionReversed='true'>
-                            <Track.DecreaseRepeatButton>
-                                <RepeatButton Style='{StaticResource VerticalScrollBarPageButton}'
-                                              Command='{x:Static ScrollBar.PageUpCommand}'/>
-                            </Track.DecreaseRepeatButton>
-                            <Track.IncreaseRepeatButton>
-                                <RepeatButton Style='{StaticResource VerticalScrollBarPageButton}'
-                                              Command='{x:Static ScrollBar.PageDownCommand}'/>
-                            </Track.IncreaseRepeatButton>
-                            <Track.Thumb>
-                                <Thumb Style='{StaticResource ScrollBarThumb}'/>
-                            </Track.Thumb>
-                        </Track>
-                    </Grid>
-                    <ControlTemplate.Triggers>
-                        <Trigger Property='IsMouseOver' Value='True'>
-                            <Trigger.EnterActions>
-                                <BeginStoryboard>
-                                    <Storyboard>
-                                        <DoubleAnimation Storyboard.TargetProperty='Opacity' To='1' Duration='0:0:0.2'/>
-                                    </Storyboard>
-                                </BeginStoryboard>
-                            </Trigger.EnterActions>
-                            <Trigger.ExitActions>
-                                <BeginStoryboard>
-                                    <Storyboard>
-                                        <DoubleAnimation Storyboard.TargetProperty='Opacity' To='0' Duration='0:0:0.5'/>
-                                    </Storyboard>
-                                </BeginStoryboard>
-                            </Trigger.ExitActions>
-                        </Trigger>
-                    </ControlTemplate.Triggers>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-        <Style.Triggers>
-            <Trigger Property='Orientation' Value='Horizontal'>
-                <Setter Property='Background' Value='Transparent'/>
-                <Setter Property='Margin' Value='2,0,6,2'/>
-                <Setter Property='Height' Value='6'/>
-                <Setter Property='MinHeight' Value='6'/>
-                <Setter Property='Width' Value='Auto'/>
-                <Setter Property='Opacity' Value='0'/>
-                <Setter Property='Template'>
-                    <Setter.Value>
-                        <ControlTemplate TargetType='{x:Type ScrollBar}'>
-                            <Grid x:Name='Bg' SnapsToDevicePixels='true'>
-                                <Track x:Name='PART_Track'>
-                                    <Track.DecreaseRepeatButton>
-                                        <RepeatButton Style='{StaticResource HorizontalScrollBarPageButton}'
-                                                      Command='{x:Static ScrollBar.PageLeftCommand}'/>
-                                    </Track.DecreaseRepeatButton>
-                                    <Track.IncreaseRepeatButton>
-                                        <RepeatButton Style='{StaticResource HorizontalScrollBarPageButton}'
-                                                      Command='{x:Static ScrollBar.PageRightCommand}'/>
-                                    </Track.IncreaseRepeatButton>
-                                    <Track.Thumb>
-                                        <Thumb Style='{StaticResource ScrollBarThumb}'/>
-                                    </Track.Thumb>
-                                </Track>
-                            </Grid>
-                            <ControlTemplate.Triggers>
-                                <Trigger Property='IsMouseOver' Value='True'>
-                                    <Trigger.EnterActions>
-                                        <BeginStoryboard>
-                                            <Storyboard>
-                                                <DoubleAnimation Storyboard.TargetProperty='Opacity' To='1' Duration='0:0:0.2'/>
-                                            </Storyboard>
-                                        </BeginStoryboard>
-                                    </Trigger.EnterActions>
-                                    <Trigger.ExitActions>
-                                        <BeginStoryboard>
-                                            <Storyboard>
-                                                <DoubleAnimation Storyboard.TargetProperty='Opacity' To='0' Duration='0:0:0.5'/>
-                                            </Storyboard>
-                                        </BeginStoryboard>
-                                    </Trigger.ExitActions>
-                                </Trigger>
-                            </ControlTemplate.Triggers>
-                        </ControlTemplate>
-                    </Setter.Value>
-                </Setter>
-            </Trigger>
-        </Style.Triggers>
-    </Style>
-</ResourceDictionary>";
-        }
-
-        private static ResourceDictionary CreateScrollBarResources()
-            => (ResourceDictionary)XamlReader.Parse(_scrollBarResourcesXaml);
 
         private UI4ContextMenu _contextMenu;
 
@@ -282,14 +162,20 @@ namespace StartUI4Controls
             Cursor = Cursors.IBeam;
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto;
 
-            var resDict = CreateScrollBarResources();
-            foreach (DictionaryEntry entry in resDict)
-                if (!Resources.Contains(entry.Key))
-                    Resources.Add(entry.Key, entry.Value);
+            ScrollBarResources.MergeInto(Resources);
 
             Style = BuildEditStyle();
             Loaded += UI4TextBox_Loaded;
             Unloaded += UI4TextBox_Unloaded;
+
+            SetResourceReference(TextColorProperty, "UI4.Color.TextForeground");
+            SetResourceReference(BorderNormalColorProperty, "UI4.Color.BorderNormal");
+            SetResourceReference(HoverBorderColorProperty, "UI4.Color.BorderHover");
+            SetResourceReference(FocusBorderColorProperty, "UI4.Color.BorderFocus");
+            SetResourceReference(EditBackgroundProperty, "UI4.Brush.Surface");
+            SetResourceReference(PlaceholderForegroundProperty, "UI4.Brush.Placeholder");
+            SetResourceReference(ClearIconColorProperty, "UI4.Color.Icon");
+            SetResourceReference(ClearIconHoverColorProperty, "UI4.Color.IconHover");
         }
 
         public override void OnApplyTemplate()
@@ -446,10 +332,10 @@ namespace StartUI4Controls
         private Style BuildEditStyle()
         {
             Style style = new Style(typeof(TextBox));
-            style.Setters.Add(new Setter(ForegroundProperty, new SolidColorBrush(TextColor)));
-            style.Setters.Add(new Setter(BackgroundProperty, EditBackground));
+            style.Setters.Add(new Setter(ForegroundProperty, OwnColorBrushBinding(nameof(TextColor))));
+            style.Setters.Add(new Setter(BackgroundProperty, new Binding(nameof(EditBackground)) { Source = this }));
             style.Setters.Add(new Setter(BorderThicknessProperty, new Thickness(1)));
-            style.Setters.Add(new Setter(BorderBrushProperty, new SolidColorBrush(BorderNormalColor)));
+            style.Setters.Add(new Setter(BorderBrushProperty, OwnColorBrushBinding(nameof(BorderNormalColor))));
             style.Setters.Add(new Setter(CursorProperty, Cursors.IBeam));
             style.Setters.Add(new Setter(MinHeightProperty, 30d));
 
@@ -498,7 +384,9 @@ namespace StartUI4Controls
             clearBtnStyle.Setters.Add(new Setter(Button.BorderThicknessProperty, new Thickness(0)));
             clearBtnStyle.Setters.Add(new Setter(Button.PaddingProperty, new Thickness(0)));
             clearBtnStyle.Setters.Add(new Setter(Button.CursorProperty, Cursors.Hand));
-            clearBtnStyle.Setters.Add(new Setter(Button.ForegroundProperty, new SolidColorBrush(Color.FromArgb(150, 120, 120, 140))));
+            // 0.588 ≈ 原烘焙值 Color.FromArgb(150, IconColor) 的淡化观感；令牌色本身是不透明的，用 Opacity 还原。
+            clearBtnStyle.Setters.Add(new Setter(UIElement.OpacityProperty, 0.588d));
+            clearBtnStyle.Setters.Add(new Setter(Button.ForegroundProperty, OwnColorBrushBinding(nameof(ClearIconColor))));
             clearBtnStyle.Setters.Add(new Setter(Button.MarginProperty, new Thickness(0, -5, 10, 0)));
 
             ControlTemplate clearBtnTemplate = new ControlTemplate(typeof(Button));
@@ -512,7 +400,8 @@ namespace StartUI4Controls
             clearBtnStyle.Setters.Add(new Setter(Button.TemplateProperty, clearBtnTemplate));
 
             Trigger clearBtnHoverTrigger = new Trigger { Property = Button.IsMouseOverProperty, Value = true };
-            clearBtnHoverTrigger.Setters.Add(new Setter(Button.ForegroundProperty, new SolidColorBrush(Color.FromArgb(255, 120, 120, 140))));
+            clearBtnHoverTrigger.Setters.Add(new Setter(Button.ForegroundProperty, OwnColorBrushBinding(nameof(ClearIconHoverColor))));
+            clearBtnHoverTrigger.Setters.Add(new Setter(UIElement.OpacityProperty, 1d));
             clearBtnStyle.Triggers.Add(clearBtnHoverTrigger);
 
             FrameworkElementFactory clearBtn = new FrameworkElementFactory(typeof(Button));
@@ -543,18 +432,30 @@ namespace StartUI4Controls
             style.Setters.Add(new Setter(TemplateProperty, template));
 
             Trigger focusTrigger = new Trigger { Property = IsFocusedProperty, Value = true };
-            focusTrigger.Setters.Add(new Setter(BorderBrushProperty, new SolidColorBrush(FocusBorderColor)));
+            focusTrigger.Setters.Add(new Setter(BorderBrushProperty, OwnColorBrushBinding(nameof(FocusBorderColor))));
             focusTrigger.Setters.Add(new Setter(BorderThicknessProperty, new Thickness(1.2)));
             style.Triggers.Add(focusTrigger);
 
             Trigger hoverTrigger = new Trigger { Property = IsMouseOverProperty, Value = true };
-            hoverTrigger.Setters.Add(new Setter(BorderBrushProperty, new SolidColorBrush(HoverBorderColor)));
+            hoverTrigger.Setters.Add(new Setter(BorderBrushProperty, OwnColorBrushBinding(nameof(HoverBorderColor))));
             style.Triggers.Add(hoverTrigger);
 
             return style;
         }
+
+        private Binding OwnColorBrushBinding(string path)
+        {
+            return new Binding(path)
+            {
+                Source = this,
+                Converter = ColorToBrushConverter.Instance
+            };
+        }
     }
 
+    /// <summary>
+    /// 将布尔值转换为 <see cref="Visibility"/> 的转换器。
+    /// </summary>
     public class BoolToVisibilityConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
@@ -563,6 +464,9 @@ namespace StartUI4Controls
             => throw new NotImplementedException();
     }
 
+    /// <summary>
+    /// 将占位符文本的可见性转换为 <see cref="Visibility"/> 的转换器。
+    /// </summary>
     public class PlaceholderVisibilityConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
@@ -574,6 +478,9 @@ namespace StartUI4Controls
             => throw new NotImplementedException();
     }
 
+    /// <summary>
+    /// 将内边距值转换为 <see cref="Thickness"/> 的转换器。
+    /// </summary>
     public class InnerPaddingConverter : IMultiValueConverter
     {
         public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)

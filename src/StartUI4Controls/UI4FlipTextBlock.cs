@@ -9,7 +9,7 @@ using System.Windows.Threading;
 
 namespace StartUI4Controls
 {
-    public class UI4FlipTextBlock : ContentControl
+    public class UI4FlipTextBlock : ContentControl, IThemeAware
     {
         //外部可设置属性
 
@@ -180,6 +180,17 @@ namespace StartUI4Controls
         {
             BuildVisualTree();
             this.Loaded += OnLoaded;
+            UI4Theme.TrackControl(this);
+        }
+
+        void IThemeAware.OnThemeChanged()
+        {
+            if (_userset_ui4panel != null && ReadLocalValue(CardBackgroundProperty) == DependencyProperty.UnsetValue)
+                _userset_ui4panel.Background = new SolidColorBrush(UI4Theme.Current.SurfaceColor);
+            if (_t_num != null && ReadLocalValue(CardForegroundProperty) == DependencyProperty.UnsetValue)
+                _t_num.Foreground = new SolidColorBrush(UI4Theme.Current.TextForegroundColor);
+            if (_userset_ui4panel != null && ReadLocalValue(CardBorderBrushProperty) == DependencyProperty.UnsetValue)
+                _userset_ui4panel.BorderColor = UI4Theme.Current.BorderNormalColor;
         }
 
         private void BuildVisualTree()
@@ -292,7 +303,7 @@ namespace StartUI4Controls
         {
             _userset_ui4panel.Background = new SolidColorBrush(CardBackground);
             _t_num.Foreground = new SolidColorBrush(CardForeground);
-            _userset_ui4panel.BorderBrush = CardBorderBrush;
+            _userset_ui4panel.BorderColor = CardBorderBrush;
             _userset_ui4panel.ShadowColor = ShadowColor;
             _userset_ui4panel.CornerRadius = CardCornerRadius;
             _userset_ui4panel.BorderThickness = CardBorderThickness;
@@ -511,7 +522,7 @@ namespace StartUI4Controls
         {
             var control = (UI4FlipTextBlock)d;
             if (control._userset_ui4panel != null)
-                control._userset_ui4panel.BorderBrush = (Color)e.NewValue;
+                control._userset_ui4panel.BorderColor = (Color)e.NewValue;
         }
 
         private static void OnShadowColorChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)

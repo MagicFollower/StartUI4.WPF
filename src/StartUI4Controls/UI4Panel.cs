@@ -9,7 +9,19 @@ using System.Windows.Media.Effects;
 
 namespace StartUI4Controls
 {
-    public class UI4Panel : ContentControl
+    /// <summary>
+    /// 现代风格的面板容器控件，支持圆角、阴影、渐变背景和标题栏。
+    /// </summary>
+    /// <remarks>
+    /// <para>继承自 <see cref="System.Windows.Controls.ContentControl"/>，提供以下自定义属性：</para>
+    /// <list type="bullet">
+    ///   <item><see cref="CornerRadius"/> — 圆角半径</item>
+    ///   <item><see cref="BorderColor"/> — 边框颜色（Color 类型，用于驱动 ColorAnimation）</item>
+    ///   <item><see cref="ShadowDepth"/> — 阴影深度</item>
+    ///   <item><see cref="Title"/> — 标题栏文字</item>
+    /// </list>
+    /// </remarks>
+    public class UI4Panel : ContentControl, IThemeAware
     {
         public static readonly DependencyProperty CornerRadiusProperty =
             DependencyProperty.Register(
@@ -24,17 +36,24 @@ namespace StartUI4Controls
             set => SetValue(CornerRadiusProperty, value);
         }
 
-        public static new readonly DependencyProperty BorderBrushProperty =
+        /// <summary>
+        /// 获取或设置面板边框颜色（Color 类型）。
+        /// </summary>
+        /// <remarks>
+        /// 该属性用于驱动边框的 ColorAnimation 悬停效果。
+        /// 如需设置 Brush 类型的边框画刷，请使用继承自 <see cref="System.Windows.Controls.Control"/> 的 BorderBrush 属性。
+        /// </remarks>
+        public static readonly DependencyProperty BorderColorProperty =
             DependencyProperty.Register(
-                nameof(BorderBrush),
+                nameof(BorderColor),
                 typeof(Color),
                 typeof(UI4Panel),
                 new PropertyMetadata(Color.FromArgb(60, 120, 140, 200), OnStyleUpdate));
 
-        public new Color BorderBrush
+        public Color BorderColor
         {
-            get => (Color)GetValue(BorderBrushProperty);
-            set => SetValue(BorderBrushProperty, value);
+            get => (Color)GetValue(BorderColorProperty);
+            set => SetValue(BorderColorProperty, value);
         }
 
         public static readonly DependencyProperty HoverBorderBrushProperty =
@@ -48,19 +67,6 @@ namespace StartUI4Controls
         {
             get => (SolidColorBrush)GetValue(HoverBorderBrushProperty);
             set => SetValue(HoverBorderBrushProperty, value);
-        }
-
-        public static new readonly DependencyProperty BorderThicknessProperty =
-            DependencyProperty.Register(
-                nameof(BorderThickness),
-                typeof(Thickness),
-                typeof(UI4Panel),
-                new PropertyMetadata(new Thickness(1), OnStyleUpdate));
-
-        public new Thickness BorderThickness
-        {
-            get => (Thickness)GetValue(BorderThicknessProperty);
-            set => SetValue(BorderThicknessProperty, value);
         }
 
         public static readonly DependencyProperty ShadowDepthProperty =
@@ -163,13 +169,22 @@ namespace StartUI4Controls
         {
             DefaultStyleKeyProperty.OverrideMetadata(typeof(UI4Panel),
                 new FrameworkPropertyMetadata(typeof(UI4Panel)));
+            BorderThicknessProperty.OverrideMetadata(typeof(UI4Panel),
+                new FrameworkPropertyMetadata(new Thickness(1), OnStyleUpdate));
         }
 
         public UI4Panel()
         {
-            Background = new SolidColorBrush(Color.FromArgb(255, 255, 255, 255));
+            Background = UI4Theme.Current.BackgroundBrush;
             Style = BuildPanelStyle();
             Cursor = Cursors.Arrow;
+            UI4Theme.TrackControl(this);
+        }
+
+        void IThemeAware.OnThemeChanged()
+        {
+            Background = UI4Theme.Current.BackgroundBrush;
+            Style = BuildPanelStyle();
         }
 
         private Style BuildPanelStyle()
@@ -206,7 +221,7 @@ namespace StartUI4Controls
                 new Binding(nameof(BorderThickness)) { RelativeSource = RelativeSource.TemplatedParent });
             contentBorder.SetBinding(Border.PaddingProperty,
                 new Binding(nameof(ContentPadding)) { RelativeSource = RelativeSource.TemplatedParent });
-            contentBorder.SetValue(Border.BorderBrushProperty, new SolidColorBrush(BorderBrush));
+            contentBorder.SetValue(Border.BorderBrushProperty, new SolidColorBrush(BorderColor));
             contentBorder.SetValue(UIElement.ClipToBoundsProperty, true);
 
             FrameworkElementFactory contentPresenter = new FrameworkElementFactory(typeof(ContentPresenter));
@@ -231,7 +246,7 @@ namespace StartUI4Controls
 
             ColorAnimation leaveAnim = new ColorAnimation
             {
-                To = BorderBrush,
+                To = BorderColor,
                 Duration = HoverAnimationDuration
             };
             Storyboard leaveStoryboard = new Storyboard();

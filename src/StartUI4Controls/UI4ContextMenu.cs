@@ -10,6 +10,9 @@ using System.Windows.Input;
 
 namespace StartUI4Controls
 {
+    /// <summary>
+    /// 上下文菜单项类型枚举。
+    /// </summary>
     public enum UI4MenuItemType
     {
         Undo,
@@ -21,6 +24,9 @@ namespace StartUI4Controls
         SelectAll
     }
 
+    /// <summary>
+    /// 上下文菜单项数据类。
+    /// </summary>
     public class UI4MenuItem
     {
         public UI4MenuItemType Type { get; set; }
@@ -39,161 +45,9 @@ namespace StartUI4Controls
         }
     }
 
-    public static class UI4ContextMenuLanguage
-    {
-        private static Dictionary<UI4MenuItemType, string> _currentStrings;
-
-        public static Dictionary<UI4MenuItemType, string> Current
-        {
-            get
-            {
-                if (_currentStrings == null)
-                    _currentStrings = GetStrings(CultureInfo.CurrentUICulture.TwoLetterISOLanguageName);
-                return _currentStrings;
-            }
-        }
-
-        public static void Refresh()
-        {
-            _currentStrings = null;
-        }
-
-        public static Dictionary<UI4MenuItemType, string> GetStrings(string lang)
-        {
-            switch (lang.ToLower())
-            {
-                case "zh":
-                    return GetChineseStrings();
-                case "ja":
-                    return GetJapaneseStrings();
-                case "ko":
-                    return GetKoreanStrings();
-                case "de":
-                    return GetGermanStrings();
-                case "fr":
-                    return GetFrenchStrings();
-                case "es":
-                    return GetSpanishStrings();
-                case "ru":
-                    return GetRussianStrings();
-                default:
-                    return GetEnglishStrings();
-            }
-        }
-
-        private static Dictionary<UI4MenuItemType, string> GetEnglishStrings()
-        {
-            return new Dictionary<UI4MenuItemType, string>
-            {
-                { UI4MenuItemType.Undo, "Undo" },
-                { UI4MenuItemType.Redo, "Redo" },
-                { UI4MenuItemType.Cut, "Cut" },
-                { UI4MenuItemType.Copy, "Copy" },
-                { UI4MenuItemType.Paste, "Paste" },
-                { UI4MenuItemType.Delete, "Delete" },
-                { UI4MenuItemType.SelectAll, "Select All" }
-            };
-        }
-
-        private static Dictionary<UI4MenuItemType, string> GetChineseStrings()
-        {
-            return new Dictionary<UI4MenuItemType, string>
-            {
-                { UI4MenuItemType.Undo, "撤销" },
-                { UI4MenuItemType.Redo, "重做" },
-                { UI4MenuItemType.Cut, "剪切" },
-                { UI4MenuItemType.Copy, "复制" },
-                { UI4MenuItemType.Paste, "粘贴" },
-                { UI4MenuItemType.Delete, "删除" },
-                { UI4MenuItemType.SelectAll, "全选" }
-            };
-        }
-
-        private static Dictionary<UI4MenuItemType, string> GetJapaneseStrings()
-        {
-            return new Dictionary<UI4MenuItemType, string>
-            {
-                { UI4MenuItemType.Undo, "元に戻す" },
-                { UI4MenuItemType.Redo, "やり直し" },
-                { UI4MenuItemType.Cut, "切り取り" },
-                { UI4MenuItemType.Copy, "コピー" },
-                { UI4MenuItemType.Paste, "貼り付け" },
-                { UI4MenuItemType.Delete, "削除" },
-                { UI4MenuItemType.SelectAll, "すべて選択" }
-            };
-        }
-
-        private static Dictionary<UI4MenuItemType, string> GetKoreanStrings()
-        {
-            return new Dictionary<UI4MenuItemType, string>
-            {
-                { UI4MenuItemType.Undo, "실행 취소" },
-                { UI4MenuItemType.Redo, "다시 실행" },
-                { UI4MenuItemType.Cut, "잘라내기" },
-                { UI4MenuItemType.Copy, "복사" },
-                { UI4MenuItemType.Paste, "붙여넣기" },
-                { UI4MenuItemType.Delete, "삭제" },
-                { UI4MenuItemType.SelectAll, "모두 선택" }
-            };
-        }
-
-        private static Dictionary<UI4MenuItemType, string> GetGermanStrings()
-        {
-            return new Dictionary<UI4MenuItemType, string>
-            {
-                { UI4MenuItemType.Undo, "Rückgängig" },
-                { UI4MenuItemType.Redo, "Wiederholen" },
-                { UI4MenuItemType.Cut, "Ausschneiden" },
-                { UI4MenuItemType.Copy, "Kopieren" },
-                { UI4MenuItemType.Paste, "Einfügen" },
-                { UI4MenuItemType.Delete, "Löschen" },
-                { UI4MenuItemType.SelectAll, "Alles auswählen" }
-            };
-        }
-
-        private static Dictionary<UI4MenuItemType, string> GetFrenchStrings()
-        {
-            return new Dictionary<UI4MenuItemType, string>
-            {
-                { UI4MenuItemType.Undo, "Annuler" },
-                { UI4MenuItemType.Redo, "Rétablir" },
-                { UI4MenuItemType.Cut, "Couper" },
-                { UI4MenuItemType.Copy, "Copier" },
-                { UI4MenuItemType.Paste, "Coller" },
-                { UI4MenuItemType.Delete, "Supprimer" },
-                { UI4MenuItemType.SelectAll, "Tout sélectionner" }
-            };
-        }
-
-        private static Dictionary<UI4MenuItemType, string> GetSpanishStrings()
-        {
-            return new Dictionary<UI4MenuItemType, string>
-            {
-                { UI4MenuItemType.Undo, "Deshacer" },
-                { UI4MenuItemType.Redo, "Rehacer" },
-                { UI4MenuItemType.Cut, "Cortar" },
-                { UI4MenuItemType.Copy, "Copiar" },
-                { UI4MenuItemType.Paste, "Pegar" },
-                { UI4MenuItemType.Delete, "Eliminar" },
-                { UI4MenuItemType.SelectAll, "Seleccionar todo" }
-            };
-        }
-
-        private static Dictionary<UI4MenuItemType, string> GetRussianStrings()
-        {
-            return new Dictionary<UI4MenuItemType, string>
-            {
-                { UI4MenuItemType.Undo, "Отменить" },
-                { UI4MenuItemType.Redo, "Повторить" },
-                { UI4MenuItemType.Cut, "Вырезать" },
-                { UI4MenuItemType.Copy, "Копировать" },
-                { UI4MenuItemType.Paste, "Вставить" },
-                { UI4MenuItemType.Delete, "Удалить" },
-                { UI4MenuItemType.SelectAll, "Выделить все" }
-            };
-        }
-    }
-
+    /// <summary>
+    /// 提供几何图形辅助方法的静态类。
+    /// </summary>
     public static class GeometryHelper
     {
         public static Geometry GetOutlinedGeometry(this RectangleGeometry rectGeo)
@@ -215,6 +69,9 @@ namespace StartUI4Controls
         }
     }
 
+    /// <summary>
+    /// 提供菜单项图标的静态类。
+    /// </summary>
     public static class UI4MenuIcons
     {
         private static ImageSource _undoIcon;
@@ -368,6 +225,13 @@ namespace StartUI4Controls
         }
     }
 
+    /// <summary>
+    /// 现代风格的上下文菜单，支持多语言、图标和键盘快捷键。
+    /// </summary>
+    /// <remarks>
+    /// <para>通过 <see cref="AddItem(UI4MenuItemType, Action, Func&lt;bool&gt;)"/> 添加菜单项，
+    /// 使用 <see cref="Attach(UIElement)"/> 将菜单绑定到目标元素。</para>
+    /// </remarks>
     public class UI4ContextMenu
     {
         private Popup _popup;
@@ -377,15 +241,84 @@ namespace StartUI4Controls
 
         public double Width { get; set; } = 160;
         public Thickness ItemPadding { get; set; } = new Thickness(12, 8, 12, 8);
-        public Color BorderColor { get; set; } = Color.FromArgb(255, 200, 200, 220);
-        public Brush Background { get; set; } = Brushes.White;
-        public Color HoverBackground { get; set; } = Color.FromArgb(10, 0, 0, 0);
+
+        /// <summary>边框色；显式赋值后主题切换不再覆盖。</summary>
+        public Color BorderColor
+        {
+            get { return _borderColor; }
+            set { _borderColor = value; MarkCustomized(nameof(BorderColor)); ApplyColorsToListBox(); }
+        }
+        private Color _borderColor;
+
+        /// <summary>菜单背景；显式赋值后主题切换不再覆盖。</summary>
+        public Brush Background
+        {
+            get { return _background; }
+            set { _background = value; MarkCustomized(nameof(Background)); ApplyColorsToListBox(); }
+        }
+        private Brush _background;
+
+        /// <summary>悬停背景色；显式赋值后主题切换不再覆盖。</summary>
+        public Color HoverBackground
+        {
+            get { return _hoverBackground; }
+            set { _hoverBackground = value; MarkCustomized(nameof(HoverBackground)); ApplyColorsToListBox(); }
+        }
+        private Color _hoverBackground;
 
         public bool IsOpen => _popup?.IsOpen ?? false;
 
         public UI4ContextMenu()
         {
             _menuItems = new List<UI4MenuItem>();
+            _borderColor = UI4Theme.Current.BorderNormalColor;
+            _background = UI4Theme.Current.SurfaceBrush;
+            _hoverBackground = UI4Theme.Current.HoverOverlayColor;
+            UI4Theme.ThemeChanged += OnGlobalThemeChanged;
+        }
+
+        private void OnGlobalThemeChanged(object sender, EventArgs e)
+        {
+            var customized = _customizedColors;
+            if (customized == null || !customized.Contains(nameof(BorderColor)))
+                _borderColor = UI4Theme.Current.BorderNormalColor;
+            if (customized == null || !customized.Contains(nameof(Background)))
+                _background = UI4Theme.Current.SurfaceBrush;
+            if (customized == null || !customized.Contains(nameof(HoverBackground)))
+                _hoverBackground = UI4Theme.Current.HoverOverlayColor;
+            ApplyColorsToListBox();
+        }
+
+        private HashSet<string> _customizedColors;
+
+        private void MarkCustomized(string propertyName)
+        {
+            if (_customizedColors == null)
+                _customizedColors = new HashSet<string>();
+            _customizedColors.Add(propertyName);
+        }
+
+        private void ApplyColorsToListBox()
+        {
+            if (_listBox == null) return;
+            _listBox.BorderNormalColor = BorderColor;
+            // UI4ListBox 样式的表面背景取自 PanelBackground
+            _listBox.PanelBackground = Background;
+            _listBox.HoverBackground = HoverBackground;
+        }
+
+        /// <summary>弹出前补齐失联期间错过的主题（未弹出的 Popup 子元素不触发 Loaded）。</summary>
+        private void SyncBeforeOpen()
+        {
+            if (_listBox == null) return;
+            var customized = _customizedColors;
+            if (customized == null || !customized.Contains(nameof(BorderColor)))
+                _listBox.BorderNormalColor = _borderColor;
+            if (customized == null || !customized.Contains(nameof(HoverBackground)))
+                _listBox.HoverBackground = _hoverBackground;
+            if (customized == null || !customized.Contains(nameof(Background)))
+                _listBox.PanelBackground = _background;
+            _listBox.RefreshTheme();
         }
 
         public void AddItem(UI4MenuItem item)
@@ -430,6 +363,7 @@ namespace StartUI4Controls
 
         public void Detach()
         {
+            UI4Theme.ThemeChanged -= OnGlobalThemeChanged;
             if (_placementTarget != null)
             {
                 _placementTarget.MouseRightButtonUp -= OnTargetRightButtonUp;
@@ -445,7 +379,7 @@ namespace StartUI4Controls
                 Width = this.Width,
                 ItemPadding = this.ItemPadding,
                 BorderNormalColor = this.BorderColor,
-                Background = this.Background,
+                PanelBackground = this.Background,
                 HoverBackground = this.HoverBackground,
             };
 
@@ -518,6 +452,7 @@ namespace StartUI4Controls
         {
             if (_popup == null || _listBox == null || _placementTarget == null) return;
 
+            SyncBeforeOpen();
             Close();
 
             UpdateCanExecuteStates();

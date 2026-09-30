@@ -5,9 +5,21 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using StartUI4Controls.Internal;
 
 namespace StartUI4Controls
 {
+    /// <summary>
+    /// 现代风格的单选按钮控件，支持自定义勾选颜色和边框。
+    /// </summary>
+    /// <remarks>
+    /// <para>继承自 <see cref="System.Windows.Controls.RadioButton"/>，提供以下自定义属性：</para>
+    /// <list type="bullet">
+    ///   <item><see cref="CheckBackground"/> — 选中时的填充色</item>
+    ///   <item><see cref="BorderNormalColor"/> — 边框颜色</item>
+    ///   <item><see cref="TextColor"/> — 文字颜色</item>
+    /// </list>
+    /// </remarks>
     public class UI4Radio : RadioButton
     {
         public static readonly DependencyProperty CheckBackgroundProperty =
@@ -15,7 +27,7 @@ namespace StartUI4Controls
                 nameof(CheckBackground),
                 typeof(Color),
                 typeof(UI4Radio),
-                new PropertyMetadata(Color.FromRgb(0, 102, 181), OnStyleRefresh));
+                new PropertyMetadata(Color.FromRgb(0, 102, 181)));
 
         public Color CheckBackground
         {
@@ -28,7 +40,7 @@ namespace StartUI4Controls
                 nameof(BorderNormalColor),
                 typeof(Color),
                 typeof(UI4Radio),
-                new PropertyMetadata(Color.FromRgb(180, 180, 200), OnStyleRefresh));
+                new PropertyMetadata(Color.FromRgb(180, 180, 200)));
 
         public Color BorderNormalColor
         {
@@ -67,7 +79,7 @@ namespace StartUI4Controls
                 nameof(TextColor),
                 typeof(Color),
                 typeof(UI4Radio),
-                new PropertyMetadata(Colors.Black, OnStyleRefresh));
+                new PropertyMetadata(Colors.Black));
 
         public Color TextColor
         {
@@ -104,6 +116,10 @@ namespace StartUI4Controls
         {
             FontSize = 15d;
             Style = BuildRadioStyle();
+
+            SetResourceReference(BorderNormalColorProperty, "UI4.Color.BorderSecondary");
+            SetResourceReference(TextColorProperty, "UI4.Color.TextForeground");
+            SetResourceReference(CheckBackgroundProperty, "UI4.Color.CheckBackground");
         }
 
         private Style BuildRadioStyle()
@@ -120,7 +136,7 @@ namespace StartUI4Controls
             outerEllipse.Name = "outerEllipse";
             outerEllipse.SetValue(Ellipse.WidthProperty, BoxSize);
             outerEllipse.SetValue(Ellipse.HeightProperty, BoxSize);
-            outerEllipse.SetValue(Shape.StrokeProperty, new SolidColorBrush(BorderNormalColor));
+            outerEllipse.SetBinding(Shape.StrokeProperty, ColorBrushBinding(nameof(BorderNormalColor)));
             outerEllipse.SetValue(Shape.StrokeThicknessProperty, 1.5d);
             outerEllipse.SetValue(Shape.FillProperty, Brushes.Transparent);
 
@@ -143,8 +159,7 @@ namespace StartUI4Controls
             contentPresenter.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center);
             contentPresenter.SetBinding(ContentPresenter.MarginProperty,
                 new System.Windows.Data.Binding(nameof(TextMargin)) { RelativeSource = System.Windows.Data.RelativeSource.TemplatedParent });
-            contentPresenter.SetBinding(TextBlock.ForegroundProperty,
-                new System.Windows.Data.Binding(nameof(TextColor)) { RelativeSource = System.Windows.Data.RelativeSource.TemplatedParent, Converter = new ColorToBrushConverter() });
+            contentPresenter.SetBinding(TextBlock.ForegroundProperty, ColorBrushBinding(nameof(TextColor)));
             contentPresenter.SetValue(TextBlock.FontSizeProperty, FontSize);
 
             rootStack.AppendChild(grid);
@@ -153,13 +168,13 @@ namespace StartUI4Controls
             template.VisualTree = rootStack;
 
             Trigger checkedTrigger = new Trigger { Property = ToggleButton.IsCheckedProperty, Value = true };
-            checkedTrigger.Setters.Add(new Setter(Shape.FillProperty, new SolidColorBrush(CheckBackground)) { TargetName = "outerEllipse" });
-            checkedTrigger.Setters.Add(new Setter(Shape.StrokeProperty, new SolidColorBrush(CheckBackground)) { TargetName = "outerEllipse" });
+            checkedTrigger.Setters.Add(new Setter(Shape.FillProperty, OwnColorBrushBinding(nameof(CheckBackground))) { TargetName = "outerEllipse" });
+            checkedTrigger.Setters.Add(new Setter(Shape.StrokeProperty, OwnColorBrushBinding(nameof(CheckBackground))) { TargetName = "outerEllipse" });
             checkedTrigger.Setters.Add(new Setter(UIElement.VisibilityProperty, Visibility.Visible) { TargetName = "innerDot" });
             template.Triggers.Add(checkedTrigger);
 
             Trigger hoverTrigger = new Trigger { Property = UIElement.IsMouseOverProperty, Value = true };
-            hoverTrigger.Setters.Add(new Setter(Shape.StrokeProperty, new SolidColorBrush(CheckBackground)) { TargetName = "outerEllipse" });
+            hoverTrigger.Setters.Add(new Setter(Shape.StrokeProperty, OwnColorBrushBinding(nameof(CheckBackground))) { TargetName = "outerEllipse" });
             template.Triggers.Add(hoverTrigger);
 
             Trigger disabledTrigger = new Trigger { Property = UIElement.IsEnabledProperty, Value = false };
@@ -174,19 +189,22 @@ namespace StartUI4Controls
             return style;
         }
 
-        private class ColorToBrushConverter : IValueConverter
+        private static Binding ColorBrushBinding(string path)
         {
-            public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+            return new Binding(path)
             {
-                if (value is Color c)
-                    return new SolidColorBrush(c);
-                return Brushes.Transparent;
-            }
+                RelativeSource = RelativeSource.TemplatedParent,
+                Converter = ColorToBrushConverter.Instance
+            };
+        }
 
-            public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        private Binding OwnColorBrushBinding(string path)
+        {
+            return new Binding(path)
             {
-                throw new NotImplementedException();
-            }
+                Source = this,
+                Converter = ColorToBrushConverter.Instance
+            };
         }
     }
 }

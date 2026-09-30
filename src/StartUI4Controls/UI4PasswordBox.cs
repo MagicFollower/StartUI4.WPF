@@ -10,9 +10,24 @@ using System.Windows.Markup;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
+using StartUI4Controls.Internal;
 
 namespace StartUI4Controls
 {
+    /// <summary>
+    /// 现代风格的密码输入控件，支持密码遮罩显示切换、占位符文本和自定义样式。
+    /// </summary>
+    /// <remarks>
+    /// <para>继承自 <see cref="System.Windows.Controls.TextBox"/>，提供以下自定义属性：</para>
+    /// <list type="bullet">
+    ///   <item><see cref="Password"/> — 密码字符串（注意：以明文存储在内存中）</item>
+    ///   <item><see cref="PasswordChar"/> — 密码遮罩字符</item>
+    ///   <item><see cref="IsPasswordMode"/> — 是否处于密码模式</item>
+    ///   <item><see cref="ShowPasswordButton"/> — 是否显示密码可见性切换按钮</item>
+    ///   <item><see cref="PlaceholderText"/> / <see cref="PlaceholderForeground"/> — 占位符</item>
+    /// </list>
+    /// <para>提供 <see cref="ClearPassword()"/> 方法用于安全地清除密码。</para>
+    /// </remarks>
     public class UI4PasswordBox : TextBox
     {
         public static readonly DependencyProperty CornerRadiusProperty =
@@ -26,7 +41,7 @@ namespace StartUI4Controls
 
         public static readonly DependencyProperty BorderNormalColorProperty =
             DependencyProperty.Register(nameof(BorderNormalColor), typeof(Color), typeof(UI4PasswordBox),
-                new PropertyMetadata(Color.FromRgb(200, 200, 220), OnStyleRefresh));
+                new PropertyMetadata(Color.FromRgb(200, 200, 220)));
         public Color BorderNormalColor
         {
             get => (Color)GetValue(BorderNormalColorProperty);
@@ -35,7 +50,7 @@ namespace StartUI4Controls
 
         public static readonly DependencyProperty HoverBorderColorProperty =
             DependencyProperty.Register(nameof(HoverBorderColor), typeof(Color), typeof(UI4PasswordBox),
-                new PropertyMetadata(Color.FromRgb(0, 120, 212), OnStyleRefresh));
+                new PropertyMetadata(Color.FromRgb(0, 120, 212)));
         public Color HoverBorderColor
         {
             get => (Color)GetValue(HoverBorderColorProperty);
@@ -44,7 +59,7 @@ namespace StartUI4Controls
 
         public static readonly DependencyProperty FocusBorderColorProperty =
             DependencyProperty.Register(nameof(FocusBorderColor), typeof(Color), typeof(UI4PasswordBox),
-                new PropertyMetadata(Color.FromRgb(0, 102, 181), OnStyleRefresh));
+                new PropertyMetadata(Color.FromRgb(0, 102, 181)));
         public Color FocusBorderColor
         {
             get => (Color)GetValue(FocusBorderColorProperty);
@@ -53,7 +68,7 @@ namespace StartUI4Controls
 
         public static readonly DependencyProperty EditBackgroundProperty =
             DependencyProperty.Register(nameof(EditBackground), typeof(Brush), typeof(UI4PasswordBox),
-                new PropertyMetadata(new SolidColorBrush(Color.FromRgb(255, 255, 255)), OnStyleRefresh));
+                new PropertyMetadata(new SolidColorBrush(Color.FromRgb(255, 255, 255))));
         public Brush EditBackground
         {
             get => (Brush)GetValue(EditBackgroundProperty);
@@ -62,7 +77,7 @@ namespace StartUI4Controls
 
         public static readonly DependencyProperty TextColorProperty =
             DependencyProperty.Register(nameof(TextColor), typeof(Color), typeof(UI4PasswordBox),
-                new PropertyMetadata(Color.FromRgb(30, 30, 30), OnStyleRefresh));
+                new PropertyMetadata(Color.FromRgb(30, 30, 30)));
         public Color TextColor
         {
             get => (Color)GetValue(TextColorProperty);
@@ -98,13 +113,23 @@ namespace StartUI4Controls
 
         public static readonly DependencyProperty PlaceholderForegroundProperty =
             DependencyProperty.Register(nameof(PlaceholderForeground), typeof(Brush), typeof(UI4PasswordBox),
-                new PropertyMetadata(new SolidColorBrush(Colors.LightGray), OnStyleRefresh));
+                new PropertyMetadata(new SolidColorBrush(Colors.LightGray)));
         public Brush PlaceholderForeground
         {
             get => (Brush)GetValue(PlaceholderForegroundProperty);
             set => SetValue(PlaceholderForegroundProperty, value);
         }
 
+        /// <summary>
+        /// 获取或设置密码字符串。
+        /// </summary>
+        /// <remarks>
+        /// <para><b>安全注意事项：</b></para>
+        /// <para>此属性使用普通 <see cref="string"/> 存储密码，密码会以明文形式保留在内存中，
+        /// 可能被内存转储或调试工具读取。对于高安全性场景，建议考虑使用 WPF 原生的
+        /// <see cref="System.Windows.Controls.PasswordBox"/>，它使用不安全的内存存储来保护密码。</para>
+        /// <para>此属性支持数据绑定，但请注意绑定目标可能会暴露密码值。</para>
+        /// </remarks>
         public static readonly DependencyProperty PasswordProperty =
             DependencyProperty.Register(nameof(Password), typeof(string), typeof(UI4PasswordBox),
                 new PropertyMetadata(string.Empty, OnPasswordChanged));
@@ -132,7 +157,28 @@ namespace StartUI4Controls
             set => SetValue(IsPasswordModeProperty, value);
         }
 
-        private static readonly Brush DefaultRevealButtonForeground = new SolidColorBrush(Color.FromArgb(150, 80, 80, 100));
+        /// <summary>显示/隐藏明文按钮常态色，跟随主题令牌 UI4.Color.Icon。</summary>
+        private static readonly DependencyProperty RevealIconColorProperty =
+            DependencyProperty.Register(nameof(RevealIconColor), typeof(Color), typeof(UI4PasswordBox),
+                new PropertyMetadata(Color.FromRgb(110, 110, 120)));
+        private Color RevealIconColor
+        {
+            get => (Color)GetValue(RevealIconColorProperty);
+            set => SetValue(RevealIconColorProperty, value);
+        }
+
+        /// <summary>显示/隐藏明文按钮悬停色，跟随主题令牌 UI4.Color.IconHover。</summary>
+        private static readonly DependencyProperty RevealIconHoverColorProperty =
+            DependencyProperty.Register(nameof(RevealIconHoverColor), typeof(Color), typeof(UI4PasswordBox),
+                new PropertyMetadata(Color.FromRgb(0, 102, 181)));
+        private Color RevealIconHoverColor
+        {
+            get => (Color)GetValue(RevealIconHoverColorProperty);
+            set => SetValue(RevealIconHoverColorProperty, value);
+        }
+
+        private static Brush CreateDefaultRevealBrush()
+            => new SolidColorBrush(Color.FromArgb(150, UI4Theme.Current.IconColor.R, UI4Theme.Current.IconColor.G, UI4Theme.Current.IconColor.B));
 
         private static void OnPasswordModeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
@@ -160,12 +206,14 @@ namespace StartUI4Controls
             if (d is UI4PasswordBox box) box.Style = box.BuildEditStyle();
         }
 
-        private static string _scrollBarResourcesXaml;
         private ScrollViewer _scrollViewer;
         private ScrollBar _verticalScrollBar;
         private DispatcherTimer _fadeTimer;
         private EventHandler _fadeTimerTickHandler;
         private UI4ContextMenu _contextMenu;
+        /// <summary>
+        /// 内部密码字段。注意：此字段以明文存储密码，存在安全风险。
+        /// </summary>
         private string _password = string.Empty;
         private int? _pendingCaretIndex;
         private bool _showPlainText = false;
@@ -173,161 +221,9 @@ namespace StartUI4Controls
 
         static UI4PasswordBox()
         {
-            _scrollBarResourcesXaml = GetScrollBarResourcesXaml();
             DefaultStyleKeyProperty.OverrideMetadata(typeof(UI4PasswordBox),
                 new FrameworkPropertyMetadata(typeof(UI4PasswordBox)));
         }
-
-        private static string GetScrollBarResourcesXaml()
-        {
-            return @"
-<ResourceDictionary xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation'
-                    xmlns:x='http://schemas.microsoft.com/winfx/2006/xaml'>
-    <Style x:Key='ScrollBarThumb' TargetType='{x:Type Thumb}'>
-        <Setter Property='OverridesDefaultStyle' Value='true'/>
-        <Setter Property='IsTabStop' Value='false'/>
-        <Setter Property='Template'>
-            <Setter.Value>
-                <ControlTemplate TargetType='{x:Type Thumb}'>
-                    <Rectangle Fill='#90000000' RadiusX='3' RadiusY='3'/>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-    <Style x:Key='HorizontalScrollBarPageButton' TargetType='{x:Type RepeatButton}'>
-        <Setter Property='OverridesDefaultStyle' Value='true'/>
-        <Setter Property='Background' Value='Transparent'/>
-        <Setter Property='Focusable' Value='false'/>
-        <Setter Property='IsTabStop' Value='false'/>
-        <Setter Property='Opacity' Value='0'/>
-        <Setter Property='Template'>
-            <Setter.Value>
-                <ControlTemplate TargetType='{x:Type RepeatButton}'>
-                    <Rectangle Fill='{TemplateBinding Background}'
-                               Width='{TemplateBinding Width}'
-                               Height='{TemplateBinding Height}'/>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-    <Style x:Key='VerticalScrollBarPageButton' TargetType='{x:Type RepeatButton}'>
-        <Setter Property='OverridesDefaultStyle' Value='true'/>
-        <Setter Property='Background' Value='Transparent'/>
-        <Setter Property='Focusable' Value='false'/>
-        <Setter Property='IsTabStop' Value='false'/>
-        <Setter Property='Opacity' Value='0'/>
-        <Setter Property='Template'>
-            <Setter.Value>
-                <ControlTemplate TargetType='{x:Type RepeatButton}'>
-                    <Rectangle Fill='{TemplateBinding Background}'
-                               Width='{TemplateBinding Width}'
-                               Height='{TemplateBinding Height}'/>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-    <Style TargetType='{x:Type ScrollBar}'>
-        <Setter Property='Stylus.IsPressAndHoldEnabled' Value='false'/>
-        <Setter Property='Stylus.IsFlicksEnabled' Value='false'/>
-        <Setter Property='Background' Value='Transparent'/>
-        <Setter Property='Margin' Value='0,1,2,6'/>
-        <Setter Property='Width' Value='6'/>
-        <Setter Property='MinWidth' Value='6'/>
-        <Setter Property='Opacity' Value='0'/>
-        <Setter Property='Template'>
-            <Setter.Value>
-                <ControlTemplate TargetType='{x:Type ScrollBar}'>
-                    <Grid x:Name='Bg' SnapsToDevicePixels='true'>
-                        <Track x:Name='PART_Track' IsDirectionReversed='true'>
-                            <Track.DecreaseRepeatButton>
-                                <RepeatButton Style='{StaticResource VerticalScrollBarPageButton}'
-                                              Command='{x:Static ScrollBar.PageUpCommand}'/>
-                            </Track.DecreaseRepeatButton>
-                            <Track.IncreaseRepeatButton>
-                                <RepeatButton Style='{StaticResource VerticalScrollBarPageButton}'
-                                              Command='{x:Static ScrollBar.PageDownCommand}'/>
-                            </Track.IncreaseRepeatButton>
-                            <Track.Thumb>
-                                <Thumb Style='{StaticResource ScrollBarThumb}'/>
-                            </Track.Thumb>
-                        </Track>
-                    </Grid>
-                    <ControlTemplate.Triggers>
-                        <Trigger Property='IsMouseOver' Value='True'>
-                            <Trigger.EnterActions>
-                                <BeginStoryboard>
-                                    <Storyboard>
-                                        <DoubleAnimation Storyboard.TargetProperty='Opacity' To='1' Duration='0:0:0.2'/>
-                                    </Storyboard>
-                                </BeginStoryboard>
-                            </Trigger.EnterActions>
-                            <Trigger.ExitActions>
-                                <BeginStoryboard>
-                                    <Storyboard>
-                                        <DoubleAnimation Storyboard.TargetProperty='Opacity' To='0' Duration='0:0:0.5'/>
-                                    </Storyboard>
-                                </BeginStoryboard>
-                            </Trigger.ExitActions>
-                        </Trigger>
-                    </ControlTemplate.Triggers>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-        <Style.Triggers>
-            <Trigger Property='Orientation' Value='Horizontal'>
-                <Setter Property='Background' Value='Transparent'/>
-                <Setter Property='Margin' Value='2,0,6,2'/>
-                <Setter Property='Height' Value='6'/>
-                <Setter Property='MinHeight' Value='6'/>
-                <Setter Property='Width' Value='Auto'/>
-                <Setter Property='Opacity' Value='0'/>
-                <Setter Property='Template'>
-                    <Setter.Value>
-                        <ControlTemplate TargetType='{x:Type ScrollBar}'>
-                            <Grid x:Name='Bg' SnapsToDevicePixels='true'>
-                                <Track x:Name='PART_Track'>
-                                    <Track.DecreaseRepeatButton>
-                                        <RepeatButton Style='{StaticResource HorizontalScrollBarPageButton}'
-                                                      Command='{x:Static ScrollBar.PageLeftCommand}'/>
-                                    </Track.DecreaseRepeatButton>
-                                    <Track.IncreaseRepeatButton>
-                                        <RepeatButton Style='{StaticResource HorizontalScrollBarPageButton}'
-                                                      Command='{x:Static ScrollBar.PageRightCommand}'/>
-                                    </Track.IncreaseRepeatButton>
-                                    <Track.Thumb>
-                                        <Thumb Style='{StaticResource ScrollBarThumb}'/>
-                                    </Track.Thumb>
-                                </Track>
-                            </Grid>
-                            <ControlTemplate.Triggers>
-                                <Trigger Property='IsMouseOver' Value='True'>
-                                    <Trigger.EnterActions>
-                                        <BeginStoryboard>
-                                            <Storyboard>
-                                                <DoubleAnimation Storyboard.TargetProperty='Opacity' To='1' Duration='0:0:0.2'/>
-                                            </Storyboard>
-                                        </BeginStoryboard>
-                                    </Trigger.EnterActions>
-                                    <Trigger.ExitActions>
-                                        <BeginStoryboard>
-                                            <Storyboard>
-                                                <DoubleAnimation Storyboard.TargetProperty='Opacity' To='0' Duration='0:0:0.5'/>
-                                            </Storyboard>
-                                        </BeginStoryboard>
-                                    </Trigger.ExitActions>
-                                </Trigger>
-                            </ControlTemplate.Triggers>
-                        </ControlTemplate>
-                    </Setter.Value>
-                </Setter>
-            </Trigger>
-        </Style.Triggers>
-    </Style>
-</ResourceDictionary>";
-        }
-
-        private static ResourceDictionary CreateScrollBarResources()
-            => (ResourceDictionary)XamlReader.Parse(_scrollBarResourcesXaml);
 
         public UI4PasswordBox()
         {
@@ -335,15 +231,21 @@ namespace StartUI4Controls
             Cursor = Cursors.IBeam;
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto;
 
-            var resDict = CreateScrollBarResources();
-            foreach (DictionaryEntry entry in resDict)
-                if (!Resources.Contains(entry.Key))
-                    Resources.Add(entry.Key, entry.Value);
+            ScrollBarResources.MergeInto(Resources);
 
             Style = BuildEditStyle();
             Loaded += UI4PasswordBox_Loaded;
             Unloaded += UI4PasswordBox_Unloaded;
             LostFocus += (s, e) => HidePlainText();
+
+            SetResourceReference(TextColorProperty, "UI4.Color.TextForeground");
+            SetResourceReference(BorderNormalColorProperty, "UI4.Color.BorderNormal");
+            SetResourceReference(HoverBorderColorProperty, "UI4.Color.BorderHover");
+            SetResourceReference(FocusBorderColorProperty, "UI4.Color.BorderFocus");
+            SetResourceReference(EditBackgroundProperty, "UI4.Brush.Surface");
+            SetResourceReference(PlaceholderForegroundProperty, "UI4.Brush.Placeholder");
+            SetResourceReference(RevealIconColorProperty, "UI4.Color.Icon");
+            SetResourceReference(RevealIconHoverColorProperty, "UI4.Color.IconHover");
 
             PreviewTextInput += OnPreviewTextInput;
             PreviewKeyDown += OnPreviewKeyDown;
@@ -404,6 +306,9 @@ namespace StartUI4Controls
             _fadeTimer?.Stop();
             _fadeTimer = null;
             _fadeTimerTickHandler = null;
+            
+            // 安全改进：在控件卸载时清除密码，减少内存中密码暴露的时间窗口
+            _password = string.Empty;
         }
 
         private void OnScrollBarMouseEnter(object sender, MouseEventArgs e)
@@ -633,6 +538,23 @@ namespace StartUI4Controls
             UpdateDisplay();
         }
 
+        /// <summary>
+        /// 清除密码并重置控件状态。
+        /// </summary>
+        /// <remarks>
+        /// 调用此方法会清空内部密码存储，将 <see cref="Password"/> 属性设置为空字符串，
+        /// 并清除显示文本。建议在用户完成登录或取消操作后调用此方法，
+        /// 以减少密码在内存中的暴露时间。
+        /// </remarks>
+        public void ClearPassword()
+        {
+            _password = string.Empty;
+            Password = string.Empty;
+            Text = string.Empty;
+            SelectionStart = 0;
+            SelectionLength = 0;
+        }
+
         private void OnRevealButtonMouseDown(object sender, MouseButtonEventArgs e)
         {
             if (e.LeftButton == MouseButtonState.Pressed)
@@ -641,7 +563,7 @@ namespace StartUI4Controls
                 var btn = sender as Button;
                 if (btn != null)
                 {
-                    btn.Foreground = new SolidColorBrush(Color.FromRgb(0, 120, 212));
+                    btn.Foreground = UI4Theme.Current.AccentBrush;
                     btn.CaptureMouse();
                 }
                 e.Handled = true;
@@ -657,7 +579,7 @@ namespace StartUI4Controls
                 {
                     if (btn.IsMouseCaptured)
                         btn.ReleaseMouseCapture();
-                    btn.Foreground = DefaultRevealButtonForeground;
+                    btn.Foreground = CreateDefaultRevealBrush();
                 }
                 HidePlainText();
                 e.Handled = true;
@@ -670,7 +592,7 @@ namespace StartUI4Controls
             if (btn != null && btn.IsMouseCaptured)
             {
                 btn.ReleaseMouseCapture();
-                btn.Foreground = DefaultRevealButtonForeground;
+                btn.Foreground = CreateDefaultRevealBrush();
                 HidePlainText();
             }
         }
@@ -767,11 +689,11 @@ namespace StartUI4Controls
         private Style BuildEditStyle()
         {
             Style style = new Style(typeof(TextBox));
-            style.Setters.Add(new Setter(ForegroundProperty, new SolidColorBrush(TextColor)));
-            style.Setters.Add(new Setter(PaddingProperty, InnerPadding));
-            style.Setters.Add(new Setter(BackgroundProperty, EditBackground));
+            style.Setters.Add(new Setter(ForegroundProperty, OwnColorBrushBinding(nameof(TextColor))));
+            style.Setters.Add(new Setter(PaddingProperty, new Binding(nameof(InnerPadding)) { Source = this }));
+            style.Setters.Add(new Setter(BackgroundProperty, new Binding(nameof(EditBackground)) { Source = this }));
             style.Setters.Add(new Setter(BorderThicknessProperty, new Thickness(1)));
-            style.Setters.Add(new Setter(BorderBrushProperty, new SolidColorBrush(BorderNormalColor)));
+            style.Setters.Add(new Setter(BorderBrushProperty, OwnColorBrushBinding(nameof(BorderNormalColor))));
             style.Setters.Add(new Setter(CursorProperty, Cursors.IBeam));
 
             ControlTemplate template = new ControlTemplate(typeof(TextBox));
@@ -813,7 +735,9 @@ namespace StartUI4Controls
             revealBtnStyle.Setters.Add(new Setter(Button.BorderThicknessProperty, new Thickness(0)));
             revealBtnStyle.Setters.Add(new Setter(Button.PaddingProperty, new Thickness(0)));
             revealBtnStyle.Setters.Add(new Setter(Button.CursorProperty, Cursors.Hand));
-            revealBtnStyle.Setters.Add(new Setter(Button.ForegroundProperty, DefaultRevealButtonForeground));
+            // 0.588 ≈ 原烘焙值 Color.FromArgb(150, IconColor) 的淡化观感；令牌色本身不透明，用 Opacity 还原。
+            revealBtnStyle.Setters.Add(new Setter(UIElement.OpacityProperty, 0.588d));
+            revealBtnStyle.Setters.Add(new Setter(Button.ForegroundProperty, OwnColorBrushBinding(nameof(RevealIconColor))));
             revealBtnStyle.Setters.Add(new Setter(Button.MarginProperty, new Thickness(0, 0, 10, 0)));
 
             ControlTemplate revealBtnTemplate = new ControlTemplate(typeof(Button));
@@ -827,7 +751,8 @@ namespace StartUI4Controls
             revealBtnStyle.Setters.Add(new Setter(Button.TemplateProperty, revealBtnTemplate));
 
             Trigger revealHoverTrigger = new Trigger { Property = Button.IsMouseOverProperty, Value = true };
-            revealHoverTrigger.Setters.Add(new Setter(Button.ForegroundProperty, new SolidColorBrush(Color.FromArgb(255, 80, 80, 100))));
+            revealHoverTrigger.Setters.Add(new Setter(Button.ForegroundProperty, OwnColorBrushBinding(nameof(RevealIconHoverColor))));
+            revealHoverTrigger.Setters.Add(new Setter(UIElement.OpacityProperty, 1d));
             revealBtnStyle.Triggers.Add(revealHoverTrigger);
 
             FrameworkElementFactory revealBtn = new FrameworkElementFactory(typeof(Button));
@@ -863,15 +788,24 @@ namespace StartUI4Controls
             style.Setters.Add(new Setter(TemplateProperty, template));
 
             Trigger focusTrigger = new Trigger { Property = IsFocusedProperty, Value = true };
-            focusTrigger.Setters.Add(new Setter(BorderBrushProperty, new SolidColorBrush(FocusBorderColor)));
+            focusTrigger.Setters.Add(new Setter(BorderBrushProperty, OwnColorBrushBinding(nameof(FocusBorderColor))));
             focusTrigger.Setters.Add(new Setter(BorderThicknessProperty, new Thickness(1.2)));
             style.Triggers.Add(focusTrigger);
 
             Trigger hoverTrigger = new Trigger { Property = IsMouseOverProperty, Value = true };
-            hoverTrigger.Setters.Add(new Setter(BorderBrushProperty, new SolidColorBrush(HoverBorderColor)));
+            hoverTrigger.Setters.Add(new Setter(BorderBrushProperty, OwnColorBrushBinding(nameof(HoverBorderColor))));
             style.Triggers.Add(hoverTrigger);
 
             return style;
+        }
+
+        private Binding OwnColorBrushBinding(string path)
+        {
+            return new Binding(path)
+            {
+                Source = this,
+                Converter = ColorToBrushConverter.Instance
+            };
         }
     }
 }

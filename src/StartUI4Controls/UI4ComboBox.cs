@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
@@ -11,9 +12,23 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Shapes;
 using System.Windows.Threading;
+using StartUI4Controls.Internal;
+
 namespace StartUI4Controls
 {
-    public class UI4ComboBox : ComboBox
+    /// <summary>
+    /// 现代风格的下拉组合框控件，支持圆角、自定义边框和滚动条样式。
+    /// </summary>
+    /// <remarks>
+    /// <para>继承自 <see cref="System.Windows.Controls.ComboBox"/>，提供以下自定义属性：</para>
+    /// <list type="bullet">
+    ///   <item><see cref="CornerRadius"/> — 圆角半径</item>
+    ///   <item><see cref="BorderNormalColor"/> / <see cref="HoverBorderColor"/> / <see cref="FocusBorderColor"/> — 边框颜色状态</item>
+    ///   <item><see cref="TextColor"/> — 文字颜色</item>
+    ///   <item><see cref="EditBackground"/> — 编辑区域背景</item>
+    /// </list>
+    /// </remarks>
+    public class UI4ComboBox : ComboBox, IThemeAware
     {
         public static readonly DependencyProperty CornerRadiusProperty =
             DependencyProperty.Register(
@@ -86,7 +101,7 @@ namespace StartUI4Controls
                 nameof(InnerPadding),
                 typeof(Thickness),
                 typeof(UI4ComboBox),
-                new PropertyMetadata(new Thickness(12, 10, 30, 10), OnStyleRefresh));
+                new PropertyMetadata(new Thickness(12, 4, 30, 4), OnStyleRefresh));
         public Thickness InnerPadding
         {
             get => (Thickness)GetValue(InnerPaddingProperty);
@@ -103,7 +118,6 @@ namespace StartUI4Controls
             get => (CornerRadius)GetValue(DropCornerRadiusProperty);
             set => SetValue(DropCornerRadiusProperty, value);
         }
-        private static string _scrollBarResourcesXaml;
         private static bool _globalScrollResLoaded = false;
         private static void OnStyleRefresh(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
@@ -112,7 +126,6 @@ namespace StartUI4Controls
         }
         static UI4ComboBox()
         {
-            _scrollBarResourcesXaml = GetScrollBarResourcesXaml();
             DefaultStyleKeyProperty.OverrideMetadata(typeof(UI4ComboBox),
                 new FrameworkPropertyMetadata(typeof(UI4ComboBox)));
             LoadGlobalScrollResource();
@@ -120,13 +133,7 @@ namespace StartUI4Controls
         private static void LoadGlobalScrollResource()
         {
             if (_globalScrollResLoaded) return;
-            var appRes = Application.Current.Resources;
-            var dict = (ResourceDictionary)XamlReader.Parse(_scrollBarResourcesXaml);
-            foreach (DictionaryEntry entry in dict)
-            {
-                if (!appRes.Contains(entry.Key))
-                    appRes.Add(entry.Key, entry.Value);
-            }
+            ScrollBarResources.MergeInto(Application.Current.Resources);
             _globalScrollResLoaded = true;
         }
         private static void OnDropDownPreviewMouseWheel(object sender, MouseWheelEventArgs e)
@@ -181,131 +188,30 @@ namespace StartUI4Controls
                     yield return descendant;
             }
         }
-        private static string GetScrollBarResourcesXaml()
-        {
-            return @"
-<ResourceDictionary xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation'
-                    xmlns:x='http://schemas.microsoft.com/winfx/2006/xaml'>
-    <Style x:Key='ScrollBarThumb' TargetType='{x:Type Thumb}'>
-        <Setter Property='OverridesDefaultStyle' Value='true' />
-        <Setter Property='IsTabStop' Value='false' />
-        <Setter Property='Template'>
-            <Setter.Value>
-                <ControlTemplate TargetType='{x:Type Thumb}'>
-                    <Rectangle Fill='#90000000' RadiusX='3' RadiusY='3' />
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-    <Style x:Key='HorizontalScrollBarPageButton' TargetType='{x:Type RepeatButton}'>
-        <Setter Property='OverridesDefaultStyle' Value='true' />
-        <Setter Property='Background' Value='Transparent' />
-        <Setter Property='Focusable' Value='false' />
-        <Setter Property='IsTabStop' Value='false' />
-        <Setter Property='Opacity' Value='0' />
-        <Setter Property='Template'>
-            <Setter.Value>
-                <ControlTemplate TargetType='{x:Type RepeatButton}'>
-                    <Rectangle Fill='{TemplateBinding Background}'
-                               Width='{TemplateBinding Width}'
-                               Height='{TemplateBinding Height}' />
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-    <Style x:Key='VerticalScrollBarPageButton' TargetType='{x:Type RepeatButton}'>
-        <Setter Property='OverridesDefaultStyle' Value='true' />
-        <Setter Property='Background' Value='Transparent' />
-        <Setter Property='Focusable' Value='false' />
-        <Setter Property='IsTabStop' Value='false' />
-        <Setter Property='Opacity' Value='0' />
-        <Setter Property='Template'>
-            <Setter.Value>
-                <ControlTemplate TargetType='{x:Type RepeatButton}'>
-                    <Rectangle Fill='{TemplateBinding Background}'
-                               Width='{TemplateBinding Width}'
-                               Height='{TemplateBinding Height}' />
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-    <Style TargetType='{x:Type ScrollBar}'>
-        <Setter Property='Stylus.IsPressAndHoldEnabled' Value='false' />
-        <Setter Property='Stylus.IsFlicksEnabled' Value='false' />
-        <Setter Property='Background' Value='Transparent' />
-        <Setter Property='Margin' Value='0,1,2,6' />
-        <Setter Property='Width' Value='6' />
-        <Setter Property='MinWidth' Value='6' />
-        <Setter Property='Opacity' Value='0' />
-        <Setter Property='Template'>
-            <Setter.Value>
-                <ControlTemplate TargetType='{x:Type ScrollBar}'>
-                    <Grid x:Name='Bg' SnapsToDevicePixels='true'>
-                        <Track x:Name='PART_Track' IsDirectionReversed='true'>
-                            <Track.DecreaseRepeatButton>
-                                <RepeatButton Style='{StaticResource VerticalScrollBarPageButton}'
-                                              Command='{x:Static ScrollBar.PageUpCommand}' />
-                            </Track.DecreaseRepeatButton>
-                            <Track.IncreaseRepeatButton>
-                                <RepeatButton Style='{StaticResource VerticalScrollBarPageButton}'
-                                              Command='{x:Static ScrollBar.PageDownCommand}' />
-                            </Track.IncreaseRepeatButton>
-                            <Track.Thumb>
-                                <Thumb Style='{StaticResource ScrollBarThumb}' />
-                            </Track.Thumb>
-                        </Track>
-                    </Grid>
-                    <ControlTemplate.Triggers>
-                        <Trigger Property='IsMouseOver' Value='True'>
-                            <Setter Property='Opacity' Value='0.6' />
-                        </Trigger>
-                    </ControlTemplate.Triggers>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-        <Style.Triggers>
-            <Trigger Property='Orientation' Value='Horizontal'>
-                <Setter Property='Background' Value='Transparent' />
-                <Setter Property='Margin' Value='2,0,6,2' />
-                <Setter Property='Height' Value='6' />
-                <Setter Property='MinHeight' Value='6' />
-                <Setter Property='Width' Value='Auto' />
-                <Setter Property='Opacity' Value='0' />
-                <Setter Property='Template'>
-                    <Setter.Value>
-                        <ControlTemplate TargetType='{x:Type ScrollBar}'>
-                            <Grid x:Name='Bg' SnapsToDevicePixels='true'>
-                                <Track x:Name='PART_Track'>
-                                    <Track.DecreaseRepeatButton>
-                                        <RepeatButton Style='{StaticResource HorizontalScrollBarPageButton}'
-                                                      Command='{x:Static ScrollBar.PageLeftCommand}' />
-                                    </Track.DecreaseRepeatButton>
-                                    <Track.IncreaseRepeatButton>
-                                        <RepeatButton Style='{StaticResource HorizontalScrollBarPageButton}'
-                                                      Command='{x:Static ScrollBar.PageRightCommand}' />
-                                    </Track.IncreaseRepeatButton>
-                                    <Track.Thumb>
-                                        <Thumb Style='{StaticResource ScrollBarThumb}' />
-                                    </Track.Thumb>
-                                </Track>
-                            </Grid>
-                            <ControlTemplate.Triggers>
-                                <Trigger Property='IsMouseOver' Value='True'>
-                                    <Setter Property='Opacity' Value='0.6' />
-                                </Trigger>
-                            </ControlTemplate.Triggers>
-                        </ControlTemplate>
-                    </Setter.Value>
-                </Setter>
-            </Trigger>
-        </Style.Triggers>
-    </Style>
-</ResourceDictionary>";
-        }
         public UI4ComboBox()
         {
             FontSize = 15d;
+            SyncThemeColors();
             Style = BuildComboStyle();
+            UI4Theme.TrackControl(this);
+        }
+
+        void IThemeAware.OnThemeChanged()
+        {
+            SyncThemeColors();
+            Style = BuildComboStyle();
+        }
+
+        private readonly Dictionary<DependencyProperty, object> _applied = new Dictionary<DependencyProperty, object>();
+
+        private void SyncThemeColors()
+        {
+            var theme = UI4Theme.Current;
+            ThemeSync.Apply(this, TextColorProperty, _applied, theme.TextForegroundColor);
+            ThemeSync.Apply(this, BorderNormalColorProperty, _applied, theme.BorderNormalColor);
+            ThemeSync.Apply(this, EditBackgroundProperty, _applied, theme.SurfaceBrush);
+            ThemeSync.Apply(this, FocusGradientStartProperty, _applied, theme.AccentColor);
+            ThemeSync.Apply(this, FocusGradientEndProperty, _applied, theme.AccentEndColor);
         }
         private Style BuildComboStyle()
         {
@@ -329,11 +235,11 @@ namespace StartUI4Controls
             itemTemplate.VisualTree = itemBorder;
             itemStyle.Setters.Add(new Setter(Control.TemplateProperty, itemTemplate));
             Trigger itemHoverTrigger = new Trigger { Property = UIElement.IsMouseOverProperty, Value = true };
-            itemHoverTrigger.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(Color.FromArgb(20, 0, 0, 0))));
+            itemHoverTrigger.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(UI4Theme.Current.HoverOverlayColor)));
             itemHoverTrigger.Setters.Add(new Setter(CursorProperty, Cursors.Hand));
             itemStyle.Triggers.Add(itemHoverTrigger);
             Trigger itemSelectedTrigger = new Trigger { Property = ListBoxItem.IsSelectedProperty, Value = true };
-            itemSelectedTrigger.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(Color.FromArgb(10, 0, 0, 0))));
+            itemSelectedTrigger.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(UI4Theme.Current.SelectedOverlayColor)));
             itemSelectedTrigger.Setters.Add(new Setter(CursorProperty, Cursors.Hand));
             itemStyle.Triggers.Add(itemSelectedTrigger);
             style.Setters.Add(new Setter(ComboBox.ItemContainerStyleProperty, itemStyle));
@@ -343,7 +249,7 @@ namespace StartUI4Controls
             itemStyle.Setters.Add(new Setter(Control.HorizontalContentAlignmentProperty, HorizontalAlignment.Left));
             itemStyle.Setters.Add(new Setter(Control.BackgroundProperty, Brushes.Transparent));
             Trigger hoverTrigger = new Trigger { Property = UIElement.IsMouseOverProperty, Value = true };
-            hoverTrigger.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(Color.FromArgb(20, 0, 0, 0))));
+            hoverTrigger.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(UI4Theme.Current.HoverOverlayColor)));
             hoverTrigger.Setters.Add(new Setter(CursorProperty, Cursors.Hand));
             itemStyle.Triggers.Add(hoverTrigger);
             style.Setters.Add(new Setter(ComboBox.ItemContainerStyleProperty, itemStyle));
@@ -365,14 +271,14 @@ namespace StartUI4Controls
             toggleBtnStyle.Setters.Add(new Setter(ToggleButton.BackgroundProperty, Brushes.Transparent));
             toggleBtnStyle.Setters.Add(new Setter(ToggleButton.BorderThicknessProperty, new Thickness(0)));
             toggleBtnStyle.Setters.Add(new Setter(ToggleButton.CursorProperty, Cursors.Hand));
-            toggleBtnStyle.Setters.Add(new Setter(ToggleButton.ForegroundProperty, new SolidColorBrush(Color.FromRgb(120, 120, 140))));
+            toggleBtnStyle.Setters.Add(new Setter(ToggleButton.ForegroundProperty, new SolidColorBrush(UI4Theme.Current.IconColor)));
             ControlTemplate toggleBtnTemplate = new ControlTemplate(typeof(ToggleButton));
             FrameworkElementFactory toggleBtnBorder = new FrameworkElementFactory(typeof(Border));
             toggleBtnBorder.SetValue(Border.BackgroundProperty, Brushes.Transparent);
             toggleBtnBorder.SetBinding(Border.BackgroundProperty, new Binding(nameof(Background)) { RelativeSource = RelativeSource.TemplatedParent });
             FrameworkElementFactory arrowPath = new FrameworkElementFactory(typeof(Path));
             arrowPath.SetValue(Path.DataProperty, Geometry.Parse("M 0 0 L 6 6 L 12 0"));
-            arrowPath.SetValue(Path.StrokeProperty, new SolidColorBrush(Color.FromRgb(120, 120, 140)));
+            arrowPath.SetValue(Path.StrokeProperty, new SolidColorBrush(UI4Theme.Current.IconColor));
             arrowPath.SetValue(Path.StrokeThicknessProperty, 1.5);
             arrowPath.SetValue(Path.FillProperty, Brushes.Transparent);
             arrowPath.SetValue(Path.HorizontalAlignmentProperty, HorizontalAlignment.Center);
@@ -386,7 +292,7 @@ namespace StartUI4Controls
                 Property = UIElement.IsMouseOverProperty,
                 Value = true
             };
-            toggleBtnHoverTrigger.Setters.Add(new Setter(Path.StrokeProperty, new SolidColorBrush(Color.FromRgb(60, 60, 80))) { TargetName = "ArrowPath" });
+            toggleBtnHoverTrigger.Setters.Add(new Setter(Path.StrokeProperty, new SolidColorBrush(UI4Theme.Current.IconHoverColor)) { TargetName = "ArrowPath" });
             toggleBtnTemplate.Triggers.Add(toggleBtnHoverTrigger);
             Trigger toggleBtnCheckedTrigger = new Trigger
             {
@@ -480,9 +386,9 @@ namespace StartUI4Controls
             dropPopup.SetBinding(FrameworkElement.MinWidthProperty, new Binding(nameof(ActualWidth)) { RelativeSource = RelativeSource.TemplatedParent });
             FrameworkElementFactory dropBorder = new FrameworkElementFactory(typeof(Border));
             dropBorder.SetBinding(Border.CornerRadiusProperty, new Binding(nameof(DropCornerRadius)) { RelativeSource = RelativeSource.TemplatedParent });
-            dropBorder.SetValue(Border.BackgroundProperty, Brushes.White);
+            dropBorder.SetValue(Border.BackgroundProperty, UI4Theme.Current.SurfaceBrush);
             dropBorder.SetValue(Border.BorderThicknessProperty, new Thickness(1, 1, 1, 1));
-            dropBorder.SetValue(Border.BorderBrushProperty, new SolidColorBrush(Color.FromRgb(200, 200, 220)));
+            dropBorder.SetValue(Border.BorderBrushProperty, UI4Theme.Current.BorderNormalBrush);
             FrameworkElementFactory dropScroll = new FrameworkElementFactory(typeof(ScrollViewer));
             dropScroll.SetBinding(FrameworkElement.MaxHeightProperty, new Binding(nameof(MaxDropDownHeight)) { RelativeSource = RelativeSource.TemplatedParent });
             dropScroll.SetValue(ScrollViewer.VerticalScrollBarVisibilityProperty, ScrollBarVisibility.Auto);
@@ -527,7 +433,7 @@ namespace StartUI4Controls
                 Property = UIElement.IsMouseOverProperty,
                 Value = true
             };
-            hoverTrigger1.Setters.Add(new Setter(Border.BorderBrushProperty, new SolidColorBrush(Color.FromRgb(160, 160, 190))) { TargetName = "PART_Border" });
+            hoverTrigger1.Setters.Add(new Setter(Border.BorderBrushProperty, new SolidColorBrush(UI4Theme.Current.HoverBorderColorLight)) { TargetName = "PART_Border" });
             template.Triggers.Add(hoverTrigger1);
             style.Setters.Add(new Setter(Control.TemplateProperty, template));
             return style;

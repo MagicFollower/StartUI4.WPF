@@ -3,6 +3,7 @@ using System.IO;
 using System.Text;
 using System.Windows;
 using System.Windows.Threading;
+using StartUI4Controls;
 
 namespace StartUI4Demo
 {
@@ -11,6 +12,9 @@ namespace StartUI4Demo
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
+
+            // 资源桥：把主题令牌写入 Application.Resources，供宿主 XAML 的 {DynamicResource UI4.Brush.X} 消费。
+            UI4Theme.ApplyToApplication();
 
             DispatcherUnhandledException += OnDispatcherUnhandledException;
             AppDomain.CurrentDomain.UnhandledException += OnDomainUnhandledException;

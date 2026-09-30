@@ -3,79 +3,131 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Animation;
 using System.Windows.Media.Effects;
+using StartUI4Controls.Internal;
 
 namespace StartUI4Controls
 {
+    /// <summary>
+    /// 消息框按钮模式枚举。
+    /// </summary>
     public enum UI4MessageBoxButtons
     {
         OK,
         OKCancel
     }
 
-    public class UI4MessageBox : Window
+    /// <summary>
+    /// 现代风格的消息框窗口，支持动画效果和自定义按钮。
+    /// </summary>
+    /// <remarks>
+    /// <para>继承自 <see cref="System.Windows.Window"/>，提供现代化的消息提示界面，
+    /// 支持淡入淡出动画和圆角边框。实现 <see cref="IThemeAware"/> 以响应主题切换。</para>
+    /// </remarks>
+    public class UI4MessageBox : Window, IThemeAware
     {
+        private const double DefaultWidth = 460;
+        private const double DefaultMinHeight = 160;
+        private const double DefaultMaxHeight = 400;
+
+        private static readonly FontFamily WindowFontFamily =
+            new FontFamily("Segoe UI Variable Display, Segoe UI, sans-serif");
+        private static readonly FontFamily IconFontFamily =
+            new FontFamily("Segoe MDL2 Assets");
+        private static readonly DropShadowEffect ContainerShadow;
+
         private bool _isClosingAnimating;
-        private const double ResizeThumbSize = 8;
-        private Point _resizeStartPoint;
-        private double _resizeStartWidth, _resizeStartHeight;
-        private int _resizeDirection = 0;
         private readonly UI4MessageBoxButtons _buttonMode;
         private TextBlock _iconText;
         private TextBlock _headingText;
         private TextBlock _messageText;
-        private UI4Button _okButton;
-        private UI4Button _cancelButton;
         private Border _mainContainer;
 
+        static UI4MessageBox()
+        {
+            ContainerShadow = new DropShadowEffect
+            {
+                Color = Colors.Black,
+                BlurRadius = 18,
+                ShadowDepth = 6,
+                Opacity = 0.3
+            };
+            ContainerShadow.Freeze();
+        }
+
+        /// <summary>
+        /// 初始化消息框实例，构建完整视觉树。
+        /// </summary>
         public UI4MessageBox(string title, string content, UI4MessageBoxButtons buttonMode = UI4MessageBoxButtons.OK)
         {
             _buttonMode = buttonMode;
+            ConfigureWindowProperties(title);
+            BuildMainContainer();
+            BuildContentLayout(title, content);
+            AttachDragAndResize();
+            Loaded += Window_LoadedAnim;
+            UI4Theme.TrackControl(this);
+        }
+
+        void IThemeAware.OnThemeChanged()
+        {
+            _mainContainer.Background = UI4Theme.Current.SurfaceBrush;
+            _headingText.Foreground = UI4Theme.Current.TextForegroundBrush;
+            _messageText.Foreground = UI4Theme.Current.TextForegroundBrush;
+            _iconText.Foreground = new SolidColorBrush(UI4Theme.Current.IconColor);
+        }
+
+        /// <summary>配置窗口基本属性（尺寸、样式、启动位置等）。</summary>
+        private void ConfigureWindowProperties(string title)
+        {
             Title = title ?? UI4MultiLanguage.Get(UI4LanguageKey.Notice);
-            Width = 460;
-            MinHeight = 160;
-            MaxHeight = 400;
+            Width = DefaultWidth;
+            MinHeight = DefaultMinHeight;
+            MaxHeight = DefaultMaxHeight;
             SizeToContent = SizeToContent.Height;
             ResizeMode = ResizeMode.CanResize;
             WindowStartupLocation = WindowStartupLocation.CenterOwner;
             ShowInTaskbar = false;
-            FontFamily = new FontFamily("Segoe UI Variable Display, Segoe UI, sans-serif");
+            FontFamily = WindowFontFamily;
             Background = Brushes.Transparent;
             WindowStyle = WindowStyle.None;
             AllowsTransparency = true;
             TextOptions.SetTextFormattingMode(this, TextFormattingMode.Display);
+        }
 
+        /// <summary>创建主容器 Border（含阴影和圆角）。</summary>
+        private void BuildMainContainer()
+        {
             _mainContainer = new Border
             {
                 Margin = new Thickness(28),
-                Background = new SolidColorBrush(Colors.White),
+                Background = UI4Theme.Current.SurfaceBrush,
                 CornerRadius = new CornerRadius(10),
-                Effect = new DropShadowEffect
-                {
-                    Color = Colors.Black,
-                    BlurRadius = 18,
-                    ShadowDepth = 6,
-                    Opacity = 0.3
-                }
+                Effect = ContainerShadow
             };
+        }
 
+        /// <summary>构建内容布局：标题栏、消息文本、按钮区域。</summary>
+        private void BuildContentLayout(string title, string content)
+        {
             Grid rootGrid = new Grid { Margin = new Thickness(20) };
             rootGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             rootGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
             rootGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
+            // 标题栏
             Grid headerGrid = new Grid();
             headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
             _iconText = new TextBlock
             {
-                FontFamily = new FontFamily("Segoe MDL2 Assets"),
+                FontFamily = IconFontFamily,
                 FontSize = 28,
                 VerticalAlignment = VerticalAlignment.Center,
                 Margin = new Thickness(0, 0, 12, 0),
-                Text = "\uE134"
+                Text = "\uE134",
+                Foreground = new SolidColorBrush(UI4Theme.Current.IconColor)
             };
             Grid.SetColumn(_iconText, 0);
             headerGrid.Children.Add(_iconText);
@@ -86,13 +138,15 @@ namespace StartUI4Controls
                 FontWeight = FontWeights.SemiBold,
                 VerticalAlignment = VerticalAlignment.Center,
                 TextTrimming = TextTrimming.CharacterEllipsis,
-                Text = title
+                Text = title,
+                Foreground = UI4Theme.Current.TextForegroundBrush
             };
             Grid.SetColumn(_headingText, 1);
             headerGrid.Children.Add(_headingText);
             Grid.SetRow(headerGrid, 0);
             rootGrid.Children.Add(headerGrid);
 
+            // 消息文本
             _messageText = new TextBlock
             {
                 FontSize = 14,
@@ -100,11 +154,13 @@ namespace StartUI4Controls
                 VerticalAlignment = VerticalAlignment.Center,
                 Margin = new Thickness(0, 12, 0, 0),
                 Opacity = 0.85,
-                Text = content
+                Text = content,
+                Foreground = UI4Theme.Current.TextForegroundBrush
             };
             Grid.SetRow(_messageText, 1);
             rootGrid.Children.Add(_messageText);
 
+            // 按钮区域
             Grid buttonWrapper = new Grid();
             buttonWrapper.Margin = new Thickness(0, 12, 0, 0);
             Grid.SetRow(buttonWrapper, 2);
@@ -119,58 +175,12 @@ namespace StartUI4Controls
             BuildButtons(buttonPanel);
 
             _mainContainer.Child = rootGrid;
-            _mainContainer.MouseLeftButtonDown += (ss, ee) =>
-            {
-                if (ee.ClickCount == 1) DragMove();
-            };
-
-            Grid resizeGrid = new Grid();
-            Border left = new Border { Width = ResizeThumbSize, HorizontalAlignment = HorizontalAlignment.Left, Cursor = Cursors.SizeWE, Background = Brushes.Transparent };
-            Border right = new Border { Width = ResizeThumbSize, HorizontalAlignment = HorizontalAlignment.Right, Cursor = Cursors.SizeWE, Background = Brushes.Transparent };
-            Border top = new Border { Height = ResizeThumbSize, VerticalAlignment = VerticalAlignment.Top, Cursor = Cursors.SizeNS, Background = Brushes.Transparent };
-            Border bottom = new Border { Height = ResizeThumbSize, VerticalAlignment = VerticalAlignment.Bottom, Cursor = Cursors.SizeNS, Background = Brushes.Transparent };
-            Border topLeft = new Border { Width = ResizeThumbSize, Height = ResizeThumbSize, HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top, Cursor = Cursors.SizeNWSE, Background = Brushes.Transparent };
-            Border topRight = new Border { Width = ResizeThumbSize, Height = ResizeThumbSize, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Top, Cursor = Cursors.SizeNESW, Background = Brushes.Transparent };
-            Border bottomLeft = new Border { Width = ResizeThumbSize, Height = ResizeThumbSize, HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Bottom, Cursor = Cursors.SizeNESW, Background = Brushes.Transparent };
-            Border bottomRight = new Border { Width = ResizeThumbSize, Height = ResizeThumbSize, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Bottom, Cursor = Cursors.SizeNWSE, Background = Brushes.Transparent };
-            resizeGrid.Children.Add(_mainContainer);
-            resizeGrid.Children.Add(left);
-            resizeGrid.Children.Add(right);
-            resizeGrid.Children.Add(top);
-            resizeGrid.Children.Add(bottom);
-            resizeGrid.Children.Add(topLeft);
-            resizeGrid.Children.Add(topRight);
-            resizeGrid.Children.Add(bottomLeft);
-            resizeGrid.Children.Add(bottomRight);
-
-            left.MouseLeftButtonDown += (s, e) => StartResize(e, 1);
-            right.MouseLeftButtonDown += (s, e) => StartResize(e, 2);
-            top.MouseLeftButtonDown += (s, e) => StartResize(e, 3);
-            bottom.MouseLeftButtonDown += (s, e) => StartResize(e, 4);
-            topLeft.MouseLeftButtonDown += (s, e) => StartResize(e, 5);
-            topRight.MouseLeftButtonDown += (s, e) => StartResize(e, 6);
-            bottomLeft.MouseLeftButtonDown += (s, e) => StartResize(e, 7);
-            bottomRight.MouseLeftButtonDown += (s, e) => StartResize(e, 8);
-
-            UI4Panel winUI4Style_Panel = new UI4Panel
-            {
-                Margin = new Thickness(20),
-                HoverScale = 1,
-                HoverBorderBrush = new SolidColorBrush(Colors.Transparent),
-                BorderThickness = new Thickness(0),
-                Background = Brushes.Transparent,
-                ShadowBlurRadius = 0,
-                ShadowOpacity = 0,
-                ShadowDepth = 0
-            };
-            winUI4Style_Panel.Content = resizeGrid;
-            this.Content = winUI4Style_Panel;
-            this.Loaded += Window_LoadedAnim;
         }
 
+        /// <summary>创建 OK / Cancel 按钮并添加到面板。</summary>
         private void BuildButtons(StackPanel buttonPanel)
         {
-            _okButton = new UI4Button
+            var okButton = new UI4Button
             {
                 Content = UI4MultiLanguage.Get(UI4LanguageKey.OK),
                 Width = 80,
@@ -179,12 +189,12 @@ namespace StartUI4Controls
                 Cursor = Cursors.Hand,
                 IsDefault = true
             };
-            _okButton.Click += OkButton_Click;
-            buttonPanel.Children.Add(_okButton);
+            okButton.Click += OkButton_Click;
+            buttonPanel.Children.Add(okButton);
 
             if (_buttonMode == UI4MessageBoxButtons.OKCancel)
             {
-                _cancelButton = new UI4Button
+                var cancelButton = new UI4Button
                 {
                     Content = UI4MultiLanguage.Get(UI4LanguageKey.Cancel),
                     Width = 80,
@@ -193,177 +203,85 @@ namespace StartUI4Controls
                     Cursor = Cursors.Hand,
                     Margin = new Thickness(12, 0, 0, 0)
                 };
-                _cancelButton.Click += CloseButton_Click;
-                buttonPanel.Children.Add(_cancelButton);
+                cancelButton.Click += CloseButton_Click;
+                buttonPanel.Children.Add(cancelButton);
             }
         }
 
-        private void Window_LoadedAnim(object s, RoutedEventArgs e)
+        /// <summary>附加拖拽移动和 resize 边框，设置窗口内容。</summary>
+        private void AttachDragAndResize()
         {
-            if (!(this.Content is UI4Panel rootPanel))
-                return;
-            rootPanel.Opacity = 0;
-            rootPanel.RenderTransform = new TransformGroup
+            _mainContainer.MouseLeftButtonDown += (ss, ee) =>
             {
-                Children = new TransformCollection
-                {
-                    new TranslateTransform(0, 90),
-                    new ScaleTransform(0.88, 0.88)
-                }
+                if (ee.ClickCount == 1) DragMove();
             };
-            rootPanel.RenderTransformOrigin = new Point(0.5, 0.5);
-            rootPanel.Effect = new BlurEffect { Radius = 14 };
-            DoubleAnimation fadeAnim = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(200))
+
+            Grid resizeGrid = new Grid();
+            resizeGrid.Children.Add(_mainContainer);
+
+            var resizeBehavior = new WindowResizeBehavior(this);
+            resizeBehavior.Attach(resizeGrid);
+
+            Border rootBorder = new Border
             {
-                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+                Margin = new Thickness(20),
+                Background = Brushes.Transparent
             };
-            rootPanel.BeginAnimation(UIElement.OpacityProperty, fadeAnim);
-            TransformGroup transformGroup = rootPanel.RenderTransform as TransformGroup;
-            TranslateTransform translate = transformGroup.Children[0] as TranslateTransform;
-            ScaleTransform scale = transformGroup.Children[1] as ScaleTransform;
-            DoubleAnimation slideAnim = new DoubleAnimation(90, 0, TimeSpan.FromMilliseconds(200))
-            {
-                EasingFunction = new BackEase { EasingMode = EasingMode.EaseOut, Amplitude = 0.35 }
-            };
-            translate.BeginAnimation(TranslateTransform.YProperty, slideAnim);
-            DoubleAnimation scaleAnim = new DoubleAnimation(0.88, 1, TimeSpan.FromMilliseconds(200))
-            {
-                EasingFunction = new BackEase { EasingMode = EasingMode.EaseOut, Amplitude = 0.5 }
-            };
-            scale.BeginAnimation(ScaleTransform.ScaleXProperty, scaleAnim);
-            scale.BeginAnimation(ScaleTransform.ScaleYProperty, scaleAnim);
-            DoubleAnimation blurAnim = new DoubleAnimation(14, 0, TimeSpan.FromMilliseconds(200))
-            {
-                EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut }
-            };
-            rootPanel.Effect.BeginAnimation(BlurEffect.RadiusProperty, blurAnim);
+            rootBorder.Child = resizeGrid;
+            Content = rootBorder;
         }
 
+        /// <summary>窗口加载完成时播放打开动画。</summary>
+        private void Window_LoadedAnim(object s, RoutedEventArgs e)
+        {
+            if (!(Content is Border rootBorder)) return;
+            WindowAnimationHelper.PlayOpenAnimation(rootBorder);
+        }
+
+        /// <summary>播放关闭动画，完成后设置 DialogResult 并关闭窗口。</summary>
         private void CloseAnimation(bool dialogResult)
         {
             if (_isClosingAnimating) return;
-            if (!(this.Content is UI4Panel rootPanel))
-                return;
-            if (!(rootPanel.RenderTransform is TransformGroup tg) || tg.Children.Count < 2)
-                return;
-            if (!(tg.Children[0] is TranslateTransform trans) || !(tg.Children[1] is ScaleTransform scale))
-                return;
-            BlurEffect blurEffect = rootPanel.Effect as BlurEffect;
-            if (blurEffect == null)
-            {
-                blurEffect = new BlurEffect { Radius = 0 };
-                rootPanel.Effect = blurEffect;
-            }
+            if (!(Content is Border rootBorder)) return;
+
             _isClosingAnimating = true;
-            TimeSpan duration = TimeSpan.FromMilliseconds(200);
-            DoubleAnimation fadeOut = new DoubleAnimation(1, 0, duration)
+            WindowAnimationHelper.PlayCloseAnimation(rootBorder, () =>
             {
-                EasingFunction = new CubicEase() { EasingMode = EasingMode.EaseIn },
-                FillBehavior = FillBehavior.HoldEnd
-            };
-            DoubleAnimation slideDown = new DoubleAnimation(0, 90, duration)
-            {
-                EasingFunction = new BackEase() { EasingMode = EasingMode.EaseIn, Amplitude = 0.35 },
-                FillBehavior = FillBehavior.HoldEnd
-            };
-            DoubleAnimation shrinkX = new DoubleAnimation(1, 0.88, duration)
-            {
-                EasingFunction = new BackEase() { EasingMode = EasingMode.EaseIn, Amplitude = 0.5 },
-                FillBehavior = FillBehavior.HoldEnd
-            };
-            DoubleAnimation shrinkY = new DoubleAnimation(1, 0.88, duration)
-            {
-                EasingFunction = new BackEase() { EasingMode = EasingMode.EaseIn, Amplitude = 0.5 },
-                FillBehavior = FillBehavior.HoldEnd
-            };
-            DoubleAnimation blurOut = new DoubleAnimation(0, 14, duration)
-            {
-                EasingFunction = new QuadraticEase() { EasingMode = EasingMode.EaseIn },
-                FillBehavior = FillBehavior.HoldEnd
-            };
-            int completeCount = 0;
-            int totalAnim = 5;
-            void OnAnyAnimationCompleted(object s, EventArgs e)
-            {
-                completeCount++;
-                if (completeCount >= totalAnim)
-                {
-                    Dispatcher.Invoke(() =>
-                    {
-                        DialogResult = dialogResult;
-                        this.Close();
-                    });
-                }
-            }
-            fadeOut.Completed += OnAnyAnimationCompleted;
-            slideDown.Completed += OnAnyAnimationCompleted;
-            shrinkX.Completed += OnAnyAnimationCompleted;
-            shrinkY.Completed += OnAnyAnimationCompleted;
-            blurOut.Completed += OnAnyAnimationCompleted;
-            rootPanel.BeginAnimation(UIElement.OpacityProperty, fadeOut);
-            trans.BeginAnimation(TranslateTransform.YProperty, slideDown);
-            scale.BeginAnimation(ScaleTransform.ScaleXProperty, shrinkX);
-            scale.BeginAnimation(ScaleTransform.ScaleYProperty, shrinkY);
-            blurEffect.BeginAnimation(BlurEffect.RadiusProperty, blurOut);
+                DialogResult = dialogResult;
+                Close();
+            });
         }
 
-        private void OkButton_Click(object sender, RoutedEventArgs e)
-        {
-            CloseAnimation(true);
-        }
+        private void OkButton_Click(object sender, RoutedEventArgs e) => CloseAnimation(true);
 
-        private void CloseButton_Click(object sender, RoutedEventArgs e)
-        {
-            CloseAnimation(false);
-        }
+        private void CloseButton_Click(object sender, RoutedEventArgs e) => CloseAnimation(false);
 
+        /// <summary>
+        /// 显示消息框并返回用户选择结果。
+        /// </summary>
+        /// <param name="content">消息内容文本。</param>
+        /// <param name="title">窗口标题（为 null 时使用默认"注意"）。</param>
+        /// <param name="buttons">按钮模式。</param>
+        /// <param name="width">窗口宽度。</param>
+        /// <param name="owner">父窗口（消息框居中于其上方；为 null 时居中于屏幕）。</param>
+        /// <returns>DialogResult：OK 为 true，Cancel 为 false，关闭为 null。</returns>
         public static bool? Show(string content,
             string title = null,
             UI4MessageBoxButtons buttons = UI4MessageBoxButtons.OK,
-            double width = 460)
+            double width = DefaultWidth,
+            Window owner = null)
         {
-            UI4MessageBox box = new UI4MessageBox(title ?? UI4MultiLanguage.Get(UI4LanguageKey.Notice), content, buttons);
+            var box = new UI4MessageBox(title ?? UI4MultiLanguage.Get(UI4LanguageKey.Notice), content, buttons);
             box.Width = width;
-            return box.ShowDialog();
-        }
-
-        private void StartResize(MouseButtonEventArgs e, int direction)
-        {
-            _resizeDirection = direction;
-            _resizeStartPoint = PointToScreen(e.GetPosition(this));
-            _resizeStartWidth = Width;
-            _resizeStartHeight = Height;
-            Mouse.Capture(this);
-            MouseMove += DoResize;
-            MouseLeftButtonUp += EndResize;
-        }
-
-        private void DoResize(object sender, MouseEventArgs e)
-        {
-            if (_resizeDirection == 0 || e.LeftButton != MouseButtonState.Pressed) return;
-            Point current = PointToScreen(e.GetPosition(this));
-            double dx = current.X - _resizeStartPoint.X;
-            double dy = current.Y - _resizeStartPoint.Y;
-            double minW = 200, minH = 150;
-            switch (_resizeDirection)
+            if (owner != null)
             {
-                case 2: Width = Math.Max(minW, _resizeStartWidth + dx); break;
-                case 1: Width = Math.Max(minW, _resizeStartWidth - dx); break;
-                case 4: Height = Math.Max(minH, _resizeStartHeight + dy); break;
-                case 3: Height = Math.Max(minH, _resizeStartHeight - dy); break;
-                case 6: Width = Math.Max(minW, _resizeStartWidth + dx); Height = Math.Max(minH, _resizeStartHeight - dy); break;
-                case 5: Width = Math.Max(minW, _resizeStartWidth - dx); Height = Math.Max(minH, _resizeStartHeight - dy); break;
-                case 8: Width = Math.Max(minW, _resizeStartWidth + dx); Height = Math.Max(minH, _resizeStartHeight + dy); break;
-                case 7: Width = Math.Max(minW, _resizeStartWidth - dx); Height = Math.Max(minH, _resizeStartHeight + dy); break;
+                box.Owner = owner;
             }
-        }
-
-        private void EndResize(object sender, MouseButtonEventArgs e)
-        {
-            _resizeDirection = 0;
-            Mouse.Capture(null);
-            MouseMove -= DoResize;
-            MouseLeftButtonUp -= EndResize;
+            else
+            {
+                box.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+            }
+            return box.ShowDialog();
         }
     }
 }

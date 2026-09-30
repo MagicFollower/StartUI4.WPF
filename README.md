@@ -18,6 +18,7 @@
 - [七、Demo 工程指南](#七demo-工程指南)
 - [八、与上游（net6 版）的差异与已知问题](#八与上游net6-版的差异与已知问题)
 - [九、附录](#九附录)
+- [十、主题系统（全局 / 局部作用域 / 高对比度）](#十主题系统全局--局部作用域--高对比度)
 - [许可证](#许可证)
 
 ---
@@ -45,6 +46,7 @@
 - **丰富动画** —— 悬浮缩放、开关滑动、加载旋转、数字翻转等平滑动画
 - **高度可定制** —— 250+ 个依赖属性对外开放，几乎每个视觉细节都可调
 - **开箱即用** —— 引用程序集或 NuGet 包后直接在 XAML 中使用，无需额外资源字典
+- **主题系统** —— 亮/暗/跟随系统/高对比度一键切换，30 个颜色令牌经 `DynamicResource` 桥接到宿主；`UI4ThemeScope` 可对单张卡片或整个窗口局部换肤（详见第十节）
 - **纯代码模板** —— 所有控件模板由代码构建，不依赖 Themes/generic.xaml，单 dll 即可分发
 - **.NET Framework 4.8 原生** —— 无 `IsExternalInit` 等 polyfill、无 LangVersion 开关，老工具链亦可编译
 
@@ -144,6 +146,8 @@ xmlns:ui="clr-namespace:StartUI4Controls;assembly=StartUI4Controls"
 | `UI4CodeEditor` | AvalonEdit `TextEditor` | 代码编辑器，内置 C# 高亮与右键菜单 |
 | `UI4Grid` | `Grid` | 默认渐变背景的 Grid |
 | `UI4MultiLanguage` | —（静态服务） | zh / en 多语言字符串 |
+| `UI4Theme` | —（静态服务） | 全局主题：亮/暗/跟随系统/高对比度、令牌资源桥、`SetAccent`、自定义主题注册、持久化 |
+| `UI4ThemeScope` | —（附加属性） | 局部/每窗口主题：`ui:UI4ThemeScope.Theme="dark"`，子树独立换肤（见第十节） |
 
 > `UI4DataGrid`、`UI43DSphere` 在上游即为 `internal` 且无引用，本移植版保持 internal，不对外公开（见附录 C）。
 
@@ -152,6 +156,8 @@ xmlns:ui="clr-namespace:StartUI4Controls;assembly=StartUI4Controls"
 ## 五、控件详解
 
 > 约定：颜色默认值以 `#AARRGGBB` 表示；"继承属性"指基类自带、可直接使用的属性。
+> "默认值"列给出的是依赖属性的字面值；标注「跟随主题 X」的属性，在宿主未显式赋值时会被当前主题的对应令牌覆盖，
+> 一旦在 XAML/代码里显式赋值即停止跟随（宿主优先）。
 
 ---
 
@@ -492,11 +498,11 @@ FlipText.Text = new Random().Next(0, 100).ToString();   // 赋值即触发翻转
 | 属性 | 类型 | 默认值 | 说明 |
 |---|---|---|---|
 | `CornerRadius` | `CornerRadius` | `6` | 控件圆角 |
-| `BorderNormalColor` | `Color` | `#FFC8C8DC` | 常态边框色 |
-| `FocusGradientStart` | `Color` | `#FF0078D4` | 聚焦渐变起始色 |
-| `FocusGradientEnd` | `Color` | `#FF9333EA` | 聚焦渐变结束色 |
-| `EditBackground` | `Brush` | `White` | 编辑区背景 |
-| `TextColor` | `Color` | `#FF1E1E1E` | 文字颜色 |
+| `BorderNormalColor` | `Color` | `#FFC8C8DC` | 常态边框色（跟随主题 `BorderNormal`） |
+| `FocusGradientStart` | `Color` | `#FF0078D4` | 聚焦渐变起始色（跟随主题 `Accent`） |
+| `FocusGradientEnd` | `Color` | `#FF9333EA` | 聚焦渐变结束色（跟随主题 `AccentEnd`） |
+| `EditBackground` | `Brush` | `White` | 编辑区背景（跟随主题 `Surface`） |
+| `TextColor` | `Color` | `#FF1E1E1E` | 文字颜色（跟随主题 `TextForeground`） |
 | `InnerPadding` | `Thickness` | `12,10,30,10` | 内边距 |
 | `DropCornerRadius` | `CornerRadius` | `6` | 下拉面板圆角 |
 
@@ -915,12 +921,12 @@ private void MyTab_CloseTab(object sender, TabCloseRoutedEventArgs e)
 | 属性 | 类型 | 默认值 | 说明 |
 |---|---|---|---|
 | `CornerRadius` | `CornerRadius` | `6` | 圆角 |
-| `BorderNormalColor` | `Color` | `#FF2563EB` | 边框色 |
-| `PanelBackground` | `Brush` | `White` | 面板背景 |
-| `TextColor` | `Color` | `Black` | 文字颜色 |
+| `BorderNormalColor` | `Color` | `#FF2563EB` | 边框色（跟随主题 `BorderNormal`） |
+| `PanelBackground` | `Brush` | `White` | 面板背景（跟随主题 `Surface`） |
+| `TextColor` | `Color` | `Black` | 文字颜色（跟随主题 `TextForeground`） |
 | `ItemPadding` | `Thickness` | `12,8,12,8` | 项内边距 |
 | `ItemCornerRadius` | `CornerRadius` | `6` | 项圆角 |
-| `HoverBackground` | `Color` | `#0AF5FFFF` | 项悬浮背景 |
+| `HoverBackground` | `Color` | `#0AF5FFFF` | 项悬浮背景（跟随主题 `HoverOverlay`，浅色下为 `#14000000`） |
 | `HoverForeground` | `Color` | `#DC000000` | 项悬浮文字色 |
 | `PressedBackground` | `Color` | `#FF2563EB` | 项按下背景 |
 | `PressedForeground` | `Color` | `White` | 项按下文字色 |
@@ -1468,6 +1474,7 @@ dotnet run --project samples/StartUI4Demo
 | 布局面板 | UI4Grid / UI4Panel |
 | 对话框 | UI4MessageBox / UI4ColorPicker |
 | 菜单与托盘 | UI4Menu / UI4ContextMenu / UI4NotifyIcon / UI4MultiLanguage |
+| 局部主题 | UI4ThemeScope（左卡片深色 / 右卡片跟随全局的对照、两卡各含 `UI4ComboBox`+`UI4ListBox` 底色对照、作用域键下拉、嵌套作用域、`ScopeWindow` 异主题窗口、高对比度入口） |
 
 ### 命令行参数
 
@@ -1488,6 +1495,14 @@ StartUI4Demo.exe --tab=5     # 直接打开第 5 页（0 起），便于自动�
 | `interact.ps1 -Scenario tray` | 启用托盘图标并截取任务栏溢出区 |
 | `interact.ps1 -Scenario hover` | 悬浮 UI4ListView 卡片，验证文字不模糊 |
 | `interact.ps1 -Scenario combo` | 长文本下拉框闭合/展开态截图 |
+| `theme.ps1` | UIA 走查：切深色 → Tab 往返 → 切回亮色，检查 `demo-errors.log` |
+| `p2verify.ps1` | **进程内值断言**：STA 加载已构建 dll，离屏窗口承载 CheckBox/Radio/TextBox/PasswordBox，`Template.FindName` 读解析后的画刷色，深/浅各 16 项 + 显式覆盖 + `Style` 不重建 |
+| `p3verify.ps1` | **进程内值断言**：局部作用域（G1 资源 / G2 换入 / G3 令牌化三组控件）、全局切换不串味、作用域可撤销、高对比度 30 令牌齐备、System 解析、持久化往返、`SetAccent` 传播、H 组：ComboBox/ListBox 选中框与面板底色及焦点渐变在三主题下跟随令牌（共 83 项） |
+| `scopewalk.ps1` | UIA 走查 Demo 第 11 页：作用域键切换、全局高对比度/跟随系统不污染作用域、撤销作用域、打开 `ScopeWindow` 并读其自证文本 |
+
+> 本机对 WPF 窗口的屏幕抓取（`PrintWindow` 与 `CopyFromScreen`）返回全白，且未修改的基线同样全白，属环境限制；
+> 因此主题相关验证一律用 `p2verify.ps1` / `p3verify.ps1` 的进程内取值断言 + `theme.ps1` / `scopewalk.ps1` 的 UIA 走查，
+> 截图脚本仅在环境可用时补充。所有脚本用 `powershell -STA -ExecutionPolicy Bypass -File <脚本>` 运行。
 
 所有截图存于 `shots/`；运行期异常会写入 Demo 输出目录的 `demo-errors.log` 并弹窗。
 
@@ -1547,6 +1562,140 @@ sln 的 `Debug/Release × Any CPU/x64/x86` 只决定构建配置与平台映射�
 | `UI4DataGrid` | `internal`，SQLite 分页加载表格，上游即无引用 |
 | `UI43DSphere` | `internal`，Media3D 纹理球体，上游即无引用 |
 | 各类 `*Converter` | `internal` / `public` 工具转换器，随库导出但一般无需直接使用 |
+
+### D. 发布产物清单（哪些文件是运行必需的）
+
+以 `samples/StartUI4Demo/bin/Release/net48` 构建出的 7 个文件为例（合计约 1472 KB）：
+
+| 文件 | 大小 | 运行必需 | 说明 |
+|---|---|---|---|
+| `StartUI4Demo.exe` | 35 KB | **必需** | 入口程序集 |
+| `StartUI4Controls.dll` | 360 KB | **必需** | 控件库实现 |
+| `ICSharpCode.AvalonEdit.dll` | 621 KB | **必需**（当前 Demo） | `UI4CodeEditor` 继承自 AvalonEdit 的 `TextEditor`，主窗口 XAML 在构造期即解析该类型层级；实测移除后启动即抛 `FileNotFoundException` |
+| `StartUI4Demo.exe.config` | 174 B | 建议保留 | 仅声明 `<supportedRuntime sku=".NETFramework,Version=v4.8"/>`；实测删除后仍可正常运行（.NET Framework 4.x 就地升级），保留它可在只装了更低版本的环境上给出明确报错 |
+| `System.Data.SQLite.dll` | 398 KB | **不必需** | 库中唯一使用者 `UI4DataGrid` 为 `internal` 且无引用；程序集引用是惰性解析，实测删除后各分页均正常 |
+| `StartUI4Demo.pdb` / `StartUI4Controls.pdb` | 92 KB | **不必需** | 仅调试符号（异常堆栈行号），发布时应排除 |
+
+**最小可分发包** = `StartUI4Demo.exe` + `StartUI4Controls.dll` + `ICSharpCode.AvalonEdit.dll`（约 993 KB，比整目录小 33%）；
+推荐再加 `StartUI4Demo.exe.config`。
+
+补充：
+
+- 若你的应用不使用 `UI4CodeEditor`，`ICSharpCode.AvalonEdit.dll` 也可不部署。
+- 若将来把 `UI4DataGrid` 公开，除 `System.Data.SQLite.dll` 外还需随包部署原生 `x64/SQLite.Interop.dll`
+  与 `x86/SQLite.Interop.dll`（当前类库构建并不会自动复制它们，见 `PORTING.md` 第 3 节第 3 条）。
+- 精简发布建议用 `dotnet publish` 或只拷贝上表中的必需文件，而非直接打包整个 `bin` 目录。
+
+这 7 个文件由构建流水线的不同环节各自产出（可用
+`obj/Release/net48/StartUI4Demo.csproj.FileListAbsolute.txt` 核对完整复制清单）：
+
+| 产物 | 生成环节 |
+|---|---|
+| `StartUI4Demo.exe` | csc 编译本项目；`App.xaml`/`MainWindow.xaml` 先被标记编译为 `.baml` 并嵌入 `.g.resources`，`app.manifest`（DPI 声明）与自动生成的 `AssemblyInfo.cs` 一并编入 |
+| `StartUI4Demo.pdb` | 同上，`DebugType` 默认为 `portable`，随编译一并产出 |
+| `StartUI4Demo.exe.config` | SDK 的 `GenerateSupportedRuntime` 目标按 `TargetFramework` 注入 `supportedRuntime sku`，先落为 `obj/.../StartUI4Demo.exe.withSupportedRuntime.config`，再由 `CopyAppConfig` 复制为 `exe.config` |
+| `StartUI4Controls.dll` + `.pdb` | `ProjectReference` 的 CopyLocal（`Private` 默认 true），连同其符号一起复制到使用者输出目录 |
+| `ICSharpCode.AvalonEdit.dll`、`System.Data.SQLite.dll` | 库的 `PackageReference` 经 NuGet 传递解析后进入 CopyLocal 闭包，按 TFM 就近取 `lib/net462`、`lib/net471` 资产复制 |
+
+**为什么没有别的文件**：`*.deps.json` / `*.runtimeconfig.json` 是 .NET Core/5+ 的宿主探测机制，
+.NET Framework 改用 Fusion/GAC + `app.config`；未生成 `*.xml` 文档文件（`GenerateDocumentationFile`
+默认 false）；无本地化资源故无卫星程序集；原生 `SQLite.Interop.dll` 也未被复制（见上表说明）。
+其余中间产物（`.g.cs`、`.baml`、`.Up2Date`、各类 `.cache`）全部留在 `obj/`，不进入 `bin/`。
+
+---
+
+## 十、主题系统（全局 / 局部作用域 / 高对比度）
+
+### 1. 全局主题与资源桥
+
+```csharp
+UI4Theme.SetTheme(UI4ThemeMode.Dark);     // Light / Dark / System / HighContrast
+UI4Theme.SetTheme(UI4ThemeMode.System);   // 跟随系统（注册表 AppsUseLightTheme，实时响应切换）
+UI4ThemeMode resolved = UI4Theme.ResolvedMode;  // System 时报告真正解析出的亮/暗
+```
+
+`SetTheme` 会把 30 个颜色令牌写进 `Application.Resources`，宿主 XAML 用 `{DynamicResource}` 即可跟随，无需逐元素手工同步：
+
+```xml
+<Window Background="{DynamicResource UI4.Brush.Background}">
+    <TextBlock Foreground="{DynamicResource UI4.Brush.Text}"/>   <!-- 别名：Text / Border / Accent -->
+    <Border BorderBrush="{DynamicResource UI4.Brush.BorderNormal}"/> <!-- 或全名 UI4.Brush.<令牌名> -->
+</Window>
+```
+
+另有 `UI4.Color.<令牌>`（`Color` 值）与 `UI4Theme.SetAccent(Color)`（自动派生 AccentDark，全部控件跟随）。
+
+### 2. 局部 / 每窗口主题（`UI4ThemeScope`）
+
+在任意元素（卡片、`UserControl`、整个 `Window`）上声明主题键，其**整棵子树**改用该主题，与全局互不干扰：
+
+```xml
+xmlns:ui="clr-namespace:StartUI4Controls;assembly=StartUI4Controls"
+
+<Border ui:UI4ThemeScope.Theme="dark"> <!-- 子树全部深色，即使全局是亮色 -->
+    <StackPanel TextElement.Foreground="{DynamicResource UI4.Brush.Text}">
+        <ui:UI4Button Content="深色按钮"/>
+        <ui:UI4TextBox Text="深色输入框"/>
+    </StackPanel>
+</Border>
+```
+
+```csharp
+UI4ThemeScope.SetTheme(myWindow, "highcontrast"); // 整窗另一套主题
+UI4ThemeScope.SetTheme(card, "");                 // 撤销：子树回到全局主题
+string key = UI4ThemeScope.GetTheme(card);        // 只读该元素自身声明的键
+```
+
+要点：
+
+- 键大小写不敏感，取值 `light` / `dark` / `highcontrast` / 通过 `UI4Theme.Register(...)` 注册的自定义键；
+  **空串与未注册键都表示撤销作用域**（XAML 写错键名不会导致崩溃）。
+- 两条生效通道：① 向该元素 `Resources` 注入令牌字典，故 `{DynamicResource}` 宿主画刷与库内引用式控件
+  （`UI4CheckBox`/`UI4Radio`/`UI4TextBox`/`UI4PasswordBox`/`UI4Switch`/`UI4ProgressBar`/`UI4Slider`/`UI4Pivot` 等）自动跟随；
+  ② 仍走命令式刷新的控件（`UI4Button`/`UI4ComboBox`/`UI4Menu`…）在子树刷新时被同步换入该主题，因此**无需改任何控件代码**。
+- 支持嵌套：子树内再声明一个键即为内层作用域，内外层各自正确；向上查找可穿过 Popup 与控件模板。
+- 元素自身 `Resources` 里的同名直接键优先于作用域字典（标准 WPF 资源语义）。
+- Demo 第 11 页「局部主题」提供左右对照卡片、作用域键下拉与嵌套示例；「打开异主题窗口」演示整窗作用域。
+
+### 3. 高对比度主题
+
+```csharp
+UI4Theme.Apply("highcontrast");              // 直接切
+UI4Theme.FollowSystemHighContrast = true;    // 可选：开启后 SetTheme(System) 在系统高对比度下优先用 highcontrast
+```
+
+定义为黑底 / 白字白框 / 黄强调，选中态用深蓝承托白色前景，覆盖全部 30 个令牌。
+`FollowSystemHighContrast` 默认为 `false`（避免未经宿主同意就改变观感），开启后会订阅系统
+`UserPreferenceChanged` 并在 Dispatcher 上编组刷新。
+
+### 4. 自定义主题与持久化
+
+```csharp
+// 自定义主题：克隆内置定义（30 个令牌齐全），再改想改的令牌
+var ocean = UI4ThemeDefinition.Dark().Clone();
+ocean.With(UI4ThemeToken.Accent, Color.FromRgb(0, 150, 136));
+ocean.With(UI4ThemeToken.Background, Color.FromRgb(0, 20, 26));
+UI4Theme.Register(ocean);            // 键 = ocean.Key（Clone 生成，如 "dark.clone"）
+UI4Theme.Apply(ocean.Key);           // 也可用作 UI4ThemeScope.Theme 的取值
+foreach (string k in UI4Theme.ThemeKeys) { /* light / dark / highcontrast / 自定义 */ }
+
+UI4Theme.Persistence = new RegistryThemePersistence();   // 或 JsonThemePersistence(path)；默认 null = 不持久化
+UI4Theme.Save();
+UI4Theme.ApplyPersisted();
+```
+
+### 5. 已知限制
+
+- 命令式控件（`UI4Button`/`UI4ComboBox`/`UI4Menu`/`UI4ListBox`/`UI4NavigationView`/`UI4DataGrid` 等）在
+  **作用域子树内**切换时仍会重建 `Style`；待 P2 把这些模板逐批改用令牌引用后，该开销归零（见 `PORTING.md` 第 11、12、13 节）。
+- `UI4ComboBox`（含闭合选中框背景、焦点渐变）、`UI4ListBox`（面板背景、悬浮色）的背景**已跟随主题**，
+  深色与高对比度下文字与底面对比度成立（`p3verify.ps1` H 组逐主题断言）。浅色主题下有一处**有意的观感变化**：
+  `UI4ListBox` 项悬浮色由上游遗留的青色 `#0AF5FFFF` 改为主题令牌 `HoverOverlay`（浅色即 `#14000000` 半透黑）。
+- 仍**未接入主题**的控件：`UI4Button` 恒为「蓝→紫渐变 + 白字」的强调按钮（三主题取值相同，对比度成立，但在高对比度黑底上
+  不与黄/白体系呼应）；`UI4ListView`/`UI4GridView`/`UI4TabControl` 无 `IThemeAware`，卡片与文字恒为浅色（可读，观感不统一）。
+  二者均归入 P2 批次 ②。
+- `UI4ListBox` 编号样式的角标**数字颜色**在 `Dispatcher.BeginInvoke` 中重绘，作用域下该项可能取到全局色（同一处遗留，P2 批次 ② 消除）。
+- 主题切换为瞬时生效，无交叉淡入动画。
 
 ---
 

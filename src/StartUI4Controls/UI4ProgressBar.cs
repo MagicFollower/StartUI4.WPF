@@ -7,6 +7,17 @@ using System.Windows.Shapes;
 
 namespace StartUI4Controls
 {
+    /// <summary>
+    /// 现代风格的进度条控件，支持圆角、渐变填充和不确定进度动画。
+    /// </summary>
+    /// <remarks>
+    /// <para>继承自 <see cref="System.Windows.Controls.Control"/>，提供以下自定义属性：</para>
+    /// <list type="bullet">
+    ///   <item><see cref="CornerRadius"/> — 圆角半径</item>
+    ///   <item><see cref="GradientStart"/> / <see cref="GradientEnd"/> — 进度条渐变填充色</item>
+    ///   <item><see cref="IsIndeterminate"/> — 是否显示不确定进度动画</item>
+    /// </list>
+    /// </remarks>
     public class UI4ProgressBar : Control
     {
         private Border _trackBorder;
@@ -143,8 +154,20 @@ namespace StartUI4Controls
         public UI4ProgressBar()
         {
             this.Loaded += OnLoaded;
+            this.Unloaded += OnUnloaded;
             this.SizeChanged += OnSizeChanged;
             BuildVisualTree();
+            SetResourceReference(GradientStartProperty, "UI4.Color.ProgressStart");
+            SetResourceReference(GradientEndProperty, "UI4.Color.Accent");
+            SetResourceReference(TrackBackgroundProperty, "UI4.Color.TrackBackground");
+        }
+
+        private void OnUnloaded(object sender, RoutedEventArgs e)
+        {
+            StopIndeterminateAnimation();
+            this.Loaded -= OnLoaded;
+            this.Unloaded -= OnUnloaded;
+            this.SizeChanged -= OnSizeChanged;
         }
 
         private void BuildVisualTree()

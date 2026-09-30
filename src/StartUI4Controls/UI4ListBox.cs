@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Windows;
@@ -10,10 +11,14 @@ using System.Windows.Markup;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using System.Xml;
+using StartUI4Controls.Internal;
 
 namespace StartUI4Controls
 {
 
+    /// <summary>
+    /// 列表样式类型枚举。
+    /// </summary>
     public enum ListStyleType
     {
         None,
@@ -21,6 +26,9 @@ namespace StartUI4Controls
         Number
     }
 
+    /// <summary>
+    /// 将索引值转换为从 1 开始的序号字符串的转换器。
+    /// </summary>
     public class IndexPlusOneConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
@@ -35,7 +43,13 @@ namespace StartUI4Controls
             throw new NotImplementedException();
         }
     }
-    public class UI4ListBox : ListBox
+    /// <summary>
+    /// 现代风格的列表框控件，支持自定义滚动条样式和列表样式。
+    /// </summary>
+    /// <remarks>
+    /// <para>继承自 <see cref="System.Windows.Controls.ListBox"/>，提供自定义 ScrollViewer 样式和滚动条样式。</para>
+    /// </remarks>
+    public class UI4ListBox : ListBox, IThemeAware
     {
 
         public static readonly DependencyProperty CornerRadiusProperty =
@@ -205,14 +219,13 @@ namespace StartUI4Controls
 
         static UI4ListBox()
         {
-
             BorderThicknessProperty.OverrideMetadata(typeof(UI4ListBox),
                 new FrameworkPropertyMetadata(new Thickness(0), OnBorderThicknessChanged));
 
             DefaultStyleKeyProperty.OverrideMetadata(typeof(UI4ListBox),
                 new FrameworkPropertyMetadata(typeof(UI4ListBox)));
 
-            _scrollViewerStyle = CreateScrollViewerStyleFromXaml();
+            _scrollViewerStyle = ScrollBarResources.GetScrollViewerStyle();
         }
 
         private static void OnBorderThicknessChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -221,226 +234,36 @@ namespace StartUI4Controls
                 list.Style = list.BuildListStyle();
         }
 
-        public static Style CreateScrollViewerStyleFromXaml()
-        {
-            string xaml = @"
-<Style xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation'
-       xmlns:x='http://schemas.microsoft.com/winfx/2006/xaml'
-       TargetType='{x:Type ScrollViewer}'>
-    <Style.Resources>
-        <Style x:Key='ScrollBarThumb' TargetType='{x:Type Thumb}'>
-            <Setter Property='OverridesDefaultStyle' Value='true'/>
-            <Setter Property='IsTabStop' Value='false'/>
-            <Setter Property='Template'>
-                <Setter.Value>
-                    <ControlTemplate TargetType='{x:Type Thumb}'>
-                        <Grid>
-                            <Rectangle Fill='#50000000' RadiusX='3' RadiusY='3'/>
-                        </Grid>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-        <Style x:Key='HorizontalScrollBarPageButton' TargetType='{x:Type RepeatButton}'>
-            <Setter Property='OverridesDefaultStyle' Value='true'/>
-            <Setter Property='Background' Value='Transparent'/>
-            <Setter Property='Focusable' Value='false'/>
-            <Setter Property='IsTabStop' Value='false'/>
-            <Setter Property='Opacity' Value='0'/>
-            <Setter Property='Template'>
-                <Setter.Value>
-                    <ControlTemplate TargetType='{x:Type RepeatButton}'>
-                        <Rectangle Fill='{TemplateBinding Background}'
-                                   Width='{TemplateBinding Width}'
-                                   Height='{TemplateBinding Height}'/>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-        <Style x:Key='VerticalScrollBarPageButton' TargetType='{x:Type RepeatButton}'>
-            <Setter Property='OverridesDefaultStyle' Value='true'/>
-            <Setter Property='Background' Value='Transparent'/>
-            <Setter Property='Focusable' Value='false'/>
-            <Setter Property='IsTabStop' Value='false'/>
-            <Setter Property='Opacity' Value='0'/>
-            <Setter Property='Template'>
-                <Setter.Value>
-                    <ControlTemplate TargetType='{x:Type RepeatButton}'>
-                        <Rectangle Fill='{TemplateBinding Background}'
-                                   Width='{TemplateBinding Width}'
-                                   Height='{TemplateBinding Height}'/>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-        <Style x:Key='for_scrollbar' TargetType='{x:Type ScrollBar}'>
-            <Setter Property='Stylus.IsPressAndHoldEnabled' Value='false'/>
-            <Setter Property='Stylus.IsFlicksEnabled' Value='false'/>
-            <Setter Property='Background' Value='Transparent'/>
-            <Setter Property='Margin' Value='0,1,2,6'/>
-            <Setter Property='Width' Value='6'/>
-            <Setter Property='MinWidth' Value='6'/>
-            <Setter Property='Opacity' Value='0'/>
-            <Setter Property='Template'>
-                <Setter.Value>
-                    <ControlTemplate TargetType='{x:Type ScrollBar}'>
-                        <Grid x:Name='Bg' SnapsToDevicePixels='true'>
-                            <Track x:Name='PART_Track' IsEnabled='{TemplateBinding IsMouseOver}' IsDirectionReversed='true'>
-                                <Track.DecreaseRepeatButton>
-                                    <RepeatButton Style='{StaticResource VerticalScrollBarPageButton}'
-                                                  Command='{x:Static ScrollBar.PageUpCommand}'/>
-                                </Track.DecreaseRepeatButton>
-                                <Track.IncreaseRepeatButton>
-                                    <RepeatButton Style='{StaticResource VerticalScrollBarPageButton}'
-                                                  Command='{x:Static ScrollBar.PageDownCommand}'/>
-                                </Track.IncreaseRepeatButton>
-                                <Track.Thumb>
-                                    <Thumb Style='{StaticResource ScrollBarThumb}'/>
-                                </Track.Thumb>
-                            </Track>
-                        </Grid>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property='IsMouseOver' Value='True'>
-                                <Trigger.EnterActions>
-                                    <BeginStoryboard>
-                                        <Storyboard>
-                                            <DoubleAnimation Storyboard.TargetProperty='Opacity' To='1' Duration='0:0:0.2'/>
-                                        </Storyboard>
-                                    </BeginStoryboard>
-                                </Trigger.EnterActions>
-                                <Trigger.ExitActions>
-                                    <BeginStoryboard>
-                                        <Storyboard>
-                                            <DoubleAnimation Storyboard.TargetProperty='Opacity' To='0' Duration='0:0:0.5'/>
-                                        </Storyboard>
-                                    </BeginStoryboard>
-                                </Trigger.ExitActions>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-            <Style.Triggers>
-                <Trigger Property='Orientation' Value='Horizontal'>
-                    <Setter Property='Background' Value='Transparent'/>
-                    <Setter Property='Margin' Value='2,0,6,2'/>
-                    <Setter Property='Height' Value='6'/>
-                    <Setter Property='MinHeight' Value='6'/>
-                    <Setter Property='Width' Value='Auto'/>
-                    <Setter Property='Opacity' Value='0'/>
-                    <Setter Property='Template'>
-                        <Setter.Value>
-                            <ControlTemplate TargetType='{x:Type ScrollBar}'>
-                                <Grid x:Name='Bg' SnapsToDevicePixels='true'>
-                                    <Track x:Name='PART_Track' IsEnabled='{TemplateBinding IsMouseOver}'>
-                                        <Track.DecreaseRepeatButton>
-                                            <RepeatButton Style='{StaticResource HorizontalScrollBarPageButton}'
-                                                          Command='{x:Static ScrollBar.PageLeftCommand}'/>
-                                        </Track.DecreaseRepeatButton>
-                                        <Track.IncreaseRepeatButton>
-                                            <RepeatButton Style='{StaticResource HorizontalScrollBarPageButton}'
-                                                          Command='{x:Static ScrollBar.PageRightCommand}'/>
-                                        </Track.IncreaseRepeatButton>
-                                        <Track.Thumb>
-                                            <Thumb Style='{StaticResource ScrollBarThumb}'/>
-                                        </Track.Thumb>
-                                    </Track>
-                                </Grid>
-                                <ControlTemplate.Triggers>
-                                    <Trigger Property='IsMouseOver' Value='True'>
-                                        <Trigger.EnterActions>
-                                            <BeginStoryboard>
-                                                <Storyboard>
-                                                    <DoubleAnimation Storyboard.TargetProperty='Opacity' To='1' Duration='0:0:0.2'/>
-                                                </Storyboard>
-                                            </BeginStoryboard>
-                                        </Trigger.EnterActions>
-                                        <Trigger.ExitActions>
-                                            <BeginStoryboard>
-                                                <Storyboard>
-                                                    <DoubleAnimation Storyboard.TargetProperty='Opacity' To='0' Duration='0:0:0.5'/>
-                                                </Storyboard>
-                                            </BeginStoryboard>
-                                        </Trigger.ExitActions>
-                                    </Trigger>
-                                </ControlTemplate.Triggers>
-                            </ControlTemplate>
-                        </Setter.Value>
-                    </Setter>
-                </Trigger>
-            </Style.Triggers>
-        </Style>
-    </Style.Resources>
-    <Setter Property='BorderBrush' Value='LightGray'/>
-    <Setter Property='BorderThickness' Value='0'/>
-    <Setter Property='HorizontalContentAlignment' Value='Left'/>
-    <Setter Property='HorizontalScrollBarVisibility' Value='Auto'/>
-    <Setter Property='VerticalContentAlignment' Value='Top'/>
-    <Setter Property='VerticalScrollBarVisibility' Value='Auto'/>
-    <Setter Property='Template'>
-        <Setter.Value>
-            <ControlTemplate TargetType='{x:Type ScrollViewer}'>
-                <Border BorderBrush='{TemplateBinding BorderBrush}'
-                        BorderThickness='{TemplateBinding BorderThickness}'
-                        SnapsToDevicePixels='True'>
-                    <Grid Background='{TemplateBinding Background}'>
-                        <ScrollContentPresenter
-                            Cursor='{TemplateBinding Cursor}'
-                            Margin='{TemplateBinding Padding}'
-                            ContentTemplate='{TemplateBinding ContentTemplate}'/>
-                        <ScrollBar x:Name='PART_VerticalScrollBar'
-                                   HorizontalAlignment='Right'
-                                   Maximum='{TemplateBinding ScrollableHeight}'
-                                   Orientation='Vertical'
-                                   Style='{StaticResource for_scrollbar}'
-                                   ViewportSize='{TemplateBinding ViewportHeight}'
-                                   Value='{TemplateBinding VerticalOffset}'
-                                   Visibility='{TemplateBinding ComputedVerticalScrollBarVisibility}'/>
-                        <ScrollBar x:Name='PART_HorizontalScrollBar'
-                                   Maximum='{TemplateBinding ScrollableWidth}'
-                                   Orientation='Horizontal'
-                                   Style='{StaticResource for_scrollbar}'
-                                   VerticalAlignment='Bottom'
-                                   Value='{TemplateBinding HorizontalOffset}'
-                                   ViewportSize='{TemplateBinding ViewportWidth}'
-                                   Visibility='{TemplateBinding ComputedHorizontalScrollBarVisibility}'/>
-                    </Grid>
-                </Border>
-                <ControlTemplate.Triggers>
-                    <EventTrigger RoutedEvent='ScrollChanged'>
-                        <BeginStoryboard>
-                            <Storyboard>
-                                <DoubleAnimation Storyboard.TargetName='PART_VerticalScrollBar' Storyboard.TargetProperty='Opacity' To='1' Duration='0:0:0.2'/>
-                                <DoubleAnimation Storyboard.TargetName='PART_VerticalScrollBar' Storyboard.TargetProperty='Opacity' To='0' Duration='0:0:0.5' BeginTime='0:0:1.5'/>
-                                <DoubleAnimation Storyboard.TargetName='PART_HorizontalScrollBar' Storyboard.TargetProperty='Opacity' To='1' Duration='0:0:0.2'/>
-                                <DoubleAnimation Storyboard.TargetName='PART_HorizontalScrollBar' Storyboard.TargetProperty='Opacity' To='0' Duration='0:0:0.5' BeginTime='0:0:1.5'/>
-                            </Storyboard>
-                        </BeginStoryboard>
-                    </EventTrigger>
-                </ControlTemplate.Triggers>
-            </ControlTemplate>
-        </Setter.Value>
-    </Setter>
-</Style>";
-
-            try
-            {
-                using (StringReader sr = new StringReader(xaml))
-                using (XmlReader xr = XmlReader.Create(sr))
-                {
-                    return (Style)XamlReader.Load(xr);
-                }
-            }
-            catch
-            {
-
-                return null;
-            }
-        }
-
         public UI4ListBox()
         {
             FontSize = 15d;
+            SyncThemeColors();
+            Style = BuildListStyle();
+            UI4Theme.TrackControl(this);
+        }
+
+        void IThemeAware.OnThemeChanged()
+        {
+            SyncThemeColors();
+            Style = BuildListStyle();
+        }
+
+        private readonly Dictionary<DependencyProperty, object> _applied = new Dictionary<DependencyProperty, object>();
+
+        /// <summary>未被用户显式设置的颜色令牌跟随当前主题。</summary>
+        private void SyncThemeColors()
+        {
+            var theme = UI4Theme.Current;
+            ThemeSync.Apply(this, TextColorProperty, _applied, theme.TextForegroundColor);
+            ThemeSync.Apply(this, BorderNormalColorProperty, _applied, theme.BorderNormalColor);
+            ThemeSync.Apply(this, PanelBackgroundProperty, _applied, theme.SurfaceBrush);
+            ThemeSync.Apply(this, HoverBackgroundProperty, _applied, theme.HoverOverlayColor);
+        }
+
+        /// <summary>立即按当前主题刷新（用于未挂载到可视树、收不到 Loaded 的场景，如 Popup 预构建内容）。</summary>
+        public void RefreshTheme()
+        {
+            SyncThemeColors();
             Style = BuildListStyle();
         }
 
@@ -577,7 +400,7 @@ namespace StartUI4Controls
                 numberCircle.SetBinding(Border.BackgroundProperty,
                     new Binding(nameof(NumberCircleBackground)) { RelativeSource = new RelativeSource(RelativeSourceMode.FindAncestor, typeof(UI4ListBox), 1) });
                 FrameworkElementFactory numberText = new FrameworkElementFactory(typeof(TextBlock));
-                numberText.SetValue(TextBlock.ForegroundProperty, Brushes.White);
+                numberText.SetValue(TextBlock.ForegroundProperty, UI4Theme.Current.OnWhiteBrush);
                 numberText.SetValue(TextBlock.FontWeightProperty, FontWeights.Medium);
                 numberText.SetValue(TextBlock.FontSizeProperty, 13.0);
                 numberText.SetValue(TextBlock.HorizontalAlignmentProperty, HorizontalAlignment.Center);

@@ -173,6 +173,9 @@ namespace StartUI4Controls
             Loaded += OnLoaded;
             SelectionChanged += (s, e) => ApplySelection();
             RebuildStyle();
+            SetResourceReference(ItemForegroundProperty, "UI4.Color.TextForeground");
+            SetResourceReference(ItemHoverForegroundProperty, "UI4.Color.TextForeground");
+            SetResourceReference(SelectedItemForegroundProperty, "UI4.Color.Accent");
         }
 
         private void OnLoaded(object sender, RoutedEventArgs e)

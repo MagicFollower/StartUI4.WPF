@@ -40,7 +40,10 @@ namespace StartUI4Demo
             UpdateLangSample();
             ApplyStartupTab();
             RuntimeText.Text = "实际运行时：" + System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription;
+            UI4Theme.ThemeChanged += delegate { UpdateScopeStatus(); };
+            ApplyTheme(false);
             SetStatus("就绪");
+            UpdateScopeStatus();
         }
 
         // 支持 "--tab=N" 直接打开指定分页，便于自动化逐页验证。
@@ -71,13 +74,7 @@ namespace StartUI4Demo
 
         private void BuildHostContextMenu()
         {
-            _hostMenu = new UI4ContextMenu
-            {
-                Width = 190,
-                Background = Brushes.White,
-                BorderColor = Color.FromRgb(200, 200, 210),
-                HoverBackground = Color.FromArgb(14, 0, 0, 0)
-            };
+            _hostMenu = new UI4ContextMenu { Width = 190 };
 
             _hostMenu.AddItem(new UI4MenuItem(
                 UI4MenuItemType.Copy, "复制文本", UI4MenuIcons.Copy,
@@ -105,17 +102,27 @@ namespace StartUI4Demo
             if (StatusText != null) StatusText.Text = text;
         }
 
-        // ---------- 按钮与开关 ----------
-
-        private void PlainButton_Click(object sender, RoutedEventArgs e)
-        {
-            SetStatus("UI4Button 被点击");
-        }
+        // ---------- 主题 ----------
 
         private void Switch_Toggled(object sender, RoutedEventArgs e)
         {
             UI4Switch sw = (UI4Switch)sender;
             SetStatus("UI4Switch IsOn = " + sw.IsOn);
+            ApplyTheme(sw.IsOn);
+        }
+
+        private void ApplyTheme(bool isDark)
+        {
+            // 资源桥：SetTheme 内部把令牌写入 Application.Resources，
+            // 宿主 XAML 的 {DynamicResource UI4.Brush.X} 自动跟随，无需逐元素手工同步。
+            UI4Theme.SetTheme(isDark ? UI4ThemeMode.Dark : UI4ThemeMode.Light);
+        }
+
+        // ---------- 按钮与开关 ----------
+
+        private void PlainButton_Click(object sender, RoutedEventArgs e)
+        {
+            SetStatus("UI4Button 被点击");
         }
 
         // ---------- 文本显示 ----------
@@ -172,13 +179,13 @@ namespace StartUI4Demo
 
         private void MsgOk_Click(object sender, RoutedEventArgs e)
         {
-            bool? r = UI4MessageBox.Show("这是 UI4MessageBox 的内容。", "提示", UI4MessageBoxButtons.OK);
+            bool? r = UI4MessageBox.Show("这是 UI4MessageBox 的内容。", "提示", UI4MessageBoxButtons.OK, owner: this);
             MsgResult.Text = "返回值：" + Format(r);
         }
 
         private void MsgOkCancel_Click(object sender, RoutedEventArgs e)
         {
-            bool? r = UI4MessageBox.Show("确认执行该操作吗？", "请确认", UI4MessageBoxButtons.OKCancel);
+            bool? r = UI4MessageBox.Show("确认执行该操作吗？", "请确认", UI4MessageBoxButtons.OKCancel, owner: this);
             MsgResult.Text = "返回值：" + Format(r);
         }
 
@@ -190,10 +197,9 @@ namespace StartUI4Demo
 
         private void PickColor_Click(object sender, RoutedEventArgs e)
         {
-            Color? result = UI4ColorPicker.ShowDialog(
-                "选择颜色",
-                ((SolidColorBrush)ColorSwatch.Background).Color,
-                this);
+            var currentBrush = ColorSwatch.Background as SolidColorBrush;
+            Color initialColor = currentBrush != null ? currentBrush.Color : Colors.Blue;
+            Color? result = UI4ColorPicker.ShowDialog("选择颜色", initialColor, this);
 
             if (result.HasValue)
             {
@@ -207,8 +213,47 @@ namespace StartUI4Demo
             }
         }
 
-        // ---------- 菜单 / 托盘 / 多语言 ----------
+        // ---------- 局部主题（UI4ThemeScope） ----------
 
+        private void ScopeKeyCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            // XAML 解析阶段 SelectedIndex="0" 会先触发一次，此时 ScopeCard 字段尚未赋值。
+            if (ScopeCard == null || ScopeKeyCombo == null) return;
+
+            ComboBoxItem item = ScopeKeyCombo.SelectedItem as ComboBoxItem;
+            string key = item == null ? null : item.Tag as string;
+            UI4ThemeScope.SetTheme(ScopeCard, key);
+            UpdateScopeStatus();
+        }
+
+        private void OpenScopeWindow_Click(object sender, RoutedEventArgs e)
+        {
+            ScopeWindow window = new ScopeWindow { Owner = this };
+            window.Show();
+            SetStatus("已打开异主题窗口（与全局主题相反）");
+        }
+
+        private void HighContrast_Click(object sender, RoutedEventArgs e)
+        {
+            UI4Theme.Apply("highcontrast");
+            SetStatus("全局主题 → highcontrast");
+        }
+
+        private void FollowSystem_Click(object sender, RoutedEventArgs e)
+        {
+            UI4Theme.SetTheme(UI4ThemeMode.System);
+            SetStatus("全局主题 → 跟随系统（ResolvedMode = " + UI4Theme.ResolvedMode + "）");
+        }
+
+        private void UpdateScopeStatus()
+        {
+            if (ScopeStatus == null) return;
+            string scopeKey = UI4ThemeScope.GetTheme(ScopeCard);
+            ScopeStatus.Text = "全局主题 ResolvedMode=" + UI4Theme.ResolvedMode + " Key=" + UI4Theme.ResolvedKey +
+                               "　　作用域卡片 Theme=" + (string.IsNullOrEmpty(scopeKey) ? "(none)" : scopeKey);
+        }
+
+        // ---------- 菜单 / 托盘 / 多语言 ----------
         private void MenuExit_Click(object sender, RoutedEventArgs e)
         {
             Close();
@@ -237,7 +282,6 @@ namespace StartUI4Demo
             string lang = LangCombo.SelectedIndex == 0 ? "zh-CN" : "en-US";
             CultureInfo.CurrentUICulture = new CultureInfo(lang);
             UI4MultiLanguage.Refresh();
-            UI4ContextMenuLanguage.Refresh();
             UpdateLangSample();
         }
 

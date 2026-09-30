@@ -85,6 +85,7 @@ async streams、`EffectiveViewportChanged` 等。WPF 侧用到的 API（`Composi
 StartUI4.WPF_net48/
 ├── StartUI4Controls.sln          解决方案（库 + Demo）
 ├── PORTING.md                    本文件
+├── 主题方案分析与改进.md          主题切换方案的不足分析与 P0–P3 改进方案
 ├── shot.ps1 / interact.ps1       运行时验证脚本（截图 / UI 自动化交互）
 ├── shots/                        验证截图（10 个分页 + 对话框/菜单/托盘）
 ├── upstream/                     上游原始源码（对照用）
@@ -168,3 +169,165 @@ grep -c "4\.8" StartUI4Controls.sln                      # 0：sln 不含 4.8
 grep -H "TargetFramework>" src/StartUI4Controls/*.csproj samples/StartUI4Demo/*.csproj   # 编译期 4.8 来源
 cat samples/StartUI4Demo/bin/Debug/net48/StartUI4Demo.exe.config   # 运行期 4.8 来源
 ```
+
+---
+
+## 8. 修复记录：移植后改动引入的编译回归（2026-09-29）
+
+移植完成后，库内又做过两轮重构（`.qoder/specs/` 下的「UI4MessageBox 综合优化」与「组件库改进分析」），
+引入了 3 处编译错误，IDE 表现为 Demo 启动失败：
+
+| 报错 | 位置 | 根因 | 修复 |
+|---|---|---|---|
+| CS0246 `DropShadowEffect` | `src/StartUI4Controls/UI4MessageBox.cs` 36/47 行 | 「缓存 DropShadowEffect 为 static readonly」优化新增类型引用但未补 using | 补 `using System.Windows.Media.Effects;` |
+| MC3074 `UI4TextBlock` 不存在 | `samples/StartUI4Demo/MainWindow.xaml` 21 行 | 级联错误：库因上一条编译失败，XAML 标记编译拿不到 `StartUI4Controls.dll` 类型；xmlns 本身无误 | 修上一条后自动消失 |
+| CS1503 参数类型不匹配 | `samples/StartUI4Demo/MainWindow.xaml.cs` `SetForeground(SubtitleText, …)` | `SubtitleText` 在 XAML 中已改为 `UI4TextBlock`（`ContentControl` 派生，自带 `new Foreground` DP），不再是 WPF 原生 `TextBlock` | 直接 `SubtitleText.Foreground = CreateFrozenBrush(theme.IconColor)` |
+| CS0103 `UI4ContextMenuLanguage` 不存在 | `samples/StartUI4Demo/MainWindow.xaml.cs` 316 行 | 「改进分析」重构已把 `UI4ContextMenuLanguage` 删除并入 `UI4MultiLanguage`（`UI4ContextMenu` 现统一走 `UI4MultiLanguage.Get`），Demo 调用未同步 | 删除该调用；`UI4MultiLanguage.Refresh()` 已覆盖右键菜单取词 |
+
+注：第 3、4 条在 IDE 中被 MC3074 挡住未显示，命令行 `dotnet build` 修复第 1 条后才暴露。
+验证：`dotnet build StartUI4Controls.sln` → 0 错误；Demo 可正常启动运行。
+
+经验：第 2 节「隐式 using」结论（源码已带全部所需 using）只对**移植时点**的源码成立；
+后续任何新增类型引用的重构都必须重新过 using，且以 `dotnet build` 全解决方案为准，
+不能只看 IDE 当前错误列表（XAML 级联错误会掩盖 C# 侧的真实报错）。
+
+---
+
+## 9. 主题切换方案 P0 正确性修复（2026-09-29）
+
+针对 `src/StartUI4Controls` 命令式主题系统的确定性 bug，实施 P0 修复（详见 `主题方案分析与改进.md` 第三节 P0 与第六节实施记录）。要点：
+
+- **追踪生命周期**：`UI4Theme.TrackControl` 幂等挂 `Loaded`、按 `_themeVersion` 在重挂载时补齐主题；删除各控件 `Unloaded` 内的 `UntrackControl`（弱引用表本就容忍失联）。
+- **通知顺序 / 短路**：`ThemeChanged` 移到控件批量刷新之后（同一 Dispatcher 回调尾部）；`SetTheme` 同模式直接 return；新增 `CurrentMode` + `StaticPropertyChanged` 供 XAML 绑定。
+- **补齐失感控件**：`UI4ContextMenu`、`UI4ColorPicker` 实现 `IThemeAware`；`UI4Menu` 去掉静态 `_stylesInitialized` 翻转，颜色改实例级刷新。
+- **热点 DP 跟随主题（关键新发现）**：`SyncThemeColors` 原先用 `ReadLocalValue == UnsetValue` 判断「用户是否覆盖」，但主题同步自身会写入本地值，导致下次切换被误判为已覆盖而跳过，控件**永久冻结在构造时的亮色**。新增 `Internal/ThemeSync.cs`（记录上次主题写入值、仅当前值仍等于该记录时才跟随），`UI4Menu/UI4ComboBox/UI4ListBox/UI4NavigationView` 统一改用 `ThemeSync.Apply`。
+
+验证：`dotnet build` 0 错误；Demo 深/浅往返 + Tab 切走再回，UI4Menu 菜单栏与 UI4ContextMenu 弹出菜单深色下均为浅字深底，无残影。
+
+---
+
+## 10. 主题切换方案 P1：令牌化 + 资源桥 + 系统跟随 + 持久化（2026-09-29）
+
+在 P0 基础上实施 P1（详见 `主题方案分析与改进.md` 第三节 P1 与第七节实施记录）。原则：**只增不改**——
+`UI4Theme` 的 30 个公开 Color 属性与 11 个冻结 Brush 属性名/类型/取值全部保持不变，控件的 P0 命令式路径继续可用。
+
+- **P1-1 令牌数据化**：新增 `UI4ThemeToken` 枚举与 `UI4ThemeDefinition`（`Dictionary<token,Color>`，内置 `Light()/Dark()`）；`UI4Theme` 内部改由 `_colors` 驱动，公开 Color 属性转为表达式属性；新增 `SetAccent(Color)`、`Register/Apply(key)/ThemeKeys`。
+- **P1-2 资源桥**：`SetTheme` 末尾把每个令牌以 `UI4.Color.X` / `UI4.Brush.X` 写入 `Application.Resources`（附 `UI4.Brush.Text/Border/Accent` 别名），公开 `ApplyToApplication()`。Demo 宿主 XAML 改用 `{DynamicResource}`，`MainWindow.xaml.cs` 的逐元素手工同步块整体删除。
+- **P1-3 系统跟随**：新增 `UI4ThemeMode.System`，读注册表 `AppsUseLightTheme` 解析、订阅 `SystemEvents.UserPreferenceChanged` 实时切换；新增 `ResolvedMode`。
+- **P1-4 持久化**：`IThemePersistence` + `RegistryThemePersistence`/`JsonThemePersistence`（无第三方依赖），`UI4Theme.Persistence` 默认关闭。
+
+验证：`dotnet build` 0 错误；STA 探针确认资源键写入、`System→ResolvedMode=Dark`、持久化 `Save/Load=Dark` 往返、`SetAccent` 派生 AccentDark；Demo 深色截图确认宿主纯靠 DynamicResource 跟随。
+
+遗留（属 P2）：库内控件模板仍命令式重建 Style，其弹出层底色（如 UI4ComboBox 下拉）未令牌化；P2 将模板逐批改用 `SetResourceReference`，届时 `ThemeSync`/`TrackControl` 命令式通道可废弃。
+
+---
+
+## 11. 主题切换方案 P2 批次 1：编辑/选择类控件改引用式模板（2026-09-30）
+
+把 `UI4CheckBox` / `UI4Radio` / `UI4TextBox` / `UI4PasswordBox` 从「切主题时整份重建 `Style`」迁移为
+「`Style` 只建一次 + 令牌引用」（详见 `主题方案分析与改进.md` 第八节）。这四类控件此前**未接入主题通知**，
+深色模式下输入框白底深字，是可见缺陷。构建 `dotnet build` 0 错误。
+
+三条规则（后续批次沿用）：
+
+- 控件自身主题色 DP：构造函数 `SetResourceReference(dp, "UI4.Color.<Token>")` / `"UI4.Brush.<Token>"`。引用式自动重解析，
+  且宿主显式赋值会覆盖引用 → 天然得到「跟随主题，除非用户覆盖」。
+- `FrameworkElementFactory` 的取值：改 `SetBinding` + `RelativeSource.TemplatedParent` + `Internal/ColorToBrushConverter.Instance`。
+- `Style`/`Trigger` 的 `Setter.Value`：改 `new Binding(path){ Source = this, Converter = ... }`（`Setter.Value` 放不了 DynamicResource；
+  触发器里 `TemplatedParent` 解析目标不确定，绑到控件实例最稳）。
+
+配套：去 `IThemeAware` / `TrackControl` / `OnThemeChanged`；**色类** DP 去掉 `OnStyleRefresh`，
+**结构类** DP（`CornerRadius`/`BoxSize`/`InnerPadding`/`TextMargin` 等）保留（它们确实需要重建模板）。
+按钮半透明由 `Color.FromArgb(150, …)` 改为「不透明色绑定 + `Opacity=0.588`」，且 **Opacity 必须写在 Style 的 Setter**
+（写成工厂本地值会让悬停触发器永远无法覆盖）。
+
+验证：本机 WPF 窗口屏幕抓取（`PrintWindow` / `CopyFromScreen`）返回全白，**回退到未修改基线同样全白**，属环境限制。
+改用 `p2verify.ps1`（STA 进程内、离屏 Window 承载控件、`Template.FindName` 读解析后的画刷色）做值断言，
+加 `theme.ps1`（UIA 深→Tab 往返→浅）走查无异常。结果：深浅 16 项颜色与令牌一致；
+`CheckBackground=Green`、`TextColor=Red` 两类显式覆盖在两主题下均保持；`Style` 实例切换前后引用相同（不再重建）。
+
+P2 剩余批次（按同一改法逐批推进，每批构建 + 进程内断言）：
+① `UI4ComboBox` / `UI4Button`；② 大模板控件 `ListBox`、`ListView`、`GridView`、`Pivot`、`NavigationView`、`TabControl`、`Menu`、`Slider`。
+已知遗留：`UI4ComboBox` 下拉弹层底色在深色下仍为浅色（弹层未令牌化，属批次 ①）。
+
+---
+
+## 12. 主题切换方案 P3：局部主题作用域 + 高对比度（2026-09-30）
+
+实施 P3（详见 `主题方案分析与改进.md` 第九节）。能力：**一屏/一窗一套主题**（`ui:UI4ThemeScope.Theme`）与
+**高对比度主题**（`highcontrast`）。构建 `dotnet build` 0 错误；`p3verify.ps1` 44 项断言全绿；
+`scopewalk.ps1`（真实 Demo 进程 UIA 走查第 11 页）19 项全绿；`p2verify.ps1` / `theme.ps1` /
+`interact.ps1 -Scenario msgbox|menu|ctx` 回归均无异常。
+
+- **新文件 `UI4ThemeScope.cs`**：附加属性 `Theme`（大小写不敏感的定义键）。置为某键时向该元素自身
+  `Resources.MergedDictionaries` **末位**插入一份该主题的令牌字典，并同步刷新子树内命令式控件；
+  置空 / null / **未注册的键**一律视为撤销作用域（写错键名不崩，回到全局主题）。
+  作用域解析沿 `FrameworkElement.Parent` → `FrameworkContentElement.Parent` → `VisualTreeHelper.GetParent` 向上找最近声明者，
+  因此能穿过 Popup 与控件模板；嵌套作用域按「控件解析到的键 == 当前作用域键」过滤，内外层互不污染。
+- **`UI4Theme` 新增主题换入栈**：`UseTheme`（internal，压栈/出栈 `_current`）、`InstanceOf(key)`（按键缓存实例）、
+  `EffectiveThemeFor(element)`；`RefreshEntries` / `OnTrackedControlLoaded` 改为**按每个控件的有效主题**刷新。
+  这样 11 个仍走命令式刷新的控件（Button/ComboBox/Menu/ListBox/NavigationView/DataGrid/Panel/FlipTextBlock/
+  ContextMenu/ColorPicker/MessageBox）**零改动**即作用域化。
+  使用约束：换入只在 **UI 线程 + 同步** 区间有效，被刷新控件不得在刷新路径里 `Dispatcher.BeginInvoke` 二段跳。
+- **G3 五控件顺手修复**（`UI4Switch`/`UI4ProgressBar`/`UI4Slider`/`UI4Pivot`/`UI4TextBlock`）：
+  这些控件此前把浅色硬编码在 Color DP 默认值里，**连全局深色都不跟**（A8 残留）。
+  现改为构造函数 `SetResourceReference`，并摘除 `IThemeAware`/`TrackControl`/`OnThemeChanged`；
+  `UI4TextBlock` 因 `Foreground` 默认 null 走继承，无需引用。
+- **高对比度**：`UI4ThemeDefinition.HighContrast()` 注册为键 `highcontrast`（覆盖全部 30 令牌：黑底、白字白框、
+  黄强调，选中态深蓝承托白色前景），新增 `UI4ThemeMode.HighContrast`；`UI4Theme.FollowSystemHighContrast`
+  默认 **false**（opt-in），开启后 `SetTheme(System)` 在系统高对比度下优先解析为 `highcontrast`，
+  并订阅 `SystemEvents.UserPreferenceChanged`（含 `Accessibility` 类别）。持久化按枚举整数/名称存储，旧值兼容。
+- **Demo**：新增第 11 页「局部主题」（`--tab=10`，左右同内容双卡片对照、作用域键下拉、全局高对比度/跟随系统、
+  嵌套作用域示例）与 `ScopeWindow`（整窗作用域，初始取与全局相反的键）；状态一律用**窗口内文本**自证，不弹窗。
+
+**与 P2 的关系**：作用域内命令式控件仍会重建 Style——这是过渡代价。P2 批次 ①②（上节的 11 个控件）迁移完成后，
+`UseTheme`/`EffectiveThemeFor`/`RefreshControl` 整块可删除，届时作用域退化为「纯资源字典覆盖」，切换开销为 0。
+
+已知小瑕疵：`UI4ListBox` 角标数字色在 `Dispatcher.BeginInvoke`（`UI4ListBox.cs:340`）里重绘，
+作用域下该项可能取到全局色；将在 P2 批次 ② 迁移 `UI4ListBox` 时消除。
+本轮**未做**切换动画（交叉淡入）：需整窗位图缓存，而本机 WPF 抓屏返回全白、无法回归验证。
+
+## 13. 修复：深色 / 高对比度下拉框文本不清晰（2026-09-30）
+
+用户反馈「深色和高对比度两种主题下，下拉框内文本颜色显示不清晰」。进程内探针取证（STA + 离屏 Window，
+读解析后的依赖属性值）确认根因**不是**文字色错，而是**底不跟随主题**：
+
+| 主题 | ComboBox 选中框底（修复前） | 文字色 | 结果 |
+|---|---|---|---|
+| Light | `#FFFFFF` | `#1E1E1E` | 正常 |
+| Dark | `#FFFFFF` | `#E6E6E6` | 浅灰压白底，发虚 |
+| HighContrast | `#FFFFFF` | `#FFFFFF` | **白字白底，完全不可见** |
+
+- **主因**：`UI4ComboBox.SyncThemeColors()` 只同步 `TextColor` 与 `BorderNormalColor`，
+  `EditBackground`（默认硬编码白）从未跟随主题；`FocusGradientStart/End` 亦是硬编码蓝→紫（A8 残留）。
+- **同类洞**：`UI4ListBox` 的 `PanelBackground`（默认 `Brushes.White`）与 `HoverBackground`（上游遗留青色
+  `#0AF5FFFF`）只在 `RefreshTheme()`（供 `UI4ContextMenu` 弹层预构建调用）里同步，`SyncThemeColors()` 里没有——
+  两条刷新路径同步的属性集合不一致，属 P0-4「热点 DP 跟随主题」的漏网。实测深色下面板仍 `#FFFFFF` 而文字已 `#E6E6E6`。
+
+改动（命令式同步通道，共 5 行 + 一处收敛）：
+
+- `UI4ComboBox.cs` `SyncThemeColors()` 补 `EditBackground → Surface`、`FocusGradientStart → Accent`、
+  `FocusGradientEnd → AccentEnd`。
+- `UI4ListBox.cs` 把 `PanelBackground → Surface`、`HoverBackground → HoverOverlay` 从 `RefreshTheme()` 下沉到
+  `SyncThemeColors()`，`RefreshTheme()` 收敛为 `SyncThemeColors(); Style = BuildListStyle();`，两条路径共用同一份集合。
+- 全部通过 `ThemeSync.Apply`：记录「上一次由主题写入的值」，只有当前值仍等于它时才覆盖 → **宿主显式赋值永远优先**
+  （`p3verify.ps1` H 组用 `EditBackground=Red` / `PanelBackground=Green` 锁定该行为）。
+- 选这条通道而非 P2 批次 ② 的 `SetResourceReference`：作用域正确性**天然成立**（`OnThemeChanged` 由 P3 换入通道在
+  控件的有效主题下调用），且 `UI4ContextMenu` 弹层预构建无资源继承链也能拿到色；引用式改造留给独立批次。
+
+浅色主题外观影响：ComboBox 逐项核对为**逐字节不变**（Light `Surface=#FFFFFF`、`Accent=#0078D4`、`AccentEnd=#9333EA`
+与旧硬编码值相同）；ListBox 面板底色仍白，唯一变化是项悬浮色由 `#0AF5FFFF` 变为 `#14000000`（半透黑，即主题令牌本意）。
+
+验证：`p3verify.ps1` 新增 **H 组** 39 项断言（每主题 13 项 × light/dark/highcontrast）——三主题下闭合态对比对（选中框底/文字/焦点渐变两端）、
+下拉展开态（弹层底 == `Surface`、项文字 == `TextForeground`）、`UI4ListBox` 三项、全局 light + 作用域 dark 时
+作用域内控件保持 dark、宿主显式赋值不被吃掉。**全量回归**：`dotnet build` 0 错误 0 警告；
+`p3verify.ps1` 83 项 PASS / 0 FAIL（原 44 项无回退）；`p2verify.ps1` 32 对色值全匹配且 Style 实例未重建；
+`theme.ps1` 11 页走查无运行时错误；`interact.ps1 -Scenario combo|msgbox|menu|ctx` 均「no runtime errors」；
+`scopewalk.ps1` 19 项 PASS / 0 FAIL。本机 WPF 抓屏仍全白（基线亦然），故**颜色正确性仅由进程内断言证明**。
+
+**仍未接入主题**（记为已知限制，归 P2 批次 ②）：`UI4Button` 恒为「蓝→紫渐变 + 白字」的强调按钮，三主题下取值相同
+（对比度成立，但在高对比度黑底上不与黄/白体系呼应）；`UI4ListView` / `UI4GridView` / `UI4TabControl` 无 `IThemeAware`，
+卡片与文字恒浅色（可读）。
+
+
+

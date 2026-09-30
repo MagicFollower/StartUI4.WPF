@@ -4,6 +4,9 @@ using System.Globalization;
 
 namespace StartUI4Controls
 {
+    /// <summary>
+    /// 多语言键枚举，用于标识多语言字符串。
+    /// </summary>
     public enum UI4LanguageKey
     {
         OK,
@@ -19,6 +22,14 @@ namespace StartUI4Controls
         SelectAll
     }
 
+    /// <summary>
+    /// 多语言支持类，提供组件库内部使用的多语言字符串。
+    /// </summary>
+    /// <remarks>
+    /// <para>通过 <see cref="SetLanguage(string)"/> 设置当前语言，
+    /// 使用 <see cref="Get(UI4LanguageKey)"/> 获取翻译字符串。</para>
+    /// <para>支持的语言包括：中文简体、中文繁体、英语、日语、韩语、法语、德语、俄语。</para>
+    /// </remarks>
     public static class UI4MultiLanguage
     {
         private static Dictionary<UI4LanguageKey, string> _current;

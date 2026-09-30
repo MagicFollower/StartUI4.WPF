@@ -8,6 +8,16 @@ using System.Windows.Media;
 
 namespace StartUI4Controls
 {
+    /// <summary>
+    /// 现代风格的滑块控件，支持圆角和渐变填充。
+    /// </summary>
+    /// <remarks>
+    /// <para>继承自 <see cref="System.Windows.Controls.Slider"/>，提供以下自定义属性：</para>
+    /// <list type="bullet">
+    ///   <item><see cref="CornerRadius"/> — 圆角半径</item>
+    ///   <item><see cref="GradientStart"/> / <see cref="GradientEnd"/> — 已选范围的渐变填充色</item>
+    /// </list>
+    /// </remarks>
     public class UI4Slider : Slider
     {
 
@@ -105,6 +115,10 @@ namespace StartUI4Controls
         {
             Style = BuildSliderStyle();
             SizeChanged += (s, e) => UpdateTrackLayout();
+            SetResourceReference(GradientStartProperty, "UI4.Color.Accent");
+            SetResourceReference(GradientEndProperty, "UI4.Color.Accent");
+            // 未填充轨道：浅色下与原「纯白」默认值一致，深色下取表面色而非刺眼的白
+            SetResourceReference(TrackBackgroundProperty, "UI4.Color.Surface");
         }
 
         public override void OnApplyTemplate()

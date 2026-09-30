@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Reflection;
 using System.Windows;
@@ -6,6 +7,7 @@ using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Markup;
 using System.Windows.Media;
+using StartUI4Controls.Internal;
 namespace StartUI4Controls
 {
     public class ObjectIsStringConverter : IValueConverter
@@ -20,7 +22,7 @@ namespace StartUI4Controls
             throw new NotImplementedException();
         }
     }
-    public class UI4Menu : Menu
+    public class UI4Menu : Menu, IThemeAware
     {
         public static readonly DependencyProperty BarBackgroundProperty =
             DependencyProperty.Register(
@@ -66,6 +68,28 @@ namespace StartUI4Controls
             get => (Brush)GetValue(TextForegroundProperty);
             set => SetValue(TextForegroundProperty, value);
         }
+        public static readonly DependencyProperty PopupBackgroundProperty =
+            DependencyProperty.Register(
+                nameof(PopupBackground),
+                typeof(Brush),
+                typeof(UI4Menu),
+                new PropertyMetadata(new SolidColorBrush(Colors.White)));
+        public Brush PopupBackground
+        {
+            get => (Brush)GetValue(PopupBackgroundProperty);
+            set => SetValue(PopupBackgroundProperty, value);
+        }
+        public static readonly DependencyProperty KeyTipForegroundProperty =
+            DependencyProperty.Register(
+                nameof(KeyTipForeground),
+                typeof(Brush),
+                typeof(UI4Menu),
+                new PropertyMetadata(new SolidColorBrush(Color.FromRgb(102, 102, 102))));
+        public Brush KeyTipForeground
+        {
+            get => (Brush)GetValue(KeyTipForegroundProperty);
+            set => SetValue(KeyTipForegroundProperty, value);
+        }
         private static bool _stylesInitialized = false;
         private static readonly object _lockObj = new object();
         static UI4Menu()
@@ -75,6 +99,25 @@ namespace StartUI4Controls
         public UI4Menu()
         {
             EnsureStylesInitialized();
+            SyncThemeColors();
+            UI4Theme.TrackControl(this);
+        }
+
+        void IThemeAware.OnThemeChanged()
+        {
+            SyncThemeColors();
+        }
+
+        private readonly Dictionary<DependencyProperty, object> _applied = new Dictionary<DependencyProperty, object>();
+
+        private void SyncThemeColors()
+        {
+            var theme = UI4Theme.Current;
+            ThemeSync.Apply(this, BarBackgroundProperty, _applied, theme.MenuBackgroundBrush);
+            ThemeSync.Apply(this, ItemHoverBrushProperty, _applied, theme.HoverOverlayBrush);
+            ThemeSync.Apply(this, TextForegroundProperty, _applied, theme.TextForegroundBrush);
+            ThemeSync.Apply(this, PopupBackgroundProperty, _applied, theme.SurfaceBrush);
+            ThemeSync.Apply(this, KeyTipForegroundProperty, _applied, theme.IconBrush);
         }
         private static void EnsureStylesInitialized()
         {
@@ -146,7 +189,7 @@ namespace StartUI4Controls
                               VerticalAlignment='Center' 
                               HorizontalAlignment='Left' 
                               Margin='10,0,0,0' />
-            <TextBlock Grid.Column='2' x:Name='PART_KeyTipText' VerticalAlignment='Center' Foreground='#666666' Margin='0,0,0,0' FontSize='12'
+            <TextBlock Grid.Column='2' x:Name='PART_KeyTipText' VerticalAlignment='Center' Foreground='{{Binding KeyTipForeground, RelativeSource={{RelativeSource AncestorType=ui:UI4Menu}}}}' Margin='0,0,0,0' FontSize='12'
                        Text='{{Binding KeyTip, RelativeSource={{RelativeSource TemplatedParent}}}}' Visibility='Collapsed'/>
             <Popup x:Name='PART_Popup' 
                    AllowsTransparency='True'
@@ -154,7 +197,7 @@ namespace StartUI4Controls
                    Placement='Bottom'
                    PopupAnimation='Slide'
                    VerticalOffset='2'>
-                <Border Background='White'
+                <Border Background='{{Binding PopupBackground, RelativeSource={{RelativeSource AncestorType=ui:UI4Menu}}}}'
                         MinWidth='160'
                         CornerRadius='{{Binding PopupCornerRadius, RelativeSource={{RelativeSource AncestorType=ui:UI4Menu}}}}'
                         Padding='4'>

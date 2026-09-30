@@ -9,17 +9,18 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Markup;
 using System.Xml;
+using StartUI4Controls.Internal;
 
 namespace StartUI4Controls
 {
-    internal class UI4DataGrid : DataGrid
+    internal class UI4DataGrid : DataGrid, IThemeAware
     {
         private static Style _scrollBarStyle;
         private static readonly System.Collections.Generic.List<string> _tempDbFiles = new System.Collections.Generic.List<string>();
 
         static UI4DataGrid()
         {
-            _scrollBarStyle = CreateScrollBarStyle();
+            _scrollBarStyle = ScrollBarResources.GetKeyedScrollBarStyle();
             AppDomain.CurrentDomain.ProcessExit += OnProcessExit;
         }
 
@@ -36,169 +37,6 @@ namespace StartUI4Controls
                     if (File.Exists(wal)) File.Delete(wal);
                 }
                 catch { }
-            }
-        }
-
-        private static Style CreateScrollBarStyle()
-        {
-            string xaml = @"
-<Style xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation'
-       xmlns:x='http://schemas.microsoft.com/winfx/2006/xaml'
-       TargetType='{x:Type ScrollBar}'>
-    <Style.Resources>
-        <Style x:Key='ScrollBarThumb' TargetType='{x:Type Thumb}'>
-            <Setter Property='OverridesDefaultStyle' Value='true'/>
-            <Setter Property='IsTabStop' Value='false'/>
-            <Setter Property='Template'>
-                <Setter.Value>
-                    <ControlTemplate TargetType='{x:Type Thumb}'>
-                        <Grid>
-                            <Rectangle Fill='#50000000' RadiusX='5' RadiusY='5'/>
-                        </Grid>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-        <Style x:Key='HorizontalScrollBarPageButton' TargetType='{x:Type RepeatButton}'>
-            <Setter Property='OverridesDefaultStyle' Value='true'/>
-            <Setter Property='Background' Value='Transparent'/>
-            <Setter Property='Focusable' Value='false'/>
-            <Setter Property='IsTabStop' Value='false'/>
-            <Setter Property='Opacity' Value='0'/>
-            <Setter Property='Template'>
-                <Setter.Value>
-                    <ControlTemplate TargetType='{x:Type RepeatButton}'>
-                        <Rectangle Fill='{TemplateBinding Background}'
-                                   Width='{TemplateBinding Width}'
-                                   Height='{TemplateBinding Height}'/>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-        <Style x:Key='VerticalScrollBarPageButton' TargetType='{x:Type RepeatButton}'>
-            <Setter Property='OverridesDefaultStyle' Value='true'/>
-            <Setter Property='Background' Value='Transparent'/>
-            <Setter Property='Focusable' Value='false'/>
-            <Setter Property='IsTabStop' Value='false'/>
-            <Setter Property='Opacity' Value='0'/>
-            <Setter Property='Template'>
-                <Setter.Value>
-                    <ControlTemplate TargetType='{x:Type RepeatButton}'>
-                        <Rectangle Fill='{TemplateBinding Background}'
-                                   Width='{TemplateBinding Width}'
-                                   Height='{TemplateBinding Height}'/>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-    </Style.Resources>
-    <Setter Property='Stylus.IsPressAndHoldEnabled' Value='false'/>
-    <Setter Property='Stylus.IsFlicksEnabled' Value='false'/>
-    <Setter Property='Background' Value='Transparent'/>
-    <Setter Property='Margin' Value='0,1,2,6'/>
-    <Setter Property='Width' Value='10'/>
-    <Setter Property='MinWidth' Value='10'/>
-    <Setter Property='Opacity' Value='0'/>
-    <Setter Property='Template'>
-        <Setter.Value>
-            <ControlTemplate TargetType='{x:Type ScrollBar}'>
-                <Grid x:Name='Bg' SnapsToDevicePixels='true'>
-                    <Track x:Name='PART_Track' IsEnabled='{TemplateBinding IsMouseOver}' IsDirectionReversed='true'>
-                        <Track.DecreaseRepeatButton>
-                            <RepeatButton Style='{StaticResource VerticalScrollBarPageButton}'
-                                          Command='{x:Static ScrollBar.PageUpCommand}'/>
-                        </Track.DecreaseRepeatButton>
-                        <Track.IncreaseRepeatButton>
-                            <RepeatButton Style='{StaticResource VerticalScrollBarPageButton}'
-                                          Command='{x:Static ScrollBar.PageDownCommand}'/>
-                        </Track.IncreaseRepeatButton>
-                        <Track.Thumb>
-                            <Thumb Style='{StaticResource ScrollBarThumb}'/>
-                        </Track.Thumb>
-                    </Track>
-                </Grid>
-                <ControlTemplate.Triggers>
-                    <Trigger Property='IsMouseOver' Value='True'>
-                        <Trigger.EnterActions>
-                            <BeginStoryboard>
-                                <Storyboard>
-                                    <DoubleAnimation Storyboard.TargetProperty='Opacity' To='1' Duration='0:0:0.2'/>
-                                </Storyboard>
-                            </BeginStoryboard>
-                        </Trigger.EnterActions>
-                        <Trigger.ExitActions>
-                            <BeginStoryboard>
-                                <Storyboard>
-                                    <DoubleAnimation Storyboard.TargetProperty='Opacity' To='0' Duration='0:0:0.5'/>
-                                </Storyboard>
-                            </BeginStoryboard>
-                        </Trigger.ExitActions>
-                    </Trigger>
-                </ControlTemplate.Triggers>
-            </ControlTemplate>
-        </Setter.Value>
-    </Setter>
-    <Style.Triggers>
-        <Trigger Property='Orientation' Value='Horizontal'>
-            <Setter Property='Background' Value='Transparent'/>
-            <Setter Property='Margin' Value='2,0,6,2'/>
-            <Setter Property='Height' Value='10'/>
-            <Setter Property='MinHeight' Value='10'/>
-            <Setter Property='Width' Value='Auto'/>
-            <Setter Property='Opacity' Value='0'/>
-            <Setter Property='Template'>
-                <Setter.Value>
-                    <ControlTemplate TargetType='{x:Type ScrollBar}'>
-                        <Grid x:Name='Bg' SnapsToDevicePixels='true'>
-                            <Track x:Name='PART_Track' IsEnabled='{TemplateBinding IsMouseOver}'>
-                                <Track.DecreaseRepeatButton>
-                                    <RepeatButton Style='{StaticResource HorizontalScrollBarPageButton}'
-                                                  Command='{x:Static ScrollBar.PageLeftCommand}'/>
-                                </Track.DecreaseRepeatButton>
-                                <Track.IncreaseRepeatButton>
-                                    <RepeatButton Style='{StaticResource HorizontalScrollBarPageButton}'
-                                                  Command='{x:Static ScrollBar.PageRightCommand}'/>
-                                </Track.IncreaseRepeatButton>
-                                <Track.Thumb>
-                                    <Thumb Style='{StaticResource ScrollBarThumb}'/>
-                                </Track.Thumb>
-                            </Track>
-                        </Grid>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property='IsMouseOver' Value='True'>
-                                <Trigger.EnterActions>
-                                    <BeginStoryboard>
-                                        <Storyboard>
-                                            <DoubleAnimation Storyboard.TargetProperty='Opacity' To='1' Duration='0:0:0.2'/>
-                                        </Storyboard>
-                                    </BeginStoryboard>
-                                </Trigger.EnterActions>
-                                <Trigger.ExitActions>
-                                    <BeginStoryboard>
-                                        <Storyboard>
-                                            <DoubleAnimation Storyboard.TargetProperty='Opacity' To='0' Duration='0:0:0.5'/>
-                                        </Storyboard>
-                                    </BeginStoryboard>
-                                </Trigger.ExitActions>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Trigger>
-    </Style.Triggers>
-</Style>";
-            try
-            {
-                using (var sr = new StringReader(xaml))
-                using (var xr = XmlReader.Create(sr))
-                {
-                    return (Style)XamlReader.Load(xr);
-                }
-            }
-            catch
-            {
-                return null;
             }
         }
 
@@ -291,8 +129,8 @@ namespace StartUI4Controls
             HeadersVisibility = DataGridHeadersVisibility.Column;
             RowHeaderWidth = 0;
             BorderThickness = new Thickness(1);
-            BorderBrush = new SolidColorBrush(Color.FromRgb(220, 220, 225));
-            Background = Brushes.White;
+            BorderBrush = UI4Theme.Current.BorderNormalBrush;
+            Background = UI4Theme.Current.BackgroundBrush;
             AlternatingRowBackground = null;
             SelectionMode = DataGridSelectionMode.Extended;
             SelectionUnit = DataGridSelectionUnit.FullRow;
@@ -313,8 +151,14 @@ namespace StartUI4Controls
 
             Loaded += OnLoaded;
             Unloaded += OnUnloaded;
+            UI4Theme.TrackControl(this);
 
             InitSqliteTable();
+            ApplyCustomStyle();
+        }
+
+        void IThemeAware.OnThemeChanged()
+        {
             ApplyCustomStyle();
         }
 
@@ -403,11 +247,11 @@ namespace StartUI4Controls
 
         private void ApplyCustomStyle()
         {
-            Background = Brushes.White;
-            RowBackground = Brushes.White;
+            Background = UI4Theme.Current.BackgroundBrush;
+            RowBackground = UI4Theme.Current.BackgroundBrush;
 
             Style rowStyle = new Style(typeof(DataGridRow));
-            rowStyle.Setters.Add(new Setter(Control.BackgroundProperty, Brushes.White));
+            rowStyle.Setters.Add(new Setter(Control.BackgroundProperty, UI4Theme.Current.BackgroundBrush));
             rowStyle.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(0)));
             rowStyle.Setters.Add(new Setter(FrameworkElement.HeightProperty, 28.0));
 
@@ -417,7 +261,7 @@ namespace StartUI4Controls
 
             Trigger selectedTrigger = new Trigger { Property = DataGridRow.IsSelectedProperty, Value = true };
             selectedTrigger.Setters.Add(new Setter(Control.BackgroundProperty, RowSelectedBackground));
-            selectedTrigger.Setters.Add(new Setter(Control.ForegroundProperty, Brushes.Black));
+            selectedTrigger.Setters.Add(new Setter(Control.ForegroundProperty, UI4Theme.Current.TextForegroundBrush));
             rowStyle.Triggers.Add(selectedTrigger);
 
             RowStyle = rowStyle;
@@ -434,7 +278,7 @@ namespace StartUI4Controls
             headerStyle.Setters.Add(new Setter(FrameworkElement.HeightProperty, 32.0));
 
             Trigger headerHoverTrigger = new Trigger { Property = UIElement.IsMouseOverProperty, Value = true };
-            headerHoverTrigger.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(Color.FromRgb(235, 235, 240))));
+            headerHoverTrigger.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(UI4Theme.Current.HoverOverlayColor)));
             headerStyle.Triggers.Add(headerHoverTrigger);
 
             ColumnHeaderStyle = headerStyle;
@@ -449,7 +293,7 @@ namespace StartUI4Controls
 
             Trigger cellSelectedTrigger = new Trigger { Property = DataGridCell.IsSelectedProperty, Value = true };
             cellSelectedTrigger.Setters.Add(new Setter(Control.BackgroundProperty, RowSelectedBackground));
-            cellSelectedTrigger.Setters.Add(new Setter(Control.ForegroundProperty, Brushes.Black));
+            cellSelectedTrigger.Setters.Add(new Setter(Control.ForegroundProperty, UI4Theme.Current.TextForegroundBrush));
             cellSelectedTrigger.Setters.Add(new Setter(Control.BorderBrushProperty, GridLineColor));
             cellStyle.Triggers.Add(cellSelectedTrigger);
 

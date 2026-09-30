@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Windows;
@@ -8,6 +9,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
+using StartUI4Controls.Internal;
 
 namespace StartUI4Controls
 {
@@ -106,7 +108,7 @@ namespace StartUI4Controls
     {
     }
 
-    public class UI4NavigationView : ItemsControl
+    public class UI4NavigationView : ItemsControl, IThemeAware
     {
 
         private const string PartLeftPanel = "PART_LeftPanel";
@@ -340,6 +342,18 @@ namespace StartUI4Controls
         {
             get { return (Brush)GetValue(SelectedItemBackgroundProperty); }
             set { SetValue(SelectedItemBackgroundProperty, value); }
+        }
+
+        public static readonly DependencyProperty SelectionIndicatorBrushProperty =
+            DependencyProperty.Register("SelectionIndicatorBrush", typeof(Brush), typeof(UI4NavigationView),
+                new FrameworkPropertyMetadata(new SolidColorBrush(Color.FromRgb(0, 120, 212)),
+                    FrameworkPropertyMetadataOptions.AffectsRender));
+
+        /// <summary>选中指示条画刷，默认跟随主题强调色。</summary>
+        public Brush SelectionIndicatorBrush
+        {
+            get { return (Brush)GetValue(SelectionIndicatorBrushProperty); }
+            set { SetValue(SelectionIndicatorBrushProperty, value); }
         }
 
         public static readonly DependencyProperty SelectedItemProperty =
@@ -582,7 +596,7 @@ namespace StartUI4Controls
             selectionIndicator.SetValue(FrameworkElement.MarginProperty, new Thickness(6, 4, 0, 0));
             selectionIndicator.SetValue(FrameworkElement.HorizontalAlignmentProperty, HorizontalAlignment.Left);
             selectionIndicator.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Top);
-            selectionIndicator.SetValue(Border.BackgroundProperty, new SolidColorBrush(Color.FromRgb(0, 120, 212)));
+            selectionIndicator.SetBinding(Border.BackgroundProperty, new Binding(nameof(SelectionIndicatorBrush)) { RelativeSource = RelativeSource.TemplatedParent });
             scrollContentGrid.AppendChild(selectionIndicator);
 
             var scrollViewer = new FrameworkElementFactory(typeof(UI4ScrollViewer));
@@ -614,7 +628,7 @@ namespace StartUI4Controls
             bottomSelectionIndicator.SetValue(FrameworkElement.HorizontalAlignmentProperty, HorizontalAlignment.Left);
             bottomSelectionIndicator.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Top);
             bottomSelectionIndicator.SetValue(UIElement.VisibilityProperty, Visibility.Collapsed);
-            bottomSelectionIndicator.SetValue(Border.BackgroundProperty, new SolidColorBrush(Color.FromRgb(0, 120, 212)));
+            bottomSelectionIndicator.SetBinding(Border.BackgroundProperty, new Binding(nameof(SelectionIndicatorBrush)) { RelativeSource = RelativeSource.TemplatedParent });
             bottomGrid.AppendChild(bottomSelectionIndicator);
 
             leftPanel.AppendChild(bottomGrid);
@@ -643,8 +657,25 @@ namespace StartUI4Controls
 
         public UI4NavigationView()
         {
-            Background = Brushes.White;
-            Foreground = Brushes.Black;
+            SyncThemeColors();
+            UI4Theme.TrackControl(this);
+        }
+
+        void IThemeAware.OnThemeChanged()
+        {
+            SyncThemeColors();
+        }
+
+        private readonly Dictionary<DependencyProperty, object> _applied = new Dictionary<DependencyProperty, object>();
+
+        private void SyncThemeColors()
+        {
+            var theme = UI4Theme.Current;
+            Background = theme.BackgroundBrush;
+            Foreground = theme.TextForegroundBrush;
+            ThemeSync.Apply(this, LeftPanelBackgroundProperty, _applied, theme.SurfaceBrush);
+            ThemeSync.Apply(this, SelectedItemBackgroundProperty, _applied, theme.SurfaceBrush);
+            ThemeSync.Apply(this, SelectionIndicatorBrushProperty, _applied, theme.AccentBrush);
         }
 
         public ObservableCollection<UI4NavigationViewItem> RegularItems => _regularItems;

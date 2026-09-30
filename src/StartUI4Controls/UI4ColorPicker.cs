@@ -3,21 +3,25 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Animation;
 using System.Windows.Media.Effects;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using StartUI4Controls.Internal;
 
 namespace StartUI4Controls
 {
-    public class UI4ColorPicker : Window
+    /// <summary>
+    /// 现代风格的颜色选择器窗口，支持 HSV 色彩模型、拖拽调整和透明度控制。
+    /// </summary>
+    /// <remarks>
+    /// <para>继承自 <see cref="System.Windows.Window"/>，提供完整的颜色选择界面，
+    /// 包括色彩区域、色相滑块和透明度滑块。</para>
+    /// </remarks>
+    public class UI4ColorPicker : Window, IThemeAware
     {
         private bool _isClosingAnimating;
         private bool _isUpdating;
-        private const double ResizeThumbSize = 8;
-        private Point _resizeStartPoint;
-        private double _resizeStartWidth, _resizeStartHeight;
-        private int _resizeDirection;
+        private Border _colorMapBorder;
 
         private double _hue;
         private double _saturation;
@@ -58,6 +62,8 @@ namespace StartUI4Controls
             ShowInTaskbar = false;
             FontFamily = new FontFamily("Segoe UI Variable Display, Segoe UI, sans-serif");
             Background = Brushes.Transparent;
+            Foreground = UI4Theme.Current.TextForegroundBrush;
+            UI4Theme.TrackControl(this);
             WindowStyle = WindowStyle.None;
             AllowsTransparency = true;
             TextOptions.SetTextFormattingMode(this, TextFormattingMode.Display);
@@ -79,7 +85,7 @@ namespace StartUI4Controls
             _mainContainer = new Border
             {
                 Margin = new Thickness(28),
-                Background = new SolidColorBrush(Colors.White),
+                Background = UI4Theme.Current.SurfaceBrush,
                 CornerRadius = new CornerRadius(10),
                 Effect = new DropShadowEffect
                 {
@@ -138,13 +144,13 @@ namespace StartUI4Controls
             _colorMapBitmap = new WriteableBitmap(280, 200, 96, 96, PixelFormats.Bgr32, null);
             _colorMapImage.Source = _colorMapBitmap;
 
-            var colorMapBorder = new Border
+            _colorMapBorder = new Border
             {
                 Width = 280,
                 Height = 200,
                 CornerRadius = new CornerRadius(8),
                 ClipToBounds = true,
-                BorderBrush = new SolidColorBrush(Color.FromRgb(220, 225, 235)),
+                BorderBrush = new SolidColorBrush(UI4Theme.Current.BorderNormalColor),
                 BorderThickness = new Thickness(1),
                 Child = _colorMapImage
             };
@@ -154,9 +160,9 @@ namespace StartUI4Controls
             _colorMapImage.MouseMove += ColorMap_MouseMove;
             _colorMapImage.MouseUp += ColorMap_MouseUp;
 
-            Grid.SetColumn(colorMapBorder, 0);
-            Grid.SetRow(colorMapBorder, 0);
-            pickerGrid.Children.Add(colorMapBorder);
+            Grid.SetColumn(_colorMapBorder, 0);
+            Grid.SetRow(_colorMapBorder, 0);
+            pickerGrid.Children.Add(_colorMapBorder);
 
             _hueBarRect = new Rectangle
             {
@@ -394,47 +400,26 @@ namespace StartUI4Controls
             Grid resizeGrid = new Grid();
             resizeGrid.Children.Add(_mainContainer);
 
-            Border left = new Border { Width = ResizeThumbSize, HorizontalAlignment = HorizontalAlignment.Left, Cursor = Cursors.SizeWE, Background = Brushes.Transparent };
-            Border right = new Border { Width = ResizeThumbSize, HorizontalAlignment = HorizontalAlignment.Right, Cursor = Cursors.SizeWE, Background = Brushes.Transparent };
-            Border top = new Border { Height = ResizeThumbSize, VerticalAlignment = VerticalAlignment.Top, Cursor = Cursors.SizeNS, Background = Brushes.Transparent };
-            Border bottom = new Border { Height = ResizeThumbSize, VerticalAlignment = VerticalAlignment.Bottom, Cursor = Cursors.SizeNS, Background = Brushes.Transparent };
-            Border topLeft = new Border { Width = ResizeThumbSize, Height = ResizeThumbSize, HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top, Cursor = Cursors.SizeNWSE, Background = Brushes.Transparent };
-            Border topRight = new Border { Width = ResizeThumbSize, Height = ResizeThumbSize, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Top, Cursor = Cursors.SizeNESW, Background = Brushes.Transparent };
-            Border bottomLeft = new Border { Width = ResizeThumbSize, Height = ResizeThumbSize, HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Bottom, Cursor = Cursors.SizeNESW, Background = Brushes.Transparent };
-            Border bottomRight = new Border { Width = ResizeThumbSize, Height = ResizeThumbSize, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Bottom, Cursor = Cursors.SizeNWSE, Background = Brushes.Transparent };
+            var resizeBehavior = new WindowResizeBehavior(this);
+            resizeBehavior.Attach(resizeGrid);
 
-            resizeGrid.Children.Add(left);
-            resizeGrid.Children.Add(right);
-            resizeGrid.Children.Add(top);
-            resizeGrid.Children.Add(bottom);
-            resizeGrid.Children.Add(topLeft);
-            resizeGrid.Children.Add(topRight);
-            resizeGrid.Children.Add(bottomLeft);
-            resizeGrid.Children.Add(bottomRight);
-
-            left.MouseLeftButtonDown += (s, e) => StartResize(e, 1);
-            right.MouseLeftButtonDown += (s, e) => StartResize(e, 2);
-            top.MouseLeftButtonDown += (s, e) => StartResize(e, 3);
-            bottom.MouseLeftButtonDown += (s, e) => StartResize(e, 4);
-            topLeft.MouseLeftButtonDown += (s, e) => StartResize(e, 5);
-            topRight.MouseLeftButtonDown += (s, e) => StartResize(e, 6);
-            bottomLeft.MouseLeftButtonDown += (s, e) => StartResize(e, 7);
-            bottomRight.MouseLeftButtonDown += (s, e) => StartResize(e, 8);
-
-            UI4Panel winUI4Style_Panel = new UI4Panel
+            Border rootBorder = new Border
             {
                 Margin = new Thickness(20),
-                HoverScale = 1,
-                HoverBorderBrush = new SolidColorBrush(Colors.Transparent),
-                BorderThickness = new Thickness(0),
-                Background = Brushes.Transparent,
-                ShadowBlurRadius = 0,
-                ShadowOpacity = 0,
-                ShadowDepth = 0
+                Background = Brushes.Transparent
             };
-            winUI4Style_Panel.Content = resizeGrid;
-            this.Content = winUI4Style_Panel;
+            rootBorder.Child = resizeGrid;
+            this.Content = rootBorder;
             this.Loaded += Window_LoadedAnim;
+        }
+
+        void IThemeAware.OnThemeChanged()
+        {
+            Foreground = UI4Theme.Current.TextForegroundBrush;
+            if (_mainContainer != null)
+                _mainContainer.Background = UI4Theme.Current.SurfaceBrush;
+            if (_colorMapBorder != null)
+                _colorMapBorder.BorderBrush = UI4Theme.Current.BorderNormalBrush;
         }
 
         private static void RgbToHsv(Color color, out double h, out double s, out double v)
@@ -775,126 +760,23 @@ namespace StartUI4Controls
         private void OkButton_Click(object sender, RoutedEventArgs e) => CloseAnimation(true);
         private void CancelButton_Click(object sender, RoutedEventArgs e) => CloseAnimation(false);
 
-        private void Window_LoadedAnim(object sender, RoutedEventArgs e)
+        private void Window_LoadedAnim(object s, RoutedEventArgs e)
         {
-            if (!(this.Content is UI4Panel rootPanel)) return;
-            rootPanel.Opacity = 0;
-            rootPanel.RenderTransform = new TransformGroup
-            {
-                Children = new TransformCollection
-                {
-                    new TranslateTransform(0, 90),
-                    new ScaleTransform(0.88, 0.88)
-                }
-            };
-            rootPanel.RenderTransformOrigin = new Point(0.5, 0.5);
-            rootPanel.Effect = new BlurEffect { Radius = 14 };
-
-            DoubleAnimation fadeAnim = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(200))
-            { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } };
-            rootPanel.BeginAnimation(UIElement.OpacityProperty, fadeAnim);
-
-            var tg = (TransformGroup)rootPanel.RenderTransform;
-            var translate = (TranslateTransform)tg.Children[0];
-            var scale = (ScaleTransform)tg.Children[1];
-
-            DoubleAnimation slideAnim = new DoubleAnimation(90, 0, TimeSpan.FromMilliseconds(200))
-            { EasingFunction = new BackEase { EasingMode = EasingMode.EaseOut, Amplitude = 0.35 } };
-            translate.BeginAnimation(TranslateTransform.YProperty, slideAnim);
-
-            DoubleAnimation scaleAnim = new DoubleAnimation(0.88, 1, TimeSpan.FromMilliseconds(200))
-            { EasingFunction = new BackEase { EasingMode = EasingMode.EaseOut, Amplitude = 0.5 } };
-            scale.BeginAnimation(ScaleTransform.ScaleXProperty, scaleAnim);
-            scale.BeginAnimation(ScaleTransform.ScaleYProperty, scaleAnim);
-
-            DoubleAnimation blurAnim = new DoubleAnimation(14, 0, TimeSpan.FromMilliseconds(200))
-            { EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut } };
-            rootPanel.Effect.BeginAnimation(BlurEffect.RadiusProperty, blurAnim);
+            if (!(this.Content is Border rootBorder)) return;
+            WindowAnimationHelper.PlayOpenAnimation(rootBorder);
         }
 
         private void CloseAnimation(bool dialogResult)
         {
             if (_isClosingAnimating) return;
-            if (!(this.Content is UI4Panel rootPanel)) return;
-            if (!(rootPanel.RenderTransform is TransformGroup tg) || tg.Children.Count < 2) return;
-            if (!(tg.Children[0] is TranslateTransform trans) || !(tg.Children[1] is ScaleTransform scale)) return;
-
-            BlurEffect blurEffect = rootPanel.Effect as BlurEffect ?? new BlurEffect { Radius = 0 };
-            if (rootPanel.Effect == null) rootPanel.Effect = blurEffect;
+            if (!(this.Content is Border rootBorder)) return;
 
             _isClosingAnimating = true;
-            TimeSpan duration = TimeSpan.FromMilliseconds(200);
-
-            DoubleAnimation fadeOut = new DoubleAnimation(1, 0, duration)
-            { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn }, FillBehavior = FillBehavior.HoldEnd };
-            DoubleAnimation slideDown = new DoubleAnimation(0, 90, duration)
-            { EasingFunction = new BackEase { EasingMode = EasingMode.EaseIn, Amplitude = 0.35 }, FillBehavior = FillBehavior.HoldEnd };
-            DoubleAnimation shrinkX = new DoubleAnimation(1, 0.88, duration)
-            { EasingFunction = new BackEase { EasingMode = EasingMode.EaseIn, Amplitude = 0.5 }, FillBehavior = FillBehavior.HoldEnd };
-            DoubleAnimation shrinkY = new DoubleAnimation(1, 0.88, duration)
-            { EasingFunction = new BackEase { EasingMode = EasingMode.EaseIn, Amplitude = 0.5 }, FillBehavior = FillBehavior.HoldEnd };
-            DoubleAnimation blurOut = new DoubleAnimation(0, 14, duration)
-            { EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseIn }, FillBehavior = FillBehavior.HoldEnd };
-
-            int completeCount = 0;
-            const int totalAnim = 5;
-            void OnCompleted(object s, EventArgs e)
+            WindowAnimationHelper.PlayCloseAnimation(rootBorder, () =>
             {
-                completeCount++;
-                if (completeCount >= totalAnim)
-                    Dispatcher.Invoke(() => { DialogResult = dialogResult; Close(); });
-            }
-
-            fadeOut.Completed += OnCompleted;
-            slideDown.Completed += OnCompleted;
-            shrinkX.Completed += OnCompleted;
-            shrinkY.Completed += OnCompleted;
-            blurOut.Completed += OnCompleted;
-
-            rootPanel.BeginAnimation(UIElement.OpacityProperty, fadeOut);
-            trans.BeginAnimation(TranslateTransform.YProperty, slideDown);
-            scale.BeginAnimation(ScaleTransform.ScaleXProperty, shrinkX);
-            scale.BeginAnimation(ScaleTransform.ScaleYProperty, shrinkY);
-            blurEffect.BeginAnimation(BlurEffect.RadiusProperty, blurOut);
-        }
-
-        private void StartResize(MouseButtonEventArgs e, int direction)
-        {
-            _resizeDirection = direction;
-            _resizeStartPoint = PointToScreen(e.GetPosition(this));
-            _resizeStartWidth = Width;
-            _resizeStartHeight = Height;
-            Mouse.Capture(this);
-            MouseMove += DoResize;
-            MouseLeftButtonUp += EndResize;
-        }
-
-        private void DoResize(object sender, MouseEventArgs e)
-        {
-            if (_resizeDirection == 0 || e.LeftButton != MouseButtonState.Pressed) return;
-            Point current = PointToScreen(e.GetPosition(this));
-            double dx = current.X - _resizeStartPoint.X;
-            double dy = current.Y - _resizeStartPoint.Y;
-            double minW = 200, minH = 150;
-            switch (_resizeDirection)
-            {
-                case 2: Width = Math.Max(minW, _resizeStartWidth + dx); break;
-                case 1: Width = Math.Max(minW, _resizeStartWidth - dx); break;
-                case 4: Height = Math.Max(minH, _resizeStartHeight + dy); break;
-                case 3: Height = Math.Max(minH, _resizeStartHeight - dy); break;
-                case 6: Width = Math.Max(minW, _resizeStartWidth + dx); Height = Math.Max(minH, _resizeStartHeight - dy); break;
-                case 5: Width = Math.Max(minW, _resizeStartWidth - dx); Height = Math.Max(minH, _resizeStartHeight - dy); break;
-                case 8: Width = Math.Max(minW, _resizeStartWidth + dx); Height = Math.Max(minH, _resizeStartHeight + dy); break;
-                case 7: Width = Math.Max(minW, _resizeStartWidth - dx); Height = Math.Max(minH, _resizeStartHeight + dy); break;
-            }
-        }
-
-        private void EndResize(object sender, MouseButtonEventArgs e)
-        {
-            _resizeDirection = 0;
-            Mouse.Capture(null);
-            MouseMove -= DoResize;
-            MouseLeftButtonUp -= EndResize;
+                DialogResult = dialogResult;
+                Close();
+            });
         }
 
         public static Color? ShowDialog(string title = null, Color? defaultColor = null, Window owner = null)

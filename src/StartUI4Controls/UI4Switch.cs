@@ -8,6 +8,17 @@ using System.Windows.Shapes;
 
 namespace StartUI4Controls
 {
+    /// <summary>
+    /// 现代风格的开关控件，支持渐变背景和动画过渡效果。
+    /// </summary>
+    /// <remarks>
+    /// <para>继承自 <see cref="System.Windows.Controls.Control"/>，提供以下自定义属性：</para>
+    /// <list type="bullet">
+    ///   <item><see cref="IsOn"/> — 开关状态（支持双向绑定）</item>
+    ///   <item><see cref="GradientStart"/> / <see cref="GradientEnd"/> — 开启状态的渐变背景色</item>
+    ///   <item><see cref="OffBackground"/> — 关闭状态的背景色</item>
+    /// </list>
+    /// </remarks>
     public class UI4Switch : Control
     {
         public static readonly DependencyProperty IsOnProperty =
@@ -129,7 +140,19 @@ namespace StartUI4Controls
             Cursor = Cursors.Hand;
             SizeChanged += OnSizeChanged;
             Loaded += OnLoaded;
+            Unloaded += OnUnloaded;
             BuildVisualTree();
+            // 引用式主题：令牌变化（含 UI4ThemeScope 作用域）自动重解析，宿主显式赋值优先
+            SetResourceReference(GradientStartProperty, "UI4.Color.Accent");
+            SetResourceReference(GradientEndProperty, "UI4.Color.Accent");
+            SetResourceReference(OffBackgroundProperty, "UI4.Color.OffBackground");
+        }
+
+        private void OnUnloaded(object sender, RoutedEventArgs e)
+        {
+            SizeChanged -= OnSizeChanged;
+            Loaded -= OnLoaded;
+            Unloaded -= OnUnloaded;
         }
 
         private void BuildVisualTree()

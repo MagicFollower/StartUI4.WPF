@@ -7,8 +7,20 @@ using System.Windows.Media;
 
 namespace StartUI4Controls
 {
-    public class UI4Button : Button
+    /// <summary>
+    /// 现代风格的按钮控件，支持圆角和渐变背景。
+    /// </summary>
+    /// <remarks>
+    /// <para>继承自 <see cref="System.Windows.Controls.Button"/>，提供以下自定义属性：</para>
+    /// <list type="bullet">
+    ///   <item><see cref="CornerRadius"/> — 圆角半径</item>
+    ///   <item><see cref="GradientStart"/> / <see cref="GradientEnd"/> — 水平渐变背景色</item>
+    ///   <item><see cref="HoverBackground"/> — 鼠标悬停背景</item>
+    /// </list>
+    /// </remarks>
+    public class UI4Button : Button, IThemeAware
     {
+        /// <summary>获取或设置按钮的圆角半径。默认值为 6。</summary>
         public static readonly DependencyProperty CornerRadiusProperty =
             DependencyProperty.Register(
                 nameof(CornerRadius),
@@ -22,6 +34,7 @@ namespace StartUI4Controls
             set => SetValue(CornerRadiusProperty, value);
         }
 
+        /// <summary>获取或设置渐变背景的起始颜色。默认值为 #0078D4。</summary>
         public static readonly DependencyProperty GradientStartProperty =
             DependencyProperty.Register(
                 nameof(GradientStart),
@@ -35,6 +48,7 @@ namespace StartUI4Controls
             set => SetValue(GradientStartProperty, value);
         }
 
+        /// <summary>获取或设置渐变背景的结束颜色。默认值为 #9333EA。</summary>
         public static readonly DependencyProperty GradientEndProperty =
             DependencyProperty.Register(
                 nameof(GradientEnd),
@@ -48,6 +62,7 @@ namespace StartUI4Controls
             set => SetValue(GradientEndProperty, value);
         }
 
+        /// <summary>获取或设置鼠标悬停时的背景画刷。</summary>
         public static readonly DependencyProperty HoverBackgroundProperty =
             DependencyProperty.Register(
                 nameof(HoverBackground),
@@ -104,18 +119,31 @@ namespace StartUI4Controls
         public UI4Button()
         {
             Style = BuildPrimaryStyle();
+            UI4Theme.TrackControl(this);
+        }
+
+        void IThemeAware.OnThemeChanged()
+        {
+            Style = BuildPrimaryStyle();
         }
 
         private Style BuildPrimaryStyle()
         {
             Style style = new Style(typeof(Button));
-            style.Setters.Add(new Setter(ForegroundProperty, Brushes.White));
+            style.Setters.Add(new Setter(ForegroundProperty, UI4Theme.Current.OnWhiteBrush));
             style.Setters.Add(new Setter(PaddingProperty, new Thickness(10, 0, 10, 0)));
             style.Setters.Add(new Setter(BorderThicknessProperty, new Thickness(0)));
             style.Setters.Add(new Setter(FontSizeProperty, 15d));
             style.Setters.Add(new Setter(FontWeightProperty, FontWeights.SemiBold));
             style.Setters.Add(new Setter(CursorProperty, Cursors.Hand));
-            style.Setters.Add(new Setter(BackgroundProperty, new SolidColorBrush(Color.FromRgb(0, 120, 212))));
+            var gradient = new LinearGradientBrush
+            {
+                StartPoint = new Point(0, 0.5),
+                EndPoint = new Point(1, 0.5)
+            };
+            gradient.GradientStops.Add(new GradientStop(GradientStart, 0));
+            gradient.GradientStops.Add(new GradientStop(GradientEnd, 1));
+            style.Setters.Add(new Setter(BackgroundProperty, gradient));
             style.Setters.Add(new Setter(MinHeightProperty, 30d));
 
             ControlTemplate normalTemplate = new ControlTemplate(typeof(Button));
