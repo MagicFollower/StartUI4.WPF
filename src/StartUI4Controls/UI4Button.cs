@@ -185,6 +185,30 @@ namespace StartUI4Controls
             hoverTrigger.Setters.Add(new Setter(TemplateProperty, hoverTemplate));
             style.Triggers.Add(hoverTrigger);
 
+            // 禁用态：换掉整个模板并固定灰色背景。必须走 Template 而不是 Background/Gradient，
+            // 因为使用者在 XAML 里本地设置 GradientStart/End 后，样式 Setter 无法覆盖本地值。
+            ControlTemplate disabledTemplate = new ControlTemplate(typeof(Button));
+            FrameworkElementFactory borderDisabled = new FrameworkElementFactory(typeof(Border));
+            borderDisabled.SetBinding(Border.CornerRadiusProperty, new Binding(nameof(CornerRadius)) { RelativeSource = RelativeSource.TemplatedParent });
+            borderDisabled.SetBinding(Border.PaddingProperty, new Binding(nameof(Padding)) { RelativeSource = RelativeSource.TemplatedParent });
+            borderDisabled.SetValue(Border.BackgroundProperty, UI4Theme.Current.BorderNormalBrush);
+            borderDisabled.SetValue(Border.BorderThicknessProperty, new Thickness(0));
+
+            FrameworkElementFactory cpDisabled = new FrameworkElementFactory(typeof(ContentPresenter));
+            cpDisabled.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Center);
+            cpDisabled.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center);
+            cpDisabled.SetValue(TextElement.ForegroundProperty, UI4Theme.Current.PlaceholderBrush);
+            borderDisabled.AppendChild(cpDisabled);
+            disabledTemplate.VisualTree = borderDisabled;
+
+            Trigger disabledTrigger = new Trigger
+            {
+                Property = IsEnabledProperty,
+                Value = false
+            };
+            disabledTrigger.Setters.Add(new Setter(TemplateProperty, disabledTemplate));
+            style.Triggers.Add(disabledTrigger);
+
             return style;
         }
     }
