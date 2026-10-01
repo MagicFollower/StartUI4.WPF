@@ -11,6 +11,6 @@
     <AssemblyName>PromptFavorites</AssemblyName>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="../../组件库与组件使用示例demo/src/StartUI4Controls/StartUI4Controls.csproj" />
+    <ProjectReference Include="../lib/StartUI4Controls.csproj" />
   </ItemGroup>
 </Project>

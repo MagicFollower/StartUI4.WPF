@@ -1,0 +1,3 @@
+dotnet build .\PromptFavorites.csproj
+
+dotnet run --projects .\PromptFavorites.csproj
