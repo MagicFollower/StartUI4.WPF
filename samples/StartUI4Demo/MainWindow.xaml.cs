@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
@@ -40,10 +41,26 @@ namespace StartUI4Demo
             UpdateLangSample();
             ApplyStartupTab();
             RuntimeText.Text = "实际运行时：" + System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription;
-            UI4Theme.ThemeChanged += delegate { UpdateScopeStatus(); };
+            UI4Theme.ThemeChanged += delegate { UpdateScopeStatus(); UpdateThemeFooter(); };
             ApplyTheme(false);
             SetStatus("就绪");
             UpdateScopeStatus();
+            UpdateThemeFooter();
+            AttachValueWatchers();
+            RefreshThemeKeyCombo();
+        }
+
+        /// <summary>
+        /// 页脚主题显示走事件驱动，而不是 {Binding Path=(ui:UI4Theme.CurrentMode)}：
+        /// CurrentMode 只是普通静态 CLR 属性，库发的是 StaticPropertyChanged，
+        /// WPF 普通绑定需要同名静态 CurrentModeChanged 事件才更新，绑定会停在初值上不再刷新。
+        /// </summary>
+        private void UpdateThemeFooter()
+        {
+            if (ThemeFooter == null) return;
+            ThemeFooter.Text = "主题: " + UI4Theme.ResolvedKey
+                + "　CurrentMode=" + UI4Theme.CurrentMode
+                + "　ResolvedMode=" + UI4Theme.ResolvedMode;
         }
 
         // 支持 "--tab=N" 直接打开指定分页，便于自动化逐页验证。
@@ -74,20 +91,60 @@ namespace StartUI4Demo
 
         private void BuildHostContextMenu()
         {
-            _hostMenu = new UI4ContextMenu { Width = 190 };
+            _hostMenu = new UI4ContextMenu
+            {
+                Width = 200,
+                ItemPadding = new Thickness(12, 8, 12, 8),
+                BorderColor = UI4Theme.Current.BorderNormalColor,
+                HoverBackground = UI4Theme.Current.HoverOverlayColor
+            };
 
-            _hostMenu.AddItem(new UI4MenuItem(
-                UI4MenuItemType.Copy, "复制文本", UI4MenuIcons.Copy,
-                () => SetStatus("UI4ContextMenu → 复制文本")));
-            _hostMenu.AddItem(new UI4MenuItem(
-                UI4MenuItemType.Paste, "粘贴", UI4MenuIcons.Paste,
-                () => SetStatus("UI4ContextMenu → 粘贴")));
-            _hostMenu.AddItem(new UI4MenuItem(
-                UI4MenuItemType.Delete, "删除", UI4MenuIcons.Delete,
-                () => SetStatus("UI4ContextMenu → 删除")));
-            _hostMenu.AddItem(UI4MenuItemType.SelectAll, () => SetStatus("UI4ContextMenu → 全选"));
+            // 用 AddItem(type, Action, Func<bool>) 重载：文案由 UI4MultiLanguage 本地化，
+            // 与"复制/粘贴/删除/全选"的实际行为天然一致，避免自造文案名不副实。
+            _hostMenu.AddItem(UI4MenuItemType.Copy,
+                () => UI4Clipboard.TrySetTextAsync(CtxSource.SelectedText, OnHostCopyDone),
+                () => CtxSource.SelectionLength > 0);
+
+            _hostMenu.AddItem(UI4MenuItemType.Paste,
+                () => UI4Clipboard.TryGetTextAsync(OnHostPasteGot),
+                () => UI4Clipboard.ContainsText());
+
+            _hostMenu.AddItem(UI4MenuItemType.Delete,
+                () =>
+                {
+                    CtxSource.SelectedText = string.Empty;
+                    SetStatus("UI4ContextMenu → 已删除选中文本");
+                },
+                () => CtxSource.SelectionLength > 0);
+
+            _hostMenu.AddItem(UI4MenuItemType.SelectAll,
+                () =>
+                {
+                    CtxSource.SelectAll();
+                    SetStatus("UI4ContextMenu → 已全选");
+                });
 
             _hostMenu.Attach(CtxHost);
+        }
+
+        // 回调由 UI4Clipboard 投递回 UI 线程执行。
+        private void OnHostCopyDone(bool ok)
+        {
+            SetStatus(ok
+                ? "UI4ContextMenu → 已复制（切到记事本 Ctrl+V 可验证）"
+                : "UI4ContextMenu → 复制失败：剪贴板被占用");
+        }
+
+        private void OnHostPasteGot(string text)
+        {
+            if (string.IsNullOrEmpty(text))
+            {
+                SetStatus("UI4ContextMenu → 剪贴板里没有文本");
+                return;
+            }
+
+            CtxSource.SelectedText = text;
+            SetStatus("UI4ContextMenu → 已粘贴 " + text.Length + " 字符");
         }
 
         private static string Describe(string value)
@@ -125,6 +182,115 @@ namespace StartUI4Demo
             SetStatus("UI4Button 被点击");
         }
 
+        private void AnyButton_Click(object sender, RoutedEventArgs e)
+        {
+            var btn = sender as ContentControl;
+            SetStatus("UI4Button 被点击：" + (btn == null ? "(未知)" : btn.Content));
+        }
+
+        private void MenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            var item = sender as UI4MenuElementItem;
+            SetStatus("UI4Menu 菜单项：" + (item == null ? "(未知)" : item.Header));
+        }
+
+        // ---------- 就近回显 ----------
+
+        private void TxtBasic_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (TxtEcho == null || TxtBasic == null) return;
+            TxtEcho.Text = "字符数 = " + TxtBasic.Text.Length.ToString(CultureInfo.InvariantCulture);
+        }
+
+        private void DemoCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (ComboEcho == null || DemoCombo == null) return;
+            var item = DemoCombo.SelectedItem as ComboBoxItem;
+            string text = item == null ? "(空)" : Convert.ToString(item.Content, CultureInfo.InvariantCulture);
+            if (text.Length > 24) text = text.Substring(0, 24) + "…";
+            ComboEcho.Text = "选中：" + text;
+        }
+
+        private void DemoSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            if (SliderEcho == null) return;
+            SliderEcho.Text = "UI4Slider Value = " + e.NewValue.ToString("0.#", CultureInfo.InvariantCulture);
+        }
+
+        private void DemoPivot_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (DemoPivot == null) return;
+            var item = DemoPivot.SelectedItem as UI4PivotItem;
+            SetStatus("UI4Pivot 当前页：" + (item == null ? "(空)" : item.Header));
+        }
+
+        private void BarToggleIndeterminate_Click(object sender, RoutedEventArgs e)
+        {
+            Bar1.IsIndeterminate = !Bar1.IsIndeterminate;
+            BarEcho.Text = "Bar1 IsIndeterminate = " + Bar1.IsIndeterminate;
+        }
+
+        private void RingToggle_Click(object sender, RoutedEventArgs e)
+        {
+            Ring1.IsActive = !Ring1.IsActive;
+            RingEcho.Text = "Ring1 IsActive = " + Ring1.IsActive;
+        }
+
+        private void RingAdvance_Click(object sender, RoutedEventArgs e)
+        {
+            Ring1.IsIndeterminate = false;
+            double next = Ring1.Value + 10;
+            Ring1.Value = next > Ring1.Maximum ? 0 : next;
+            RingEcho.Text = "Ring1 Value = " + Ring1.Value.ToString("0", CultureInfo.InvariantCulture)
+                + " / " + Ring1.Maximum.ToString("0", CultureInfo.InvariantCulture);
+        }
+
+        private void PanelUp_Click(object sender, RoutedEventArgs e)
+        {
+            SetStatus("UI4Panel 被点击（悬停缩放 + 阴影是它的两个卖点）");
+        }
+
+        private void ScrollTop_Click(object sender, RoutedEventArgs e)
+        {
+            DemoScrollViewer.SmoothScrollToVerticalOffset(0);
+            ScrollEcho.Text = "已平滑滚动到顶部";
+        }
+
+        private void ScrollBottom_Click(object sender, RoutedEventArgs e)
+        {
+            DemoScrollViewer.SmoothScrollToVerticalOffset(double.MaxValue);
+            ScrollEcho.Text = "已平滑滚动到底部";
+        }
+
+        // UI4CircleSlider / UI4NavigationView / UI4ProgressRing 只有依赖属性、没有路由事件，
+        // 宿主用 DependencyPropertyDescriptor.AddValueChanged 订阅（进程内订阅一次即可）。
+        private bool _watchersAttached;
+
+        private void AttachValueWatchers()
+        {
+            if (_watchersAttached) return;
+            _watchersAttached = true;
+
+            DependencyPropertyDescriptor.FromProperty(UI4CircleSlider.ValueProperty, typeof(UI4CircleSlider))
+                .AddValueChanged(CircleA, delegate
+                {
+                    SetStatus("UI4CircleSlider A Value = " + CircleA.Value.ToString("0", CultureInfo.InvariantCulture));
+                });
+
+            DependencyPropertyDescriptor.FromProperty(UI4NavigationView.SelectedItemProperty, typeof(UI4NavigationView))
+                .AddValueChanged(NavView, delegate
+                {
+                    var item = NavView.SelectedItem as UI4NavigationViewItem;
+                    SetStatus("UI4NavigationView → " + (item == null ? "(空)" : item.Header));
+                });
+
+            DependencyPropertyDescriptor.FromProperty(UI4ProgressRing.IsActiveProperty, typeof(UI4ProgressRing))
+                .AddValueChanged(Ring1, delegate
+                {
+                    SetStatus("UI4ProgressRing IsActive = " + Ring1.IsActive);
+                });
+        }
+
         // ---------- 文本显示 ----------
 
         private void FlipButton_Click(object sender, RoutedEventArgs e)
@@ -150,6 +316,19 @@ namespace StartUI4Demo
             {
                 SetStatus(((Control)sender).GetType().Name + " 选中：" + item.Title);
             }
+        }
+
+        // 列数 = 可用宽度 ÷（基准单元宽度 + 单元间距），与 UI4GridView 内部算法同构，
+        // 用来把"自适应"这件事变成看得见的数字。
+        private void GridView1_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            if (GridEcho == null || GridView1 == null) return;
+
+            double unit = GridView1.ItemWidth + 8;
+            int columns = unit > 0 ? Math.Max(1, (int)(e.NewSize.Width / unit)) : 1;
+            GridEcho.Text = "UI4GridView 实际宽度 = " + ((int)e.NewSize.Width).ToString(CultureInfo.InvariantCulture)
+                + " px，基准单元 " + ((int)GridView1.ItemWidth).ToString(CultureInfo.InvariantCulture)
+                + " px → 当前约 " + columns.ToString(CultureInfo.InvariantCulture) + " 列";
         }
 
         // ---------- UI4Tab ----------
@@ -262,7 +441,42 @@ namespace StartUI4Demo
         private void TraySwitch_Toggled(object sender, RoutedEventArgs e)
         {
             TrayIcon.Visibility = TraySwitch.IsOn ? Visibility.Visible : Visibility.Collapsed;
-            SetStatus("托盘图标已" + (TraySwitch.IsOn ? "启用" : "停用"));
+
+            if (TraySwitch.IsOn)
+            {
+                BuildTrayMenu();
+                SetStatus("托盘图标已启用：右键弹菜单、双击有事件");
+            }
+            else
+            {
+                // OpenMenu() 在没有菜单项时直接返回，所以停用时清空掉，重新启用时再建
+                TrayIcon.ClearMenuItems();
+                _trayMenuBuilt = false;
+                SetStatus("托盘图标已停用");
+            }
+        }
+
+        private bool _trayMenuBuilt;
+
+        private void BuildTrayMenu()
+        {
+            if (_trayMenuBuilt) return;
+            _trayMenuBuilt = true;
+
+            TrayIcon.MenuActivation = PopupActivationMode.RightClick;
+            TrayIcon.MenuWidth = 180;
+
+            TrayIcon.AddItem(UI4MenuItemType.Copy,
+                () => UI4Clipboard.TrySetTextAsync("来自 StartUI4Demo 托盘菜单的文本",
+                    ok => SetStatus(ok ? "托盘菜单：已复制到剪贴板" : "托盘菜单：复制失败")),
+                () => true);
+            TrayIcon.AddItem(UI4MenuItemType.SelectAll,
+                () => SetStatus("托盘菜单：全选（示例动作）"));
+        }
+
+        private void TrayIcon_TrayMouseDoubleClick(object sender, RoutedEventArgs e)
+        {
+            TrayLog.Text = "托盘事件：双击 @ " + DateTime.Now.ToString("HH:mm:ss", CultureInfo.CurrentCulture);
         }
 
         private void TrayIcon_TrayLeftMouseUp(object sender, RoutedEventArgs e)
@@ -279,7 +493,8 @@ namespace StartUI4Demo
         {
             if (LangSample == null) return;
 
-            string lang = LangCombo.SelectedIndex == 0 ? "zh-CN" : "en-US";
+            ComboBoxItem item = LangCombo.SelectedItem as ComboBoxItem;
+            string lang = item == null || item.Tag == null ? "zh-CN" : item.Tag.ToString();
             CultureInfo.CurrentUICulture = new CultureInfo(lang);
             UI4MultiLanguage.Refresh();
             UpdateLangSample();
@@ -291,6 +506,218 @@ namespace StartUI4Demo
                 UI4MultiLanguage.Get(UI4LanguageKey.OK),
                 UI4MultiLanguage.Get(UI4LanguageKey.Cancel),
                 UI4MultiLanguage.Get(UI4LanguageKey.Notice));
+
+            if (LangKeysLine != null)
+            {
+                var sb = new System.Text.StringBuilder("全部 UI4LanguageKey：");
+                foreach (UI4LanguageKey key in Enum.GetValues(typeof(UI4LanguageKey)))
+                    sb.Append("  ").Append(key).Append('=').Append(UI4MultiLanguage.Get(key));
+                LangKeysLine.Text = sb.ToString();
+            }
+        }
+
+        // ---------- 剪贴板与原生交互 ----------
+
+        private void ClipProbe_Click(object sender, RoutedEventArgs e)
+        {
+            bool has = UI4Clipboard.ContainsText();
+            ClipProbeResult.Text = has ? "剪贴板里有 Unicode 文本" : "剪贴板没有文本格式";
+            SetStatus("UI4Clipboard.ContainsText() = " + has + "（不打开剪贴板，不抢锁）");
+        }
+
+        private void ClipCopyFixed_Click(object sender, RoutedEventArgs e)
+        {
+            string payload = "StartUI4Demo 复制于 " + DateTime.Now.ToString("HH:mm:ss", CultureInfo.CurrentCulture);
+            ClipWriteResult.Text = "已发起复制（后台重试中）：" + payload;
+            UI4Clipboard.TrySetTextAsync(payload, ok =>
+            {
+                if (ClipWriteResult != null)
+                    ClipWriteResult.Text = (ok ? "复制成功：" : "复制失败（剪贴板被占用）：") + payload;
+            });
+        }
+
+        private void ClipCopySelection_Click(object sender, RoutedEventArgs e)
+        {
+            if (ClipSource.SelectionLength <= 0)
+            {
+                ClipWriteResult.Text = "请先在上方输入框里选中一部分文字";
+                return;
+            }
+
+            int length = ClipSource.SelectionLength;
+            UI4Clipboard.TrySetTextAsync(ClipSource.SelectedText, ok =>
+            {
+                if (ClipWriteResult != null)
+                    ClipWriteResult.Text = ok
+                        ? "已复制选区 " + length.ToString(CultureInfo.InvariantCulture) + " 字符，可去记事本 Ctrl+V 验证"
+                        : "复制失败：剪贴板被其它程序长期占用";
+            });
+        }
+
+        private void ClipRead_Click(object sender, RoutedEventArgs e)
+        {
+            if (!UI4Clipboard.ContainsText())
+            {
+                ClipReadResult.Text = "剪贴板里没有文本格式";
+                return;
+            }
+
+            UI4Clipboard.TryGetTextAsync(text =>
+            {
+                if (ClipReadResult == null) return;
+                ClipReadResult.Text = text == null
+                    ? "读取失败：剪贴板被占用超过重试预算"
+                    : "读回 " + text.Length.ToString(CultureInfo.InvariantCulture) + " 字符：" + text;
+            });
+        }
+
+        private void CtxOpen_Click(object sender, RoutedEventArgs e)
+        {
+            if (_hostMenu == null) return;
+            _hostMenu.Open();
+            CtxOpenState.Text = "IsOpen = " + _hostMenu.IsOpen;
+        }
+
+        private void CtxClose_Click(object sender, RoutedEventArgs e)
+        {
+            if (_hostMenu == null) return;
+            _hostMenu.Close();
+            CtxOpenState.Text = "IsOpen = " + _hostMenu.IsOpen;
+        }
+
+        // ---------- 主题 · 强调色 · 持久化 · 标题栏 ----------
+
+        private const string OceanKey = "ocean";
+        private bool _suppressThemeCombo;
+
+        private string PersistedPath
+        {
+            get { return System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "demo-theme.json"); }
+        }
+
+        private void AccentOcean_Click(object sender, RoutedEventArgs e)
+        {
+            UI4Theme.SetAccent(Color.FromRgb(0x00, 0x78, 0xD4));
+            AccentEcho.Text = "强调色 → #0078D4（AccentDark 由库自动派生）";
+        }
+
+        private void AccentOrange_Click(object sender, RoutedEventArgs e)
+        {
+            UI4Theme.SetAccent(Color.FromRgb(0xE6, 0x78, 0x14));
+            AccentEcho.Text = "强调色 → #E67814";
+        }
+
+        private void AccentPicker_Click(object sender, RoutedEventArgs e)
+        {
+            Color? picked = UI4ColorPicker.ShowDialog("选择强调色", UI4Theme.Current.AccentColor, this);
+            if (!picked.HasValue) return;
+
+            UI4Theme.SetAccent(picked.Value);
+            AccentEcho.Text = "强调色 → " + picked.Value;
+        }
+
+        private void AccentReset_Click(object sender, RoutedEventArgs e)
+        {
+            // SetAccent 改的是当前主题定义，重新注册内置定义即可恢复
+            UI4Theme.Register(UI4ThemeDefinition.Light());
+            UI4Theme.Register(UI4ThemeDefinition.Dark());
+            UI4Theme.Register(UI4ThemeDefinition.HighContrast());
+            UI4Theme.SetTheme(UI4Theme.CurrentMode);
+            AccentEcho.Text = "已恢复内置主题定义";
+        }
+
+        private void RegisterOcean_Click(object sender, RoutedEventArgs e)
+        {
+            UI4ThemeDefinition def = UI4ThemeDefinition.Light().Clone();
+            def.Key = OceanKey;
+            def.With(UI4ThemeToken.Accent, Color.FromRgb(0x00, 0x96, 0xAA))
+               .With(UI4ThemeToken.AccentEnd, Color.FromRgb(0x00, 0x5A, 0x82))
+               .With(UI4ThemeToken.Background, Color.FromRgb(0xEC, 0xF8, 0xFA));
+            UI4Theme.Register(def);
+            UI4Theme.Apply(OceanKey);
+            RefreshThemeKeyCombo();
+            ThemeEcho.Text = "已注册并应用自定义主题 \"" + OceanKey + "\"（克隆自 light，改了 3 个令牌）";
+        }
+
+        private void RefreshThemeKeyCombo()
+        {
+            if (ThemeKeyCombo == null) return;
+
+            _suppressThemeCombo = true;
+            string current = UI4Theme.ResolvedKey;
+            ThemeKeyCombo.Items.Clear();
+            foreach (string key in UI4Theme.ThemeKeys)
+                ThemeKeyCombo.Items.Add(new ComboBoxItem { Content = key, Tag = key });
+
+            int index = 0;
+            foreach (string key in UI4Theme.ThemeKeys)
+            {
+                if (string.Equals(key, current, StringComparison.OrdinalIgnoreCase)) break;
+                index++;
+            }
+            ThemeKeyCombo.SelectedIndex = index >= 0 ? index : 0;
+            _suppressThemeCombo = false;
+        }
+
+        private void ThemeKeyCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (_suppressThemeCombo || ThemeKeyCombo == null) return;
+
+            var item = ThemeKeyCombo.SelectedItem as ComboBoxItem;
+            string key = item == null ? null : item.Tag as string;
+            if (string.IsNullOrEmpty(key)) return;
+
+            bool applied = UI4Theme.Apply(key);
+            ThemeEcho.Text = (applied ? "已切换全局主题 → " : "切换失败（未注册的键）：") + key;
+        }
+
+        private void ThemeSave_Click(object sender, RoutedEventArgs e)
+        {
+            UI4Theme.Persistence = new JsonThemePersistence(PersistedPath);
+            UI4Theme.Save();
+            PersistEcho.Text = "已把 " + UI4Theme.CurrentMode + " 写入 " + PersistedPath;
+        }
+
+        private void ThemeApplyPersisted_Click(object sender, RoutedEventArgs e)
+        {
+            UI4Theme.Persistence = new JsonThemePersistence(PersistedPath);
+            bool loaded = UI4Theme.ApplyPersisted();
+            PersistEcho.Text = loaded
+                ? "已从文件恢复主题模式 → " + UI4Theme.CurrentMode
+                : "没有可恢复的保存（文件不存在或内容无效）";
+        }
+
+        private void ThemeClearPersisted_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (System.IO.File.Exists(PersistedPath)) System.IO.File.Delete(PersistedPath);
+                PersistEcho.Text = "已删除 " + PersistedPath;
+            }
+            catch (System.IO.IOException ex)
+            {
+                PersistEcho.Text = "删除失败：" + ex.Message;
+            }
+        }
+
+        private void TitleBarApply_Click(object sender, RoutedEventArgs e)
+        {
+            bool applied = UI4WindowTitleBar.Apply(this);
+            TitleBarEcho.Text = "Apply(本窗口) = " + applied
+                + "　SupportsCaptionColors = " + UI4WindowTitleBar.SupportsCaptionColors
+                + "　Enabled = " + UI4WindowTitleBar.GetEnabled(this);
+        }
+
+        private void TitleBarDisable_Click(object sender, RoutedEventArgs e)
+        {
+            UI4WindowTitleBar.SetEnabled(this, false);
+            TitleBarEcho.Text = "本窗口已豁免标题栏染色（交还系统默认）";
+        }
+
+        private void TitleBarEnable_Click(object sender, RoutedEventArgs e)
+        {
+            UI4WindowTitleBar.SetEnabled(this, true);
+            TitleBarEcho.Text = "本窗口恢复跟随主题染色";
         }
 
         private void MainWindow_Closed(object sender, EventArgs e)

@@ -117,7 +117,7 @@ xmlns:ui="clr-namespace:StartUI4Controls;assembly=StartUI4Controls"
 
 | 控件 | 基类 | 说明 |
 |---|---|---|
-| `UI4Button` | `Button` | 渐变 / 圆角 / 悬浮色按钮 |
+| `UI4Button` | `Button` | 渐变 / 圆角 / 悬浮色按钮；禁用态自动换灰色模板，前景按背景亮度自适应（见第五节 UI4Button） |
 | `UI4CheckBox` | `CheckBox` | 自定义勾选框 |
 | `UI4Radio` | `RadioButton` | 自定义单选按钮 |
 | `UI4Switch` | `Control` | 现代滑动开关 |
@@ -146,10 +146,17 @@ xmlns:ui="clr-namespace:StartUI4Controls;assembly=StartUI4Controls"
 | `UI4CodeEditor` | AvalonEdit `TextEditor` | 代码编辑器，内置 C# 高亮与右键菜单 |
 | `UI4Clipboard` | —（静态服务） | 原生 Win32 剪贴板读写，库内文本控件的复制/剪切/粘贴均走此通道（见第八节 E） |
 | `UI4Grid` | `Grid` | 默认渐变背景的 Grid |
-| `UI4MultiLanguage` | —（静态服务） | zh / en 多语言字符串 |
+| `UI4MultiLanguage` | —（静态服务） | 静态文案：zh / en / ja / ko / de / fr / es / ru 八套，切语言靠 `CultureInfo.CurrentUICulture` + `Refresh()` |
 | `UI4Theme` | —（静态服务） | 全局主题：亮/暗/跟随系统/高对比度、令牌资源桥、`SetAccent`、自定义主题注册、持久化 |
 | `UI4ThemeScope` | —（附加属性） | 局部/每窗口主题：`ui:UI4ThemeScope.Theme="dark"`，子树独立换肤（见第十节） |
 | `UI4WindowTitleBar` | —（附加属性 + 静态方法） | 系统标题栏跟随主题：DWM 深/浅 + 标题栏底色/文字/边框染色，默认全自动，`ui:UI4WindowTitleBar.Enabled="False"` 可豁免（见第十节） |
+| `UI4ThemeMode` / `UI4ThemeToken` | —（枚举） | 主题模式（Light/Dark/System/HighContrast）与 30 个颜色令牌键 |
+| `UI4ThemeDefinition` | —（sealed 类） | 一套主题的令牌取值：内置 `Light()` / `Dark()` / `HighContrast()`，可 `Clone()` + `With(token, color)` 定制后 `UI4Theme.Register` |
+| `RegistryThemePersistence` / `JsonThemePersistence` | `IThemePersistence` 实现 | 主题模式持久化后端：HKCU 注册表 / JSON 文件（宿主自选，见第十节） |
+| `UI4MenuItem` / `UI4MenuItemType` / `UI4MenuIcons` | —（配套类型） | 右键菜单条目数据、七种标准条目类型（Undo/Redo/Cut/Copy/Paste/Delete/SelectAll）与内置图标 |
+| `UI4TrayMenuItem` / `PopupActivationMode` | —（配套类型） | 托盘菜单条目与"哪种鼠标键弹菜单"的枚举 |
+| `UI4LanguageKey` | —（枚举） | 静态文案键（OK/Cancel/Notice/ColorPicker/Undo/…/SelectAll） |
+| `TabCloseRoutedEventArgs` | `RoutedEventArgs` | `UI4Tab.CloseTab` 事件参数（携带被关的 `UI4TabItem`） |
 
 > `UI4DataGrid`、`UI43DSphere` 在上游即为 `internal` 且无引用，本移植版保持 internal，不对外公开（见附录 C）。
 
@@ -1473,28 +1480,37 @@ protected override void OnClosed(EventArgs e)
 ### 构建与运行
 
 ```bash
-dotnet build StartUI4Controls.sln
-dotnet run --project samples/StartUI4Demo
+# 本仓库没有 .sln，按 csproj 构建；组件库开了 GeneratePackageOnBuild 且缺 LICENSE 打包元数据，
+# 必须带 -p:GeneratePackageOnBuild=false，否则 pack 阶段报 NU5019 拖垮整个构建。
+dotnet build samples/StartUI4Demo/StartUI4Demo.csproj -p:GeneratePackageOnBuild=false
+samples\StartUI4Demo\bin\Debug\net48\StartUI4Demo.exe            # 直接运行
+samples\StartUI4Demo\bin\Debug\net48\StartUI4Demo.exe --tab=11   # 直接打开指定分页（0 起）
 ```
 
-或在 Visual Studio 中：**右键 `StartUI4Demo` → 设为启动项目** 后 F5
-（解决方案默认启动项目已设为 Demo；若仍提示"无法启动类库项目"，说明 VS 读取了旧的 per-user 启动项设置，手动设一次即可）。
+或在 Visual Studio 中：**右键 `StartUI4Demo` → 设为启动项目** 后 F5。
+注意：把组件库工程加进 .sln 会让 VS 构建它（命令行 MSBuild 本来就会构建），而库目录名含中文时
+VS 会因 URI 转义超过 260 字符报"路径太长"，所以 Demo 与库都建议用 csproj 方式打开或构建。
+
+每个组件页按同一条动线组织：**外观属性 → 交互事件 → 状态反馈 → 与主题的关系**，
+所有可点项都有就近回显或底部状态栏反馈，不存在"点了没反应"的示例。
 
 ### 分页结构
 
 | 页 | 内容 |
 |---|---|
-| 按钮与开关 | UI4Button / UI4CheckBox / UI4Radio / UI4Switch |
-| 文本输入 | UI4TextBox / UI4PasswordBox / UI4CodeEditor |
+| 按钮与开关 | UI4Button（含**启动态/禁用态**并排对比与可用性切换示例）/ UI4CheckBox / UI4Radio / UI4Switch（切全局主题） |
+| 文本输入 | UI4TextBox / UI4PasswordBox / UI4CodeEditor（含 Ctrl+C·X·V 原生接管与密码模式差异说明） |
 | 文本显示 | UI4TextBlock / UI4FlipTextBlock |
-| 选择器 | UI4ComboBox（含长文本用例）/ UI4Slider / UI4CircleSlider |
-| 进度指示 | UI4ProgressBar / UI4ProgressRing |
-| 列表与网格 | UI4ListBox / UI4ListView / UI4GridView |
-| 导航容器 | UI4Pivot / UI4Tab / UI4NavigationView / UI4ScrollViewer |
+| 选择器 | UI4ComboBox（含长文本用例与选中回显）/ UI4Slider（ValueChanged 就近回显）/ UI4CircleSlider（AddValueChanged 回显） |
+| 进度指示 | UI4ProgressBar（推进 / 切换不确定模式）/ UI4ProgressRing（启停、进度推进） |
+| 列表与网格 | UI4ListBox（None/Disc/Number 三种样式）/ UI4ListView / UI4GridView（**自适应列数**：拖动窗口宽度看实时列数） |
+| 导航容器 | UI4Pivot / UI4Tab / UI4NavigationView / UI4ScrollViewer（平滑滚到顶部/底部） |
 | 布局面板 | UI4Grid / UI4Panel |
 | 对话框 | UI4MessageBox / UI4ColorPicker |
-| 菜单与托盘 | UI4Menu / UI4ContextMenu / UI4NotifyIcon / UI4MultiLanguage |
+| 菜单与托盘 | UI4Menu / UI4ContextMenu（**真操作剪贴板**，无选区时自动置灰）/ UI4NotifyIcon（右键弹真菜单、左键与双击上报）/ UI4MultiLanguage（8 套语言） |
 | 局部主题 | UI4ThemeScope（左卡片深色 / 右卡片跟随全局的对照、两卡各含 `UI4ComboBox`+`UI4ListBox` 底色对照、作用域键下拉、嵌套作用域、`ScopeWindow` 异主题窗口、高对比度入口） |
+| 剪贴板与原生交互 | `UI4Clipboard` 三个方法逐个动手验证（`ContainsText` 不抢锁 / 写入后可去记事本 Ctrl+V 验证 / 读回）+ `UI4ContextMenu.Open/Close/IsOpen` + 库内部按键接管说明 |
+| 主题与强调色 | `UI4Theme.SetAccent`（含取色器选色、恢复内置定义）、`Register(UI4ThemeDefinition)` 自定义 `ocean` 主题 + `ThemeKeys` 下拉切换、`Save/ApplyPersisted`（用 `JsonThemePersistence` 写本程序目录，**不碰注册表**）、`UI4WindowTitleBar.Apply/SupportsCaptionColors/SetEnabled` |
 
 ### 命令行参数
 
@@ -1583,7 +1599,9 @@ sln 的 `Debug/Release × Any CPU/x64/x86` 只决定构建配置与平台映射�
 |---|---|
 | `UI4DataGrid` | `internal`，SQLite 分页加载表格，上游即无引用 |
 | `UI43DSphere` | `internal`，Media3D 纹理球体，上游即无引用 |
-| 各类 `*Converter` | `internal` / `public` 工具转换器，随库导出但一般无需直接使用 |
+| `Internal/*`（`ClipboardCommandTakeover`、`ScrollBarResources`、`ThemeSync`、`WindowAnimationHelper`、`WindowResizeBehavior`、`ColorToBrushConverter`） | `internal`，库内部实现 |
+| 部分 `*Converter`（`NavigationColorToBrushConverter`、`Tab*Converter`、`TextOrContentConverter`） | `internal`，服务于各自控件模板 |
+| 其余 `*Converter`（`IndexPlusOneConverter`、`ObjectIsStringConverter`、`BoolToVisibilityConverter`、`PlaceholderVisibilityConverter`、`InnerPaddingConverter`） | **`public`**，随库导出，宿主 XAML 可直接复用 |
 
 ### D. 发布产物清单（哪些文件是运行必需的）
 
@@ -1620,8 +1638,9 @@ sln 的 `Debug/Release × Any CPU/x64/x86` 只决定构建配置与平台映射�
 | `ICSharpCode.AvalonEdit.dll`、`System.Data.SQLite.dll` | 库的 `PackageReference` 经 NuGet 传递解析后进入 CopyLocal 闭包，按 TFM 就近取 `lib/net462`、`lib/net471` 资产复制 |
 
 **为什么没有别的文件**：`*.deps.json` / `*.runtimeconfig.json` 是 .NET Core/5+ 的宿主探测机制，
-.NET Framework 改用 Fusion/GAC + `app.config`；未生成 `*.xml` 文档文件（`GenerateDocumentationFile`
-默认 false）；无本地化资源故无卫星程序集；原生 `SQLite.Interop.dll` 也未被复制（见上表说明）。
+.NET Framework 改用 Fusion/GAC + `app.config`；无本地化资源故无卫星程序集；原生 `SQLite.Interop.dll` 也未被复制（见上表说明）。
+更正一处旧说法：`StartUI4Controls.xml`（IntelliSense 文档）**会**被复制进输出目录——库的 csproj 里
+`GenerateDocumentationFile=true`；它与 `.pdb` 一样运行时不需要，详见 F 节。
 其余中间产物（`.g.cs`、`.baml`、`.Up2Date`、各类 `.cache`）全部留在 `obj/`，不进入 `bin/`。
 
 ### E. 剪贴板通道：库内改用原生 Win32（`UI4Clipboard`）
@@ -1648,6 +1667,48 @@ if (UI4Clipboard.ContainsText()) { /* 不打开剪贴板，不参与抢锁 */ }
   机器上不可靠：实测取锁与获得所有权均成功，但延迟渲染声明固定失败且从不收到渲染消息；同路径 eager 写入则正常。
 - 回归验证：`dotnet build tools/clipboard-lock-check/clipboard-lock-check.csproj -p:GeneratePackageOnBuild=false`
   后直接运行 exe，结果写入同目录 `results.txt`（10 条用例，含框架 `TextBox` 基线）。
+
+### F. 输出目录里的 `.pdb` / `.xml` 是什么，运行时到底需要哪些文件（问答）
+
+**问：exe 目录下还有一些 `.pdb` 和 `.xml` 文件，这些是什么？运行时不需要吗？**
+
+以 Prompt 收藏夹（`src/PromptFavorites`）一次 Debug 构建的真实输出为例：
+
+| 文件 | 大小 | 运行必需 | 是什么 |
+|---|---|---|---|
+| `PromptFavorites.exe` | 96 KB | **必需** | 入口程序集（WPF 的 `.baml` 已嵌进它的资源） |
+| `StartUI4Controls.dll` | 429 KB | **必需** | 本控件库 |
+| `ICSharpCode.AvalonEdit.dll` | 607 KB | **必需** | `UI4CodeEditor` 继承它的 `TextEditor`，XAML 解析期就要这个类型；实测删掉后启动即 `FileNotFoundException` |
+| `PromptFavorites.exe.config` | 174 B | 建议保留 | 只有 `<supportedRuntime sku=".NETFramework,Version=v4.8"/>`；删了也能跑（4.x 就地升级），留着可在只装了更低版本的机器上给出明确报错 |
+| `PromptFavorites.pdb` / `StartUI4Controls.pdb` | 36 KB / 106 KB | **不必需** | 调试符号 |
+| `StartUI4Controls.xml` | 63 KB | **不必需** | IntelliSense 文档 |
+| `System.Data.SQLite.dll` | 389 KB | **不必需** | 唯一使用者 `UI4DataGrid` 是 `internal` 且无人引用；程序集引用是惰性解析，实测删除后功能正常 |
+
+**`.pdb` = 调试符号数据库（Program Database）**：存的是源文件名与行号、局部变量名、私有成员签名。
+CLR 运行时**不加载**它，删掉程序照常运行。唯一影响是未处理异常的堆栈里能不能给出行号——
+没有 pdb 时堆栈会退化成"在 PromptFavorites.ViewModels.MainViewModel.Copy 位置 行号 0"，
+而排查用户报障（本项目排查"复制闪退"就是实例）往往就靠那几行行号。
+工程里没写 `DebugType`，.NET SDK 对 net48 默认 `portable`，所以每次构建都会产出 pdb。
+
+**`.xml` = XML 文档文件**：由 `StartUI4Controls.csproj` 的 `<GenerateDocumentationFile>true</GenerateDocumentationFile>`
+产出，内容全是源码里的 `<summary>` / `<param>` / `<remarks>` 注释，只供 Visual Studio / Rider 的
+IntelliSense 悬浮提示与对象浏览器使用，**运行时完全不读**，也不影响任何行为。
+
+**发布时的三种取舍**：
+
+```bash
+# 1) 保留行号但不想多带文件：把符号嵌进 exe/dll 内部（不再有 .pdb 文件）
+dotnet build src/PromptFavorites/PromptFavorites.csproj -p:GeneratePackageOnBuild=false -p:DebugType=embedded
+
+# 2) 彻底不带符号：包最小，代价是崩溃堆栈没有行号
+dotnet build src/PromptFavorites/PromptFavorites.csproj -p:GeneratePackageOnBuild=false -p:DebugType=none
+
+# 3) 常规做法：发布包只带上面标"必需"的 3~4 个文件，pdb 单独归档一份，
+#    用户报障时用它对照堆栈定位行号
+```
+
+补充两点：`*.deps.json` / `*.runtimeconfig.json` 是 .NET Core/5+ 的宿主探测机制，.NET Framework 不用；
+没有本地化资源所以没有卫星目录；原生 `SQLite.Interop.dll` 也不会被自动复制（真要公开 `UI4DataGrid` 才需要，见 D 节）。
 
 ---
 

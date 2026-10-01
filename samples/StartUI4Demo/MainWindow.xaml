@@ -38,11 +38,35 @@
                         <WrapPanel>
                             <ui:UI4Button Content="默认按钮" Width="130" Height="36" Margin="0,0,10,10" Click="PlainButton_Click"/>
                             <ui:UI4Button Content="绿色按钮" Background="Green" HoverBackground="DarkGreen"
-                                          Width="130" Height="36" Margin="0,0,10,10"/>
+                                          Width="130" Height="36" Margin="0,0,10,10" Click="AnyButton_Click"/>
                             <ui:UI4Button Content="渐变按钮" GradientStart="#FF0024FF" GradientEnd="#FFB400FF"
-                                          Width="130" Height="36" Margin="0,0,10,10"/>
-                            <ui:UI4Button Content="圆角按钮" CornerRadius="18" Width="130" Height="36" Margin="0,0,10,10"/>
+                                          Width="130" Height="36" Margin="0,0,10,10" Click="AnyButton_Click"/>
+                            <ui:UI4Button Content="圆角按钮" CornerRadius="18" Width="130" Height="36" Margin="0,0,10,10"
+                                          Click="AnyButton_Click"/>
                         </WrapPanel>
+
+                        <TextBlock Text="UI4Button 启动态 / 禁用态" Style="{StaticResource SectionTitle}"/>
+                        <TextBlock Style="{StaticResource SectionHint}" TextWrapping="Wrap"
+                                   Text="前景色自动跟随背景亮度：深色底用白字，浅色底（禁用态、中性灰按钮）自动换成主题正文色；禁用只需设 IsEnabled=false（或让绑定命令的 CanExecute 返回 false），使用方不必自己刷灰色。实测对比度：默认渐变启用 3.05、禁用 10.12、浅灰底 10.04。"/>
+                        <WrapPanel>
+                            <ui:UI4Button Content="启用（默认渐变）" Width="150" Height="36" Margin="0,0,10,10"/>
+                            <ui:UI4Button Content="禁用（默认渐变）" Width="150" Height="36" Margin="0,0,10,10"
+                                          IsEnabled="False"/>
+                            <ui:UI4Button Content="启用（浅灰底）" Width="150" Height="36" Margin="0,0,10,10"
+                                          GradientStart="#FFC8C8D2" GradientEnd="#FFC8C8D2"/>
+                            <ui:UI4Button Content="禁用（浅灰底）" Width="150" Height="36" Margin="0,0,10,10"
+                                          GradientStart="#FFC8C8D2" GradientEnd="#FFC8C8D2" IsEnabled="False"/>
+                            <ui:UI4Button Content="本地 Foreground 优先" Width="170" Height="36" Margin="0,0,10,10"
+                                          GradientStart="#FF0024FF" GradientEnd="#FFB400FF" Foreground="Yellow"/>
+                        </WrapPanel>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                            <ui:UI4CheckBox x:Name="CopyEnabledToggle" Content="勾选 = 可用" IsChecked="True"
+                                            VerticalAlignment="Center"/>
+                            <ui:UI4Button Content="可用性由外部切换（可逆）" Width="190" Height="34"
+                                          Margin="14,0,0,0"
+                                          IsEnabled="{Binding IsChecked, ElementName=CopyEnabledToggle}"/>
+                        </StackPanel>
 
                         <TextBlock Text="UI4CheckBox" Style="{StaticResource SectionTitle}"/>
                         <StackPanel>
@@ -64,7 +88,7 @@
                         <StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                                 <ui:UI4Switch IsOn="False" Toggled="Switch_Toggled"/>
-                                <TextBlock Text="深色模式" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                                <TextBlock Text="深色模式（这个开关会真的调 UI4Theme.SetTheme 换全局主题）" VerticalAlignment="Center" Margin="10,0,0,0"/>
                             </StackPanel>
                             <ui:UI4Switch IsOn="True" SwitchWidth="60" SwitchHeight="32"
                                           GradientStart="Green" GradientEnd="DarkGreen" OffBackground="LightGray"/>
@@ -79,8 +103,12 @@
                     <StackPanel Margin="16" MaxWidth="760" HorizontalAlignment="Left">
 
                         <TextBlock Text="UI4TextBox" Style="{StaticResource SectionTitle}"/>
+                        <TextBlock Style="{StaticResource SectionHint}" TextWrapping="Wrap"
+                                   Text="选中文字后按 Ctrl+C / Ctrl+X / Ctrl+V：库在按键隧道阶段改走原生 Win32 剪贴板（Internal/ClipboardCommandTakeover + UI4Clipboard），不会被剪贴板监听程序抢锁拖住 UI 线程；右键菜单也是库内置的 UI4ContextMenu。"/>
                         <StackPanel>
-                            <ui:UI4TextBox Width="320" Text="可编辑文本" Margin="0,0,0,10" HorizontalAlignment="Left"/>
+                            <ui:UI4TextBox x:Name="TxtBasic" Width="320" Text="可编辑文本" Margin="0,0,0,10"
+                                           HorizontalAlignment="Left" TextChanged="TxtBasic_TextChanged"/>
+                            <TextBlock x:Name="TxtEcho" Text="字符数 = 5" Style="{StaticResource SectionHint}" Margin="0,0,0,10"/>
                             <ui:UI4TextBox Width="320" Text="带清除按钮" ShowClearButton="True" Margin="0,0,0,10" HorizontalAlignment="Left"/>
                             <ui:UI4TextBox Width="320" PlaceholderText="请输入用户名..." Margin="0,0,0,10" HorizontalAlignment="Left"/>
                             <ui:UI4TextBox Width="320" PlaceholderText="绿色聚焦边框" FocusBorderColor="Green" Margin="0,0,0,10" HorizontalAlignment="Left"/>
@@ -90,6 +118,8 @@
                         </StackPanel>
 
                         <TextBlock Text="UI4PasswordBox" Style="{StaticResource SectionTitle}"/>
+                        <TextBlock Style="{StaticResource SectionHint}" TextWrapping="Wrap"
+                                   Text="密码模式下复制与剪切被拒绝（只允许粘贴/全选），切到明文后 Ctrl+C/X/V 与右键菜单才全部可用；卸载时会自动清空密码。"/>
                         <StackPanel>
                             <ui:UI4PasswordBox Width="320" Height="36" PlaceholderText="请输入密码" Margin="0,0,0,10" HorizontalAlignment="Left"/>
                             <ui:UI4PasswordBox x:Name="PwdBox" Width="320" Height="36" PasswordChar="*"
@@ -97,7 +127,9 @@
                             <TextBlock x:Name="PwdEcho" Text="Password = (空)" Style="{StaticResource SectionHint}"/>
                         </StackPanel>
 
-                        <TextBlock Text="UI4CodeEditor（AvalonEdit + UI4ContextMenu，右键试试）" Style="{StaticResource SectionTitle}"/>
+                        <TextBlock Text="UI4CodeEditor" Style="{StaticResource SectionTitle}"/>
+                        <TextBlock Style="{StaticResource SectionHint}" TextWrapping="Wrap"
+                                   Text="基于 AvalonEdit 的封装，构造里默认开启：C# 语法高亮、行号、自动换行、Consolas 14、右键 UI4ContextMenu，以及 Ctrl+C/X/V 的原生剪贴板接管。四个卖点都可以在这块区域直接试。"/>
                         <ui:UI4CodeEditor x:Name="CodeEditor" Height="220" Margin="0,0,0,10"/>
                     </StackPanel>
                 </ScrollViewer>
@@ -142,12 +174,16 @@
                     <StackPanel Margin="16" MaxWidth="760" HorizontalAlignment="Left">
 
                         <TextBlock Text="UI4ComboBox" Style="{StaticResource SectionTitle}"/>
+                        <TextBlock Style="{StaticResource SectionHint}"
+                                   Text="下拉选中即回显（SelectionChanged 是 ComboBox 自带的路由事件）。"/>
                         <StackPanel>
-                            <ui:UI4ComboBox Width="320" Height="36" SelectedIndex="0" Margin="0,0,0,10" HorizontalAlignment="Left">
+                            <ui:UI4ComboBox x:Name="DemoCombo" Width="320" Height="36" SelectedIndex="0" Margin="0,0,0,10"
+                                            HorizontalAlignment="Left" SelectionChanged="DemoCombo_SelectionChanged">
                                 <ComboBoxItem>选项 1</ComboBoxItem>
                                 <ComboBoxItem>选项 2</ComboBoxItem>
                                 <ComboBoxItem>选项 3</ComboBoxItem>
                             </ui:UI4ComboBox>
+                            <TextBlock x:Name="ComboEcho" Text="选中：选项 1" Style="{StaticResource SectionHint}" Margin="0,0,0,10"/>
                             <ui:UI4ComboBox Width="320" Height="36" CornerRadius="16" DropCornerRadius="10" HorizontalAlignment="Left">
                                 <ComboBoxItem>圆角下拉框</ComboBoxItem>
                                 <ComboBoxItem>另一项</ComboBoxItem>
@@ -159,15 +195,21 @@
                         </StackPanel>
 
                         <TextBlock Text="UI4Slider" Style="{StaticResource SectionTitle}"/>
+                        <TextBlock Style="{StaticResource SectionHint}"
+                                   Text="IsValueVisible=True 时控件自带数值气泡；下面这行是宿主订阅 ValueChanged 的就近回显（高频值不回写底部状态栏）。"/>
                         <StackPanel>
-                            <ui:UI4Slider Value="50" Maximum="100" Minimum="0" Width="320" Margin="0,0,0,10" HorizontalAlignment="Left"/>
+                            <ui:UI4Slider x:Name="DemoSlider" Value="50" Maximum="100" Minimum="0" Width="320"
+                                          Margin="0,0,0,10" HorizontalAlignment="Left" ValueChanged="DemoSlider_ValueChanged"/>
+                            <TextBlock x:Name="SliderEcho" Text="UI4Slider Value = 50" Style="{StaticResource SectionHint}" Margin="0,0,0,10"/>
                             <ui:UI4Slider Value="80" Maximum="200" Minimum="0" Width="320" IsValueVisible="False"
                                           GradientStart="#FFFFF900" GradientEnd="Red" HorizontalAlignment="Left"/>
                         </StackPanel>
 
                         <TextBlock Text="UI4CircleSlider" Style="{StaticResource SectionTitle}"/>
+                        <TextBlock Style="{StaticResource SectionHint}"
+                                   Text="它只有依赖属性、没有路由事件，所以宿主用 DependencyPropertyDescriptor.AddValueChanged 订阅 Value（见 MainWindow.xaml.cs 的 AttachValueWatchers）。"/>
                         <StackPanel Orientation="Horizontal">
-                            <ui:UI4CircleSlider Width="160" Height="160" Value="60" Maximum="360"
+                            <ui:UI4CircleSlider x:Name="CircleA" Width="160" Height="160" Value="60" Maximum="360"
                                                 RingThickness="12" ValueFontSize="34" ShowValueText="True" Margin="0,0,20,0"/>
                             <ui:UI4CircleSlider Width="160" Height="160" Value="12" Maximum="24" RingThickness="12"
                                                 ValueFontSize="34" ShowValueText="True" Foreground="#FF2861EB">
@@ -194,13 +236,19 @@
                             <ui:UI4ProgressBar Value="50" Maximum="100" Width="320" Height="6" Background="Red" Margin="0,0,0,12" HorizontalAlignment="Left"/>
                             <ui:UI4ProgressBar Value="75" Maximum="100" Width="320" Height="6"
                                                GradientStart="#FF55FF00" GradientEnd="#FF0016FF" Margin="0,0,0,12" HorizontalAlignment="Left"/>
-                            <ui:UI4ProgressBar IsIndeterminate="True" Width="320" Height="6" HorizontalAlignment="Left"/>
-                            <ui:UI4Button Content="推进 Bar1" Width="120" Height="32" Margin="0,10,0,0" Click="AdvanceBar_Click"/>
+                            <ui:UI4ProgressBar x:Name="BarIndeterminate" IsIndeterminate="True" Width="320" Height="6" HorizontalAlignment="Left"/>
+                            <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                                <ui:UI4Button Content="推进 Bar1" Width="120" Height="32" Margin="0,0,10,0" Click="AdvanceBar_Click"/>
+                                <ui:UI4Button Content="切换 Bar1 不确定模式" Width="170" Height="32" Click="BarToggleIndeterminate_Click"/>
+                            </StackPanel>
+                            <TextBlock x:Name="BarEcho" Style="{StaticResource SectionHint}" Margin="0,6,0,0"/>
                         </StackPanel>
 
                         <TextBlock Text="UI4ProgressRing" Style="{StaticResource SectionTitle}"/>
+                        <TextBlock Style="{StaticResource SectionHint}"
+                                   Text="同样只有 DP、没有路由事件：IsActive 用 AddValueChanged 回显。"/>
                         <StackPanel Orientation="Horizontal">
-                            <ui:UI4ProgressRing IsActive="True" IsIndeterminate="True" Width="90" Height="90" Margin="0,0,24,0"/>
+                            <ui:UI4ProgressRing x:Name="Ring1" IsActive="True" IsIndeterminate="True" Width="90" Height="90" Margin="0,0,24,0"/>
                             <ui:UI4ProgressRing IsIndeterminate="False" IsActive="True" Value="50" Maximum="150"
                                                 Foreground="Red" ValueFontSize="20" ShowValueText="True"
                                                 Width="90" Height="90" Margin="0,0,24,0"/>
@@ -215,6 +263,14 @@
                                 </ui:UI4ProgressRing.RingForeground>
                             </ui:UI4ProgressRing>
                         </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                            <ui:UI4Button Content="启停 Ring1" Width="120" Height="32" Margin="0,0,10,0"
+                                          Click="RingToggle_Click"/>
+                            <ui:UI4Button Content="Ring1 进度 +10" Width="130" Height="32"
+                                          Click="RingAdvance_Click"/>
+                            <TextBlock x:Name="RingEcho" VerticalAlignment="Center" Margin="12,0,0,0"
+                                       Style="{StaticResource SectionHint}"/>
+                        </StackPanel>
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>
@@ -222,7 +278,7 @@
             <!-- ============ 6. 列表与网格 ============ -->
             <TabItem Header="列表与网格">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <StackPanel Margin="16" MaxWidth="900" HorizontalAlignment="Left">
+                    <StackPanel Margin="16" MinWidth="760">
 
                         <TextBlock Text="UI4ListBox（三种列表样式）" Style="{StaticResource SectionTitle}"/>
                         <StackPanel Orientation="Horizontal">
@@ -261,8 +317,13 @@
                         </ui:UI4ListView>
 
                         <TextBlock Text="UI4GridView（自适应网格）" Style="{StaticResource SectionTitle}"/>
-                        <ui:UI4GridView ItemsSource="{Binding Cards}" ItemHeight="170" ItemWidth="230"
-                                        ShadowDepth="15" ShadowOpacity="0.3" HoverScale="1.06">
+                        <TextBlock Style="{StaticResource SectionHint}" TextWrapping="Wrap"
+                                   Text="ItemWidth 是「基准单元宽度」，列数 = 可用宽度 ÷ 单元宽度 自动算出来。拖动窗口右边缘变宽变窄，看下面这行实时宽度与列数变化。"/>
+                        <TextBlock x:Name="GridEcho" Style="{StaticResource SectionHint}"/>
+                        <ui:UI4GridView x:Name="GridView1" ItemsSource="{Binding Cards}" ItemHeight="170" ItemWidth="230"
+                                        ShadowDepth="15" ShadowOpacity="0.3" HoverScale="1.06"
+                                        SelectionChanged="Cards_SelectionChanged"
+                                        SizeChanged="GridView1_SizeChanged">
                             <ui:UI4GridView.ItemTemplate>
                                 <DataTemplate>
                                     <Border Background="{Binding Background}" CornerRadius="10">
@@ -285,7 +346,8 @@
                     <StackPanel Margin="16" MaxWidth="900" HorizontalAlignment="Left">
 
                         <TextBlock Text="UI4Pivot" Style="{StaticResource SectionTitle}"/>
-                        <ui:UI4Pivot Height="150" ItemFontSize="16" SelectedItemForeground="Black">
+                        <ui:UI4Pivot x:Name="DemoPivot" Height="150" ItemFontSize="16" SelectedItemForeground="Black"
+                                     SelectionChanged="DemoPivot_SelectionChanged">
                             <ui:UI4PivotItem Header="首页">
                                 <TextBlock Text="首页内容" Margin="10"/>
                             </ui:UI4PivotItem>
@@ -336,6 +398,14 @@
                                 <TextBlock Text="第 9 行" Margin="0,8,0,0"/><TextBlock Text="第 10 行" Margin="0,8,0,0"/>
                             </StackPanel>
                         </ui:UI4ScrollViewer>
+                        <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                            <ui:UI4Button Content="平滑滚到顶部" Width="140" Height="32" Margin="0,0,10,0"
+                                          Click="ScrollTop_Click"/>
+                            <ui:UI4Button Content="平滑滚到底部" Width="140" Height="32"
+                                          Click="ScrollBottom_Click"/>
+                            <TextBlock x:Name="ScrollEcho" VerticalAlignment="Center" Margin="12,0,0,0"
+                                       Style="{StaticResource SectionHint}"/>
+                        </StackPanel>
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>
@@ -351,15 +421,18 @@
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-                            <ui:UI4Button Content="按钮 1" Grid.Column="0" Margin="12" Height="34" VerticalAlignment="Center"/>
-                            <ui:UI4Button Content="按钮 2" Grid.Column="1" Margin="12" Height="34" VerticalAlignment="Center"/>
+                            <ui:UI4Button Content="按钮 1" Grid.Column="0" Margin="12" Height="34" VerticalAlignment="Center"
+                                          Click="AnyButton_Click"/>
+                            <ui:UI4Button Content="按钮 2" Grid.Column="1" Margin="12" Height="34" VerticalAlignment="Center"
+                                          Click="AnyButton_Click"/>
                         </ui:UI4Grid>
 
                         <TextBlock Text="UI4Panel（阴影 + 悬停缩放）" Style="{StaticResource SectionTitle}"/>
                         <StackPanel Orientation="Horizontal">
                             <ui:UI4Panel Width="260" Height="150" ShadowDepth="15" ShadowOpacity="0.5"
-                                         HoverScale="1.05" Margin="0,0,20,0">
-                                <TextBlock Text="悬停我会放大" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                         HoverScale="1.05" Margin="0,0,20,0"
+                                         MouseLeftButtonUp="PanelUp_Click">
+                                <TextBlock Text="悬停我会放大，点我上报事件" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </ui:UI4Panel>
                             <ui:UI4Panel Width="260" Height="150" CornerRadius="16" BorderThickness="2"
                                          HoverBorderBrush="Green" ShadowDepth="8" ShadowOpacity="0.3">
@@ -401,41 +474,57 @@
                         <TextBlock Text="UI4Menu" Style="{StaticResource SectionTitle}"/>
                         <ui:UI4Menu Width="420">
                             <ui:UI4MenuElementItem Header="文件" KeyTip="(F)">
-                                <ui:UI4MenuElementItem Header="新建" TextIcon="&#xE710;" IconFontFamily="Segoe MDL2 Assets" IconFontSize="14"/>
-                                <ui:UI4MenuElementItem Header="打开" TextIcon="&#xE8E5;" IconFontFamily="Segoe MDL2 Assets" IconFontSize="14"/>
+                                <ui:UI4MenuElementItem Header="新建" TextIcon="&#xE710;" IconFontFamily="Segoe MDL2 Assets" IconFontSize="14"
+                                                       Click="MenuItem_Click"/>
+                                <ui:UI4MenuElementItem Header="打开" TextIcon="&#xE8E5;" IconFontFamily="Segoe MDL2 Assets" IconFontSize="14"
+                                                       Click="MenuItem_Click"/>
                                 <ui:UI4MenuSeparatorElement/>
                                 <ui:UI4MenuElementItem Header="退出" TextIcon="&#xE7E8;" IconFontFamily="Segoe MDL2 Assets" IconFontSize="14"
                                                        Click="MenuExit_Click"/>
                             </ui:UI4MenuElementItem>
                             <ui:UI4MenuElementItem Header="编辑" KeyTip="(E)">
-                                <ui:UI4MenuElementItem Header="撤销" TextIcon="&#xE7A7;" IconFontFamily="Segoe MDL2 Assets" IconFontSize="14"/>
-                                <ui:UI4MenuElementItem Header="重做" TextIcon="&#xE7A6;" IconFontFamily="Segoe MDL2 Assets" IconFontSize="14"/>
+                                <ui:UI4MenuElementItem Header="撤销" TextIcon="&#xE7A7;" IconFontFamily="Segoe MDL2 Assets" IconFontSize="14"
+                                                       Click="MenuItem_Click"/>
+                                <ui:UI4MenuElementItem Header="重做" TextIcon="&#xE7A6;" IconFontFamily="Segoe MDL2 Assets" IconFontSize="14"
+                                                       Click="MenuItem_Click"/>
                             </ui:UI4MenuElementItem>
                         </ui:UI4Menu>
 
                         <TextBlock Text="UI4ContextMenu" Style="{StaticResource SectionTitle}"/>
-                        <TextBlock Text="在下面这块区域点右键弹出自定义菜单" Style="{StaticResource SectionHint}"/>
-                        <Border x:Name="CtxHost" Width="420" Height="90" Background="{DynamicResource UI4.Brush.Surface}" CornerRadius="8"
+                        <TextBlock Style="{StaticResource SectionHint}" TextWrapping="Wrap"
+                                   Text="在下面输入框里选中一段文字再点右键：复制/粘贴/删除/全选都是真操作（复制走 UI4Clipboard，可切到记事本 Ctrl+V 验证）。菜单文案由 UI4MultiLanguage 提供，与行为天然一致；没有选区时复制/删除会自动置灰。"/>
+                        <Border x:Name="CtxHost" Width="420" Height="110" Background="{DynamicResource UI4.Brush.Surface}" CornerRadius="8"
                                 BorderBrush="{DynamicResource UI4.Brush.BorderNormal}" BorderThickness="1">
-                            <TextBlock x:Name="CtxHostText" Text="右键点击这里" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{DynamicResource UI4.Brush.Icon}"/>
+                            <ui:UI4TextBox x:Name="CtxSource" Margin="8" AcceptsReturn="True" TextWrapping="Wrap"
+                                           VerticalContentAlignment="Top"
+                                           Text="在这里选中一部分文字，然后点右键看菜单。"/>
                         </Border>
 
                         <TextBlock Text="UI4NotifyIcon（系统托盘）" Style="{StaticResource SectionTitle}"/>
                         <StackPanel Orientation="Horizontal">
                             <ui:UI4Switch x:Name="TraySwitch" IsOn="False" Toggled="TraySwitch_Toggled"/>
-                            <TextBlock Text="启用托盘图标（使用系统默认图标，左键/右键均有事件）" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                            <TextBlock Text="启用托盘图标：右键弹出真菜单（复制/全选），左键与双击各自上报事件" VerticalAlignment="Center" Margin="10,0,0,0"/>
                         </StackPanel>
                         <TextBlock x:Name="TrayLog" Text="托盘事件：（无）" Style="{StaticResource SectionHint}"/>
 
                         <TextBlock Text="UI4MultiLanguage" Style="{StaticResource SectionTitle}"/>
+                        <TextBlock Style="{StaticResource SectionHint}" TextWrapping="Wrap"
+                                   Text="切语言的做法是设 CultureInfo.CurrentUICulture 再调 UI4MultiLanguage.Refresh()；源码内置 zh/en/ja/ko/de/fr/es/ru 八套词条，UI4ContextMenu 的菜单文案也走同一套。"/>
                         <StackPanel Orientation="Horizontal">
                             <ui:UI4ComboBox x:Name="LangCombo" Width="180" Height="34" SelectedIndex="0"
                                             SelectionChanged="LangCombo_SelectionChanged">
-                                <ComboBoxItem>zh-CN</ComboBoxItem>
-                                <ComboBoxItem>en-US</ComboBoxItem>
+                                <ComboBoxItem Tag="zh-CN">zh-CN</ComboBoxItem>
+                                <ComboBoxItem Tag="en-US">en-US</ComboBoxItem>
+                                <ComboBoxItem Tag="ja-JP">ja-JP</ComboBoxItem>
+                                <ComboBoxItem Tag="ko-KR">ko-KR</ComboBoxItem>
+                                <ComboBoxItem Tag="de-DE">de-DE</ComboBoxItem>
+                                <ComboBoxItem Tag="fr-FR">fr-FR</ComboBoxItem>
+                                <ComboBoxItem Tag="es-ES">es-ES</ComboBoxItem>
+                                <ComboBoxItem Tag="ru-RU">ru-RU</ComboBoxItem>
                             </ui:UI4ComboBox>
                             <TextBlock x:Name="LangSample" Text="" VerticalAlignment="Center" Margin="12,0,0,0"/>
                         </StackPanel>
+                        <TextBlock x:Name="LangKeysLine" Style="{StaticResource SectionHint}" TextWrapping="Wrap"/>
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>
@@ -548,12 +637,109 @@
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>
+            <!-- ============ 12. 剪贴板与原生交互 ============ -->
+            <TabItem Header="剪贴板与原生交互">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="16" MaxWidth="760" HorizontalAlignment="Left">
+
+                        <TextBlock Text="UI4Clipboard.ContainsText()" Style="{StaticResource SectionTitle}"/>
+                        <TextBlock Style="{StaticResource SectionHint}" TextWrapping="Wrap"
+                                   Text="只查格式是否存在，不 OpenClipboard，因此不会与截图/剪贴板历史类程序抢锁，适合放在 CanExecute 与菜单可用态判断里。"/>
+                        <StackPanel Orientation="Horizontal">
+                            <ui:UI4Button Content="查询剪贴板是否有文本" Width="200" Height="34"
+                                          Margin="0,0,10,0" Click="ClipProbe_Click"/>
+                            <TextBlock x:Name="ClipProbeResult" VerticalAlignment="Center" Style="{StaticResource SectionHint}"/>
+                        </StackPanel>
+
+                        <TextBlock Text="UI4Clipboard.TrySetTextAsync()：写入" Style="{StaticResource SectionTitle}"/>
+                        <TextBlock Style="{StaticResource SectionHint}" TextWrapping="Wrap"
+                                   Text="写入固定在后台线程重试（最多约 3 秒），UI 线程立即返回、不等锁。按下按钮后切到记事本按 Ctrl+V，能看到内容即成功；即使别的程序正占着剪贴板，本窗口也不会卡住。"/>
+                        <WrapPanel>
+                            <ui:UI4Button Content="复制一段带时间戳的文本" Width="200" Height="34"
+                                          Margin="0,0,10,10" Click="ClipCopyFixed_Click"/>
+                            <ui:UI4Button Content="复制下方输入框的选区" Width="200" Height="34"
+                                          Margin="0,0,10,10" Click="ClipCopySelection_Click"/>
+                        </WrapPanel>
+                        <ui:UI4TextBox x:Name="ClipSource" Width="460" Height="56" AcceptsReturn="True"
+                                       TextWrapping="Wrap" VerticalContentAlignment="Top" HorizontalAlignment="Left"
+                                       Text="选中我的一部分文字，再按上面第二个按钮复制。"/>
+                        <TextBlock x:Name="ClipWriteResult" Style="{StaticResource SectionHint}" Margin="0,6,0,0"/>
+
+                        <TextBlock Text="UI4Clipboard.TryGetTextAsync()：读回" Style="{StaticResource SectionTitle}"/>
+                        <StackPanel Orientation="Horizontal">
+                            <ui:UI4Button Content="读取剪贴板文本" Width="160" Height="34" Click="ClipRead_Click"/>
+                        </StackPanel>
+                        <TextBlock x:Name="ClipReadResult" Style="{StaticResource SectionHint}" TextWrapping="Wrap" Margin="0,6,0,0"/>
+
+                        <TextBlock Text="UI4ContextMenu 的程序化控制" Style="{StaticResource SectionTitle}"/>
+                        <TextBlock Style="{StaticResource SectionHint}" TextWrapping="Wrap"
+                                   Text="Open()/Close()/IsOpen：菜单对象在「菜单与托盘」页创建并挂在输入框上，这里演示不靠鼠标也能开关。"/>
+                        <StackPanel Orientation="Horizontal">
+                            <ui:UI4Button Content="程序打开菜单" Width="140" Height="34" Margin="0,0,10,0" Click="CtxOpen_Click"/>
+                            <ui:UI4Button Content="程序关闭菜单" Width="140" Height="34" Margin="0,0,10,0" Click="CtxClose_Click"/>
+                            <TextBlock x:Name="CtxOpenState" VerticalAlignment="Center" Style="{StaticResource SectionHint}"/>
+                        </StackPanel>
+
+                        <TextBlock Text="库内部的 Ctrl+C / X / V 接管" Style="{StaticResource SectionTitle}"/>
+                        <TextBlock Style="{StaticResource SectionHint}" TextWrapping="Wrap"
+                                   Text="UI4TextBox、UI4PasswordBox（明文模式）、UI4CodeEditor、UI4TextBlock 内嵌文本框、UI4DataGrid 编辑单元，都在按键隧道阶段把复制/剪切/粘贴改走 UI4Clipboard，绕开 WPF 的 OLE 剪贴板通道——后者在剪贴板被监听程序占用时会在 UI 线程上重试到秒级。密码模式下复制与剪切被拒绝。回归验证见 tools/clipboard-lock-check。"/>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- ============ 13. 主题 · 强调色 · 持久化 · 标题栏 ============ -->
+            <TabItem Header="主题与强调色">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="16" MaxWidth="760" HorizontalAlignment="Left">
+
+                        <TextBlock Text="UI4Theme.SetAccent(Color)" Style="{StaticResource SectionTitle}"/>
+                        <TextBlock Style="{StaticResource SectionHint}" TextWrapping="Wrap"
+                                   Text="只改强调色：会写回当前主题定义并自动派生 AccentDark，全局与所有作用域子树同时跟随，控件不用逐个刷。"/>
+                        <WrapPanel>
+                            <ui:UI4Button Content="强调色·海蓝" Width="130" Height="34" Margin="0,0,10,10" Click="AccentOcean_Click"/>
+                            <ui:UI4Button Content="强调色·橙" Width="130" Height="34" Margin="0,0,10,10" Click="AccentOrange_Click"/>
+                            <ui:UI4Button Content="用取色器选强调色..." Width="170" Height="34" Margin="0,0,10,10" Click="AccentPicker_Click"/>
+                            <ui:UI4Button Content="恢复内置主题" Width="140" Height="34" Margin="0,0,10,10" Click="AccentReset_Click"/>
+                        </WrapPanel>
+                        <TextBlock x:Name="AccentEcho" Style="{StaticResource SectionHint}"/>
+
+                        <TextBlock Text="UI4Theme.Register(UI4ThemeDefinition)：自定义主题" Style="{StaticResource SectionTitle}"/>
+                        <TextBlock Style="{StaticResource SectionHint}" TextWrapping="Wrap"
+                                   Text="克隆内置 light 后改 Key 与若干令牌，Register 再 Apply；右边下拉列出 ThemeKeys，可在全局之间切换。"/>
+                        <StackPanel Orientation="Horizontal">
+                            <ui:UI4Button Content="注册并应用 ocean" Width="160" Height="34" Margin="0,0,10,0" Click="RegisterOcean_Click"/>
+                            <ui:UI4ComboBox x:Name="ThemeKeyCombo" Width="200" Height="34" SelectionChanged="ThemeKeyCombo_SelectionChanged"/>
+                        </StackPanel>
+                        <TextBlock x:Name="ThemeEcho" Style="{StaticResource SectionHint}" Margin="0,6,0,0"/>
+
+                        <TextBlock Text="UI4Theme.Save() / ApplyPersisted()" Style="{StaticResource SectionTitle}"/>
+                        <TextBlock Style="{StaticResource SectionHint}" TextWrapping="Wrap"
+                                   Text="这里刻意用 JsonThemePersistence 把主题模式写到本程序目录的 demo-theme.json，不往 HKCU\Software\StartUI4 写东西（那是 RegistryThemePersistence 的行为，正式应用按宿主策略选择）。删掉该文件即恢复干净。"/>
+                        <WrapPanel>
+                            <ui:UI4Button Content="保存当前主题模式" Width="160" Height="34" Margin="0,0,10,10" Click="ThemeSave_Click"/>
+                            <ui:UI4Button Content="读取并应用已保存" Width="160" Height="34" Margin="0,0,10,10" Click="ThemeApplyPersisted_Click"/>
+                            <ui:UI4Button Content="删除持久化文件" Width="160" Height="34" Margin="0,0,10,10" Click="ThemeClearPersisted_Click"/>
+                        </WrapPanel>
+                        <TextBlock x:Name="PersistEcho" Style="{StaticResource SectionHint}"/>
+
+                        <TextBlock Text="UI4WindowTitleBar：系统标题栏跟随主题" Style="{StaticResource SectionTitle}"/>
+                        <TextBlock Style="{StaticResource SectionHint}" TextWrapping="Wrap"
+                                   Text="标题栏属于非客户区，只能经 DWM 染色。SupportsCaptionColors 探测系统是否允许自定义底色（Win11+），Apply 立即染色，SetEnabled(this,false) 把标题栏交还系统。"/>
+                        <WrapPanel>
+                            <ui:UI4Button Content="Apply(本窗口)" Width="140" Height="34" Margin="0,0,10,10" Click="TitleBarApply_Click"/>
+                            <ui:UI4Button Content="本窗口豁免" Width="140" Height="34" Margin="0,0,10,10" Click="TitleBarDisable_Click"/>
+                            <ui:UI4Button Content="恢复染色" Width="140" Height="34" Margin="0,0,10,10" Click="TitleBarEnable_Click"/>
+                        </WrapPanel>
+                        <TextBlock x:Name="TitleBarEcho" Style="{StaticResource SectionHint}"/>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
         </TabControl>
 
         <Border x:Name="FooterBorder" Grid.Row="2" Background="{DynamicResource UI4.Brush.Surface}" Padding="16,8" BorderBrush="{DynamicResource UI4.Brush.BorderNormal}" BorderThickness="0,1,0,0">
             <Grid>
                 <TextBlock x:Name="StatusText" Text="就绪" Foreground="{DynamicResource UI4.Brush.Icon}" FontSize="12" HorizontalAlignment="Left"/>
-                <TextBlock Text="{Binding Path=(ui:UI4Theme.CurrentMode), StringFormat=主题: {0}}"
+                <TextBlock x:Name="ThemeFooter"
                            Foreground="{DynamicResource UI4.Brush.Icon}" FontSize="12" HorizontalAlignment="Right"/>
             </Grid>
         </Border>
@@ -561,6 +747,7 @@
         <ui:UI4NotifyIcon x:Name="TrayIcon" Grid.Row="0" Visibility="Collapsed"
                           ToolTipText="StartUI4 Demo (.NET 4.8)"
                           TrayLeftMouseUp="TrayIcon_TrayLeftMouseUp"
-                          TrayRightMouseDown="TrayIcon_TrayRightMouseDown"/>
+                          TrayRightMouseDown="TrayIcon_TrayRightMouseDown"
+                          TrayMouseDoubleClick="TrayIcon_TrayMouseDoubleClick"/>
     </Grid>
 </Window>
