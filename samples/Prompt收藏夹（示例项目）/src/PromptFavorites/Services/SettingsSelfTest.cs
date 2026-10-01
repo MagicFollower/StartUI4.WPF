@@ -1,0 +1,155 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Text;
+
+namespace PromptFavorites.Services
+{
+    /// <summary>
+    /// 设置编解码的自检（由 PromptFavorites.exe --selftest 触发，退出码即失败断言数）。
+    /// 只跑纯函数，不读写用户设置文件、不弹窗。
+    /// </summary>
+    internal static class SettingsSelfTest
+    {
+        public static int Run()
+        {
+            var report = new StringBuilder();
+            int failed = 0;
+
+            var hostile = new[]
+            {
+                @"C:\Users\webtu\Documents\Prompts",
+                @"C:\Users\webtu\临时""测试""目录",
+                @"\\server\share\Prompts",
+                @"C:\temp\",
+                @"C:\a b\提示词\模块 (x86)",
+                "编程模块",
+                @"C:\notes",
+                @"C:\\\\already",
+                @"D:\",
+                string.Empty
+            };
+
+            foreach (var value in hostile)
+            {
+                var map = new Dictionary<string, string>(StringComparer.Ordinal);
+                map["rootPath"] = value;
+
+                var parsed = SettingsCodec.Parse(SettingsCodec.Serialize(map));
+                string back;
+                parsed.TryGetValue("rootPath", out back);
+
+                if (!string.Equals(value.Trim(), back ?? string.Empty, StringComparison.Ordinal))
+                {
+                    failed++;
+                    report.AppendLine("FAIL 往返: [" + value + "] -> [" + back + "]");
+                }
+            }
+
+            var seed = new Dictionary<string, string>(StringComparer.Ordinal);
+            seed["rootPath"] = @"C:\Users\webtu\Documents\Prompts";
+            seed["lastModule"] = "编程模块";
+            var firstText = SettingsCodec.Serialize(seed);
+            var currentText = firstText;
+            for (int round = 0; round < 5; round++)
+            {
+                var reparsed = SettingsCodec.Parse(currentText);
+                var reserialized = SettingsCodec.Serialize(reparsed);
+                if (reserialized != currentText)
+                {
+                    failed++;
+                    report.AppendLine("FAIL 稳定性: 第 " + (round + 1) + " 轮序列化文本发生变化");
+                    break;
+                }
+                if (reserialized.Length > firstText.Length)
+                {
+                    failed++;
+                    report.AppendLine("FAIL 稳定性: 第 " + (round + 1) + " 轮体积增长 "
+                        + firstText.Length + " -> " + reserialized.Length);
+                    break;
+                }
+                currentText = reserialized;
+            }
+
+            foreach (var value in hostile)
+            {
+                var legacyText = "{\n  \"rootPath\": \"" + LegacyEscape(value) + "\",\n"
+                    + "  \"lastModule\": \"编程模块\"\n}";
+
+                if (!SettingsCodec.LooksLikeLegacyJson(legacyText))
+                {
+                    failed++;
+                    report.AppendLine("FAIL 旧格式未被识别: [" + value + "]");
+                    continue;
+                }
+
+                var parsed = SettingsCodec.ParseLegacyJson(legacyText);
+                string back;
+                parsed.TryGetValue("rootPath", out back);
+
+                var expected = SettingsCodec.CollapseSeparators(value);
+                var actual = SettingsCodec.CollapseSeparators(back ?? string.Empty);
+                if (!string.Equals(expected, actual, StringComparison.Ordinal))
+                {
+                    failed++;
+                    report.AppendLine("FAIL 旧格式还原: [" + value + "] -> [" + back + "]");
+                }
+            }
+
+            var doubled = SettingsCodec.CollapseSeparators(
+                "C:" + new string('\\', 1 << 16) + "Users" + new string('\\', 1 << 16) + "Prompts");
+            if (doubled.Length > 64)
+            {
+                failed++;
+                report.AppendLine("FAIL 分隔符折叠失效，长度=" + doubled.Length);
+            }
+
+            var geometry = new SettingsService();
+            var badValues = new Dictionary<string, string>(StringComparer.Ordinal);
+            badValues["windowWidth"] = "NaN";
+            badValues["windowHeight"] = "Infinity";
+            badValues["windowLeft"] = "1e400";
+            geometry.ApplyMap(badValues);
+            if (double.IsNaN(geometry.WindowWidth) || double.IsInfinity(geometry.WindowHeight)
+                || double.IsNaN(geometry.WindowLeft) || double.IsInfinity(geometry.WindowLeft))
+            {
+                failed++;
+                report.AppendLine("FAIL 非法几何值被接受");
+            }
+
+            var sane = new SettingsService();
+            var goodValues = new Dictionary<string, string>(StringComparer.Ordinal);
+            goodValues["windowState"] = "Maximized";
+            goodValues["sortMode"] = "UpdatedAt";
+            sane.ApplyMap(goodValues);
+            if (sane.WindowState != System.Windows.WindowState.Maximized)
+            {
+                failed++;
+                report.AppendLine("FAIL windowState 未还原");
+            }
+
+            var status = failed == 0
+                ? "PASS 断言组=" + (hostile.Length * 2 + 3)
+                : report.ToString();
+
+            try
+            {
+                File.WriteAllText(
+                    Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "selftest.txt"),
+                    "SettingsSelfTest " + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
+                    + " failed=" + failed + "\r\n" + status);
+            }
+            catch
+            {
+            }
+
+            return failed;
+        }
+
+        private static string LegacyEscape(string value)
+        {
+            if (string.IsNullOrEmpty(value)) return string.Empty;
+            return value.Replace("\\", "\\\\").Replace("\"", "\\\"");
+        }
+    }
+}

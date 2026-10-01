@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <LangVersion>7.3</LangVersion>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <RootNamespace>StartUI4Controls</RootNamespace>
+    <AssemblyName>StartUI4Controls</AssemblyName>
+
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageId>StartUI4.WPF</PackageId>
+    <Title>StartUI4.WPF</Title>
+    <Authors>KS.STUDIO</Authors>
+    <Description>StartUI4 WPF control library, ported to .NET Framework 4.8.</Description>
+    <FileVersion>1.0.20</FileVersion>
+    <AssemblyVersion>1.0.20</AssemblyVersion>
+    <Version>1.0.20</Version>
+    <PackageProjectUrl>https://github.com/KSSTU/StartUI4.WPF</PackageProjectUrl>
+    <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="../../LICENSE.txt" Pack="true" PackagePath="/" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="System.Drawing" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AvalonEdit" Version="6.3.1.120" />
+    <PackageReference Include="System.Data.SQLite" Version="2.0.3" />
+  </ItemGroup>
+
+</Project>
