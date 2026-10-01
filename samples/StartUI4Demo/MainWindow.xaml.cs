@@ -274,6 +274,15 @@ namespace StartUI4Demo
             DependencyPropertyDescriptor.FromProperty(UI4CircleSlider.ValueProperty, typeof(UI4CircleSlider))
                 .AddValueChanged(CircleA, delegate
                 {
+                    // UI4CircleSlider 载入后会逐帧跑入场动画，ValueChanged 因此每帧都来一次。
+                    // 不加这道闸门，底部状态栏会被刷成「永远只显示这个数字」，
+                    // 其它控件的反馈（含回归脚本读的状态栏）全被冲掉。
+                    if (CircleEcho != null)
+                    {
+                        CircleEcho.Text = "UI4CircleSlider A Value = " +
+                                          CircleA.Value.ToString("0", CultureInfo.InvariantCulture);
+                    }
+                    if (!IsSelectorTabActive()) return;
                     SetStatus("UI4CircleSlider A Value = " + CircleA.Value.ToString("0", CultureInfo.InvariantCulture));
                 });
 
@@ -289,6 +298,14 @@ namespace StartUI4Demo
                 {
                     SetStatus("UI4ProgressRing IsActive = " + Ring1.IsActive);
                 });
+        }
+
+        // UI4CircleSlider 的入场动画每帧都触发 ValueChanged，只有当「选择器」页在前台时才允许它写状态栏，
+        // 否则底部状态栏会被这个数字刷屏，其它控件的反馈就再也看不见了。
+        private bool IsSelectorTabActive()
+        {
+            TabItem item = DemoTabs == null ? null : DemoTabs.SelectedItem as TabItem;
+            return item != null && (item.Header as string) == "选择器";
         }
 
         // ---------- 文本显示 ----------

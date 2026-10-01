@@ -98,6 +98,12 @@ StartUI4.WPF_net48/
 
 ## 5. 构建与验证
 
+> **本节与 §4 的目录树是 net48 基线的历史口径。** 里面列的 `shot.ps1 / interact.ps1 / theme.ps1 / scopewalk.ps1 /
+> p2verify.ps1 / p3verify.ps1 / titlebar.ps1 / titlebar-live.ps1` 与 `shots/` 在两个仓库中都不存在
+> （只有 `Agent手册/merge-manual.ps1` 是真的）。本目录（net10 版）已用可重跑的 `tools/Net10Regression`
+> 取代它们：UIA 逐页走查 + 进程内 STA 断言 + 系统级实证 + 剪贴板持锁矩阵，用法见 `tools/Net10Regression/USAGE.md`，
+> 迁移本身的改动清单与回归结果见 `PORTING-NET10.md`。
+
 ```bash
 dotnet build StartUI4Controls.sln        # 0 error；5 条为上游遗留 CS0414
 ```

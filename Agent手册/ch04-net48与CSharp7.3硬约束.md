@@ -1,5 +1,20 @@
 # 第 04 章 net48 与 C# 7.3 硬约束
 
+> **本章描述的是 net48 基线**（`E:\Qoder灵感项目\StartUI4.WPF_net48`）。本仓库已迁到 .NET 10，差异如下，写作时以本节为准：
+> - 工程三开关变成 `net10.0-windows` / `LangVersion=latest` / `Nullable=disable` / `ImplicitUsings=disable`
+>   ——**语言上限解除了，但源码没有回写现代语法**，因此本章的禁用清单（`record`、switch 表达式、`using var`、
+>   target-typed `new()`、`is not`、引用类型 `?`）对「读代码」仍成立，对「能不能写」已不再成立。
+> - net48 BCL 缺失项里，`Math.Clamp`、`Enum.GetValues<T>`、`string.Contains(char)`、`Dictionary.TryAdd`、`??=`、
+>   `Random.Shared`、`Index/Range`、`Span`、`System.Text.Json`、`DateOnly/TimeOnly`、`EffectiveViewportChanged`
+>   在 net10 **都已可用**；库里那 17 处 `Math.Max(v, Math.Min(...))` 因此是可选清理项，不是约束。
+>   仍不存在的是 .NET Framework 专属物：`AppDomain` 证据/私有目录、`BinaryFormatter`、CAS/XBAP、`System.Drawing` 隐式引用。
+> - `ConditionalWeakTable` 的三条限制（值须引用类型、无 `AddOrUpdate`、重复 `Add` 抛）在 net10 已放宽，
+>   `AddOrUpdate`/`TryGetValue` 都在。
+> - 产物与宿主机制：`exe` = 原生 apphost + 同名托管 `dll`；`.deps.json`/`.runtimeconfig.json` 出现，`exe.config` 消失；
+>   `TargetFrameworkAttribute` 变成 `.NETCoreApp,Version=v10.0`。
+> - 验收多了一条硬要求：跑 `tools\Net10Regression\Net10Regression.exe --all`（旧 `.ps1` 脚本已不存在）。
+> 详见仓库根 `PORTING-NET10.md`。
+
 > 本章解决：把「能跑在 net6 上的现代 C# 写法」变成「能在 net48 + C# 7.3 编译通过的写法」，并给出降级检查清单。
 > 读者：AI Agent（要在本项目之外新建/续写 WPF 业务代码）
 > 前置章节：第 02 章、第 03 章

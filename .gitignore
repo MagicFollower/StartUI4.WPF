@@ -404,3 +404,8 @@ $RECYCLE.BIN/
 #   upstream/  —— 上游原始源码，作为移植对照基准
 # 若你希望仓库不含二进制截图，可自行取消下一行注释：
 # shots/
+# net10 迁移期的临时目录（A/B 重编、一次性探针），可按 PORTING-NET10.md §7.1 重建
+_ab/
+_probe/
+_probe48/
+_scratch/

@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    net10 迁移回归 harness（README 见本目录 USAGE.md）：
+    逐页 UIA 走查 / 进程内 STA 断言 / 运行真实性与注册表零污染 / 剪贴板持锁矩阵。
+    构建：dotnet build tools/Net10Regression/Net10Regression.csproj
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <AssemblyName>Net10Regression</AssemblyName>
+    <RootNamespace>Net10Regression</RootNamespace>
+    <StartupObject>Net10Regression.Program</StartupObject>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/StartUI4Controls/StartUI4Controls.csproj" />
+  </ItemGroup>
+
+</Project>

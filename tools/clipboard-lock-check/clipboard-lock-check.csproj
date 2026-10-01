@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    剪贴板持锁回归验证程序：独立进程 OpenClipboard 持锁 + 真 keybd_event 按键 + 原生读回。
+    已并入 StartUI4Controls.sln（net48 时代它不在任何 sln 里）。
+    构建：dotnet build tools/clipboard-lock-check/clipboard-lock-check.csproj
+    运行：直接执行 exe 跑全矩阵，结果写入同目录 results.txt；子命令见 Program.cs 注释。
+  -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AssemblyName>clipboard-lock-check</AssemblyName>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/StartUI4Controls/StartUI4Controls.csproj" />
+  </ItemGroup>
+</Project>

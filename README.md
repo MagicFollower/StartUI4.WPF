@@ -1,9 +1,15 @@
-# StartUI4.WPF 控件库文档（.NET Framework 4.8 移植版）
+# StartUI4.WPF 控件库文档（.NET 10 LTS 版）
 
-> 一套现代风格（Modern Design）的 WPF UI 控件库，本仓库为 **.NET Framework 4.8 / C# 7.3** 的完整移植版本。
+> 一套现代风格（Modern Design）的 WPF UI 控件库，本仓库为 **.NET 10 (LTS) / net10.0-windows** 版本。
 
 > **上游仓库**：<https://github.com/KSSTU/StartUI4.WPF>（net6.0-windows7.0）
-> **移植与差异说明**：见本仓库 [`PORTING.md`](PORTING.md)
+> **本版本的来历**：由 `.NET Framework 4.8` 移植版（`E:\Qoder灵感项目\StartUI4.WPF_net48`）retarget 而来；
+> net6→net48 的降级记录见 [`PORTING.md`](PORTING.md)，net48→net10 的改动清单、探针实测值与回归结果见
+> [`PORTING-NET10.md`](PORTING-NET10.md)。
+>
+> **底线变化（必读）**：本版本要求 **.NET 10 桌面运行时**，因此**不再支持 Windows 7 / 8.1**；
+> 客户端支持范围是 Windows 11 与 Windows 10（1607/1809/21H2 的 LTSC / 企业版）。
+> 需要保 Win7/8.1 的场景请留在 net48 版，或另做多目标（见 PORTING-NET10.md §2 方案 C）。
 
 ---
 
@@ -19,23 +25,25 @@
 - [八、与上游（net6 版）的差异与已知问题](#八与上游net6-版的差异与已知问题)
 - [九、附录](#九附录)
 - [十、主题系统（全局 / 局部作用域 / 高对比度）](#十主题系统全局--局部作用域--高对比度)
+- [十一、.NET 10 迁移与回归](#十一net-10-迁移与回归)
 - [许可证](#许可证)
 
 ---
 
 ## 一、简介
 
-**StartUI4.WPF** 是一套对齐现代设计语言的 WPF 控件库。本移植版将上游的 .NET 6 代码完整重写为
-**.NET Framework 4.8**，可在 VS2019 及更高版本、仅安装 .NET Framework 4.8  targeting pack 的环境中编译与运行。
+**StartUI4.WPF** 是一套对齐现代设计语言的 WPF 控件库。本版本在原 .NET Framework 4.8 移植版的基础上
+retarget 到 **.NET 10 (LTS)**，可在 Visual Studio 2026（18.x+）或安装 .NET 10 SDK 的环境里编译与运行。
 
-- **版本**：1.0.20
+- **版本**：2.0.0（TFM 与 OS 底线是 breaking change，故进主版本）
 - **原作者**：KS.STUDIO
-- **目标框架**：.NET Framework 4.8（`net48`）
-- **语言级别**：C# 7.3（net48 默认，不依赖任何高版本语法开关）
+- **目标框架**：.NET 10（`net10.0-windows`，`UseWPF=true`）
+- **语言级别**：`LangVersion=latest`，但源码保持与 net48 版逐行可比（**没有**回写现代语法），
+  `Nullable` / `ImplicitUsings` 仍为 disable
 - **NuGet 包名**：StartUI4.WPF
-- **支持系统**：Windows 7 / 8.1 / 10 / 11（.NET Framework 4.8 所支持的范围）
+- **支持系统**：Windows 11（23H2+）/ Windows 10（1607、1809、21H2 的 LTSC 与企业版）；**不含 Win7 / 8.1**
 - **运行时自检**：Demo 主窗口标题栏右侧实时显示 `RuntimeInformation.FrameworkDescription`，
-  用于确认程序确实运行在 .NET Framework 4.8 上
+  本机实测 `.NET 10.0.12`
 
 ---
 
@@ -48,7 +56,7 @@
 - **开箱即用** —— 引用程序集或 NuGet 包后直接在 XAML 中使用，无需额外资源字典
 - **主题系统** —— 亮/暗/跟随系统/高对比度一键切换，30 个颜色令牌经 `DynamicResource` 桥接到宿主；`UI4ThemeScope` 可对单张卡片或整个窗口局部换肤；`UI4WindowTitleBar` 经 DWM 让**系统标题栏**同步跟随（详见第十节）
 - **纯代码模板** —— 所有控件模板由代码构建，不依赖 Themes/generic.xaml，单 dll 即可分发
-- **.NET Framework 4.8 原生** —— 无 `IsExternalInit` 等 polyfill、无 LangVersion 开关，老工具链亦可编译
+- **.NET 10 原生** —— 单文件类库 + `.deps.json`/`.runtimeconfig.json` 由 SDK 生成；不需要 `IsExternalInit` 之类的 polyfill
 
 ---
 
@@ -58,10 +66,10 @@
 
 | 项目 | 要求 |
 |---|---|
-| 操作系统 | Windows 7 SP1 及以上 |
-| 运行时 | .NET Framework 4.8 |
-| 编译工具 | Visual Studio 2019 16.8+ / VS2022 / .NET SDK（MSBuild）均可 |
-| 依赖包 | AvalonEdit 6.3.1.120、System.Data.SQLite 2.0.3（仅 `UI4CodeEditor` / 内部 `UI4DataGrid` 需要） |
+| 操作系统 | Windows 11（23H2+）或 Windows 10（1607 / 1809 / 21H2 的 LTSC 与企业版）；**不支持 Win7 / 8.1** |
+| 运行时 | .NET 10 桌面运行时（`Microsoft.WindowsDesktop.App` 10.0.x） |
+| 编译工具 | .NET SDK 10.0.1xx 及以上（本机实测 10.0.401）；Visual Studio 2026 18.x+ |
+| 依赖包 | 仅 AvalonEdit 6.3.1.120（`UI4CodeEditor` 需要）。`System.Drawing.Common`、`Microsoft.Win32.SystemEvents`、`Microsoft.Win32.Registry` 均由 `Microsoft.WindowsDesktop.App` 框架引用提供，**不必再显式引用**；net48 版的 `System.Data.SQLite 2.0.3` 已随 `UI4DataGrid` 死代码一并移除（详见 PORTING-NET10.md §4） |
 
 ### 2. 方式一：源码构建
 
@@ -72,8 +80,11 @@ dotnet build StartUI4Controls.sln
 
 产物：
 
-- `src/StartUI4Controls/bin/Debug/net48/StartUI4Controls.dll`
-- `src/StartUI4Controls/bin/Debug/StartUI4.WPF.1.0.20.nupkg`（构建时自动打包）
+- `src/StartUI4Controls/bin/Debug/net10.0-windows/StartUI4Controls.dll`（+ 同名 `.xml` 文档、`.pdb` 符号）
+- 打包**不再随构建自动进行**（`GeneratePackageOnBuild=false`）：需要包时显式执行
+  `dotnet pack src/StartUI4Controls/StartUI4Controls.csproj -c Release`，产出 `StartUI4.WPF.2.0.0.nupkg`。
+  net48 版把 `GeneratePackageOnBuild` 设成了 true，`dotnet build` 会顺带跑 pack，一旦许可证文件解析失败
+  就报 NU5019 把整条构建链拖红——这是本次迁移顺手修掉的一个工程坑。
 
 ### 3. 方式二：NuGet 引用
 
@@ -106,7 +117,7 @@ xmlns:ui="clr-namespace:StartUI4Controls;assembly=StartUI4Controls"
 启动 `samples/StartUI4Demo`，主窗口标题栏右侧会显示实际运行时，例如：
 
 ```
-实际运行时： .NET Framework 4.8.9345.0
+实际运行时： .NET 10.0.12
 ```
 
 若误跑在 .NET Core / .NET 5+ 上，此处前缀会变为 `.NET Core` / `.NET`，可立即识别。
@@ -158,7 +169,7 @@ xmlns:ui="clr-namespace:StartUI4Controls;assembly=StartUI4Controls"
 | `UI4LanguageKey` | —（枚举） | 静态文案键（OK/Cancel/Notice/ColorPicker/Undo/…/SelectAll） |
 | `TabCloseRoutedEventArgs` | `RoutedEventArgs` | `UI4Tab.CloseTab` 事件参数（携带被关的 `UI4TabItem`） |
 
-> `UI4DataGrid`、`UI43DSphere` 在上游即为 `internal` 且无引用，本移植版保持 internal，不对外公开（见附录 C）。
+> `UI4DataGrid`、`UI43DSphere` 在上游即为 `internal` 且无引用；**net10 版已把这两个死代码文件连同 `System.Data.SQLite` 依赖一起删除**（见 `PORTING-NET10.md` §4）。
 
 ---
 
@@ -1348,23 +1359,22 @@ string ok = UI4MultiLanguage.Get(UI4LanguageKey.OK);   // "OK"
 
 ## 六、完整使用教程：从零搭建一个应用
 
-以下以 Visual Studio 2022 + .NET Framework 4.8 为例，从零搭一个使用本库的应用。
+以下以 Visual Studio 2026 + .NET 10 SDK 为例，从零搭一个使用本库的应用。
 
 ### 步骤 1：新建项目
 
-新建「WPF 应用（.NET Framework）」项目，或在 SDK 风格 csproj 中写：
+新建「WPF 应用」项目（.NET 10），或在 SDK 风格 csproj 中写：
 
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net48</TargetFramework>
+    <TargetFramework>net10.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
-    <LangVersion>7.3</LangVersion>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\StartUI4Controls\StartUI4Controls.csproj" />
-    <!-- 或 <PackageReference Include="StartUI4.WPF" Version="1.0.20" /> -->
+    <!-- 或 <PackageReference Include="StartUI4.WPF" Version="2.0.0" /> -->
   </ItemGroup>
 </Project>
 ```
@@ -1469,22 +1479,31 @@ protected override void OnClosed(EventArgs e)
 
 启动后查看窗口中自行显示的 `RuntimeInformation.FrameworkDescription`，
 或临时加一行 `MessageBox.Show(System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription);`
-确认输出为 `.NET Framework 4.8.x`。
+确认输出为 `.NET 10.x`。
 
 ---
 
 ## 七、Demo 工程指南
 
-仓库自带完整演示工程 `samples/StartUI4Demo`（net48），覆盖全部公开控件。
+仓库自带完整演示工程 `samples/StartUI4Demo`（net10.0-windows），覆盖全部公开控件，共 13 页（`--tab=0..12`）。
 
 ### 构建与运行
 
 ```bash
-# 本仓库没有 .sln，按 csproj 构建；组件库开了 GeneratePackageOnBuild 且缺 LICENSE 打包元数据，
-# 必须带 -p:GeneratePackageOnBuild=false，否则 pack 阶段报 NU5019 拖垮整个构建。
-dotnet build samples/StartUI4Demo/StartUI4Demo.csproj -p:GeneratePackageOnBuild=false
-samples\StartUI4Demo\bin\Debug\net48\StartUI4Demo.exe            # 直接运行
-samples\StartUI4Demo\bin\Debug\net48\StartUI4Demo.exe --tab=11   # 直接打开指定分页（0 起）
+# 本仓库有 StartUI4Controls.sln，含 4 个工程：库 / Demo / clipboard-lock-check / Net10Regression
+dotnet build StartUI4Controls.sln
+samples\StartUI4Demo\bin\Debug\net10.0-windows\StartUI4Demo.exe            # 直接运行
+samples\StartUI4Demo\bin\Debug\net10.0-windows\StartUI4Demo.exe --tab=11   # 直接打开指定分页（0 起）
+```
+
+net48 时代要求带 `-p:GeneratePackageOnBuild=false`（否则 pack 阶段 NU5019 拖垮构建），
+本仓库已把 `GeneratePackageOnBuild` 直接设为 false，**不再需要这个参数**；需要包时显式 `dotnet pack`。
+
+回归（自动化）：
+
+```bash
+dotnet build StartUI4Controls.sln
+tools\Net10Regression\bin\Debug\net10.0-windows\Net10Regression.exe --all
 ```
 
 或在 Visual Studio 中：**右键 `StartUI4Demo` → 设为启动项目** 后 F5。
@@ -1548,10 +1567,12 @@ StartUI4Demo.exe --tab=5     # 直接打开第 5 页（0 起），便于自动�
 
 ## 八、与上游（net6 版）的差异与已知问题
 
+> 本节第 1–4 条记录 **net6 → net48** 那段历史（`PORTING.md`）；本仓库（net10）在其之上又走了一步，见第 5 条与 `PORTING-NET10.md`。
+
 完整清单见 [`PORTING.md`](PORTING.md)，摘要：
 
 1. **目标框架**：`net6.0-windows7.0` → `net48`；语言级别锁定 C# 7.3。
-2. **依赖**：移除源码中从未使用的 `Microsoft.Data.Sqlite`；保留 `AvalonEdit`、`System.Data.SQLite`。
+2. **依赖**：移除源码中从未使用的 `Microsoft.Data.Sqlite`；保留 `AvalonEdit`、`System.Data.SQLite`（后者已随 net10 版的死代码清理一并移除，见第 5 条）。
 3. **本移植版修复的上游缺陷**：
    - `UI4Switch` 被拉伸时轨道与滑块分离；
    - `UI4ListView` / `UI4GridView` 悬浮缩放导致文字模糊（Effect 与 ScaleTransform 同层）；
@@ -1561,6 +1582,21 @@ StartUI4Demo.exe --tab=5     # 直接打开第 5 页（0 起），便于自动�
    - `UI4TextBlock.GradientStart/End` 为未实现的死属性（渐变请用 `Foreground`）；
    - 5 个只写不读的私有字段（CS0414 警告保留）；
    - `UI4DataGrid` / `UI43DSphere` 为 internal 死代码，且 SQLite 原生 `SQLite.Interop.dll` 不随类库部署。
+5. **net48 → net10 的差异**（详见 `PORTING-NET10.md`）：
+   - TFM 改 `net10.0-windows`，**OS 底线升到 Win10（LTSC/企业版）+ Win11**，不再支持 Win7/8.1；
+   - 删除 `UI4DataGrid` / `UI43DSphere` 两个 internal 死代码与 `System.Data.SQLite` 依赖；
+     `System.Drawing` 的显式框架引用也不再需要（`System.Drawing.Common`、`Microsoft.Win32.SystemEvents`
+     都由 `Microsoft.WindowsDesktop.App` 框架引用提供，探针 P01/P12 实测）；
+   - `UI4Menu` 样式初始化失败不再弹模态框，改为写 `ui4menu-style-error.log` 并抛出；
+   - 产物形态：`StartUI4Demo.exe` 变成原生 apphost + 同名托管 `dll`，`exe.config` 让位于
+     `runtimeconfig.json` / `deps.json`；TFM 特性串也从 `.NETFramework,Version=v4.8` 变成 `.NETCoreApp,Version=v10.0`；
+   - **UIA 暴露差异（新发现，属无障碍待办）**：`UI4Pivot` / `UI4Tab` / `UI4NavigationView` 的内容区文本，
+     在 net10 下不再进入 UIA 树（同源码重编的 net48 原始视图里 6 处命中，net10 为 0）。
+     渲染本身没坏——harness 的进程内断言 I13~I16 按 Demo 的嵌套方式（Show 前选页 + ScrollViewer）直接翻视觉树，
+     三个容器的选中内容都在；差异只在自动化与辅助技术可读性。
+     另有一条**两个运行时共有**的缺口：`UI4ProgressBar` / `UI4CircleSlider` 等控件本体本来就不进 UIA。
+     要让屏幕阅读器可用，需要给这些容器补 `AutomationPeer`（`GetChildrenCore` / `ContentElement`），
+     进度类控件再补 `RangeValue` 型 peer。判别过程见 `PORTING-NET10.md` §7.3。
 
 ---
 
@@ -1586,7 +1622,10 @@ StartUI4Demo.exe --tab=5     # 直接打开第 5 页（0 起），便于自动�
 </Window>
 ```
 
-### B. 解决方案配置与 4.8 的关系
+### B. 解决方案配置与目标框架的关系（net48 历史口径）
+
+> 本节描述 net48 基线。net10 下：`.sln` 含 4 个工程（库/Demo/两个工具），
+> 运行期框架改由 `runtimeconfig.json` 声明 `Microsoft.WindowsDesktop.App 10.0.x`，不再有 `exe.config`。
 
 `.sln` 中**不含**任何 4.8 字样：编译期 4.8 来自各 csproj 的 `<TargetFramework>net48</TargetFramework>`，
 运行期 4.8 来自自动生成的 `exe.config` 中 `<supportedRuntime sku=".NETFramework,Version=v4.8"/>`。
@@ -1604,6 +1643,11 @@ sln 的 `Debug/Release × Any CPU/x64/x86` 只决定构建配置与平台映射�
 | 其余 `*Converter`（`IndexPlusOneConverter`、`ObjectIsStringConverter`、`BoolToVisibilityConverter`、`PlaceholderVisibilityConverter`、`InnerPaddingConverter`） | **`public`**，随库导出，宿主 XAML 可直接复用 |
 
 ### D. 发布产物清单（哪些文件是运行必需的）
+
+> 下表是 **net48 基线**的产物口径，保留作历史对照。net10 的产物形态不同：
+> `StartUI4Demo.exe` 只有原生 apphost（约 150 KB），托管主体在同名 `StartUI4Demo.dll`；
+> 不再有 `StartUI4Demo.exe.config`，改为 `StartUI4Demo.runtimeconfig.json` + `.deps.json`（这两个是 .NET 宿主定位框架与依赖的必需文件）；
+> `System.Data.SQLite.dll` 与其原生 `SQLite.Interop.dll` 随死代码清理彻底消失。
 
 以 `samples/StartUI4Demo/bin/Release/net48` 构建出的 7 个文件为例（合计约 1472 KB）：
 
@@ -1650,8 +1694,8 @@ WPF 的 `System.Windows.Clipboard` 走 OLE 通道（写入前 `OleFlushClipboard
 会在 UI 线程上卡顿秒级，甚至抛 `CLIPBRD_E_CANT_OPEN`。库内现已统一改用 Win32 原生通道，使用者无需配合：
 
 - 控件侧：`Internal/ClipboardCommandTakeover` 在**按键隧道（`PreviewKeyDown`）**阶段接管 Ctrl+C/X/V，
-  `UI4TextBox` / `UI4PasswordBox`（明文模式）/ `UI4CodeEditor` / `UI4TextBlock` / `UI4DataGrid` 编辑单元
-  构造或准备编辑时自动安装；右键菜单项与快捷键共用同一实现。
+  `UI4TextBox` / `UI4PasswordBox`（明文模式）/ `UI4CodeEditor` / `UI4TextBlock`
+  构造或准备编辑时自动安装；右键菜单项与快捷键共用同一实现。（net48 版这里还列有 `UI4DataGrid` 编辑单元，该控件已随死代码清理删除。）
 - 需要自行写剪贴板时（例如"一键复制"按钮）直接调用：
 
 ```csharp
@@ -1665,7 +1709,8 @@ if (UI4Clipboard.ContainsText()) { /* 不打开剪贴板，不参与抢锁 */ }
 - 只在 `CommandBinding.PreviewExecuted` 上接管**拦不住真实按键**（实测仍阻塞约 2 秒），必须在 `PreviewKeyDown`。
 - Notepad 式"所有权 + 延迟渲染"（`SetClipboardData(CF_UNICODETEXT, NULL)` + `WM_RENDERFORMAT`）在装有剪贴板历史工具的
   机器上不可靠：实测取锁与获得所有权均成功，但延迟渲染声明固定失败且从不收到渲染消息；同路径 eager 写入则正常。
-- 回归验证：`dotnet build tools/clipboard-lock-check/clipboard-lock-check.csproj -p:GeneratePackageOnBuild=false`
+- 回归验证：`dotnet build tools/clipboard-lock-check/clipboard-lock-check.csproj`（net10 版已把 `GeneratePackageOnBuild`
+  设为 false，不再需要 `-p:GeneratePackageOnBuild=false`；该工具也已并入 `StartUI4Controls.sln`）
   后直接运行 exe，结果写入同目录 `results.txt`（10 条用例，含框架 `TextBox` 基线）。
 
 ### F. 输出目录里的 `.pdb` / `.xml` 是什么，运行时到底需要哪些文件（问答）
@@ -1866,7 +1911,7 @@ int  cref    = UI4WindowTitleBar.ToColorRef(color);       // Color -> DWM COLORR
 - 标题栏染色维度由系统给出：Windows 10 1903~2004 只认深/浅标志（标题栏变深但底色仍是系统深色，非主题 `Background`）；
   配色属性在更早系统与 Windows Server 上会静默失败，此时只保留深/浅标志。圆角、阴影与动画由 DWM 掌控，库不改。
 - **不含任何 UI4 控件**的窗口没有加载钩子可挂，需自行调用一次 `UI4WindowTitleBar.Apply(this)`（否则要等到下一次主题切换才被清扫）。
-- 命令式控件（`UI4Button`/`UI4ComboBox`/`UI4Menu`/`UI4ListBox`/`UI4NavigationView`/`UI4DataGrid` 等）在
+- 命令式控件（`UI4Button`/`UI4ComboBox`/`UI4Menu`/`UI4ListBox`/`UI4NavigationView` 等）在
   **作用域子树内**切换时仍会重建 `Style`；待 P2 把这些模板逐批改用令牌引用后，该开销归零（见 `PORTING.md` 第 11、12、13、14 节）。
 - `UI4ComboBox`（含闭合选中框背景、焦点渐变）、`UI4ListBox`（面板背景、悬浮色）的背景**已跟随主题**，
   深色与高对比度下文字与底面对比度成立（`p3verify.ps1` H 组逐主题断言）。浅色主题下有一处**有意的观感变化**：
@@ -1876,6 +1921,50 @@ int  cref    = UI4WindowTitleBar.ToColorRef(color);       // Color -> DWM COLORR
   二者均归入 P2 批次 ②。
 - `UI4ListBox` 编号样式的角标**数字颜色**在 `Dispatcher.BeginInvoke` 中重绘，作用域下该项可能取到全局色（同一处遗留，P2 批次 ② 消除）。
 - 主题切换为瞬时生效，无交叉淡入动画。
+
+---
+
+## 十一、.NET 10 迁移与回归
+
+本节只讲「从 net48 迁到 net10 之后有什么不一样、怎么验」，细节在 [`PORTING-NET10.md`](PORTING-NET10.md)。
+
+### 1. 工程侧
+
+| 项 | net48 版 | 本版 |
+|---|---|---|
+| TFM | `net48` | `net10.0-windows` |
+| 语言 | C# 7.3 锁定 | `latest`（源码未回写新语法，同一份代码仍能以 net48/C#7.3 编过，已在 `_ab` 试验证） |
+| 依赖 | AvalonEdit + System.Data.SQLite + 显式 `System.Drawing` 引用 | **仅 AvalonEdit**；Drawing/SystemEvents/Registry 由 WindowsDesktop 框架引用提供 |
+| 打包 | `GeneratePackageOnBuild=true`（`dotnet build` 会顺带 pack，NU5019 会拖红整条链） | `false`，显式 `dotnet pack` |
+| 产物 | 托管 `exe` + `exe.config`（`supportedRuntime sku=.NETFramework,Version=v4.8`） | 原生 apphost `exe` + 托管 `dll` + `runtimeconfig.json`/`deps.json`，TFM 特性串 `.NETCoreApp,Version=v10.0` |
+| OS | Win7/8.1/10/11 | Win10（LTSC/企业版）+ Win11 |
+
+### 2. 一键回归
+
+```bash
+dotnet build StartUI4Controls.sln
+tools\Net10Regression\bin\Debug\net10.0-windows\Net10Regression.exe --all
+```
+
+覆盖：13 页 UIA 逐页走查（真实按键 Ctrl+C/X/V + 原生读回剪贴板、模态框、右键菜单、托盘开关、下拉弹出层、
+DWM 标题栏跨进程回读、`demo-theme.json` 往返）、系统级（TFM 三层实证、注册表零污染、异常日志、
+`clipboard-lock-check` 持锁矩阵）、进程内 STA（令牌桥、三主题、按钮对比度、局部作用域、SetAccent/Register/持久化、
+剪贴板通道、8 套语言、导航容器内容）。`--help` 见 `tools/Net10Regression/USAGE.md`。
+
+本轮结果：**326 PASS / 0 FAIL，退出码 0**
+（net10 逐页 145/0、同源码重编的 net48 A/B 逐页 145/0、系统级 10/0、进程内 26/0）。
+两侧跑同一套用例、同一份 Demo 源码，逐条同结果；`T0-runtime` 一条在两侧分别报
+`.NET 10.0.12` 与 `.NET Framework 4.8.9345.0`，证明对照确实换了运行时。
+剪贴板持锁矩阵 10/10：接管后 UI 阻塞 11~30ms，未接管的框架通道在同一把锁下阻塞 1048ms。
+唯一真实的 net10 独有差异是 UIA 暴露（不在用例失败里体现，用 `--dump=6` 两侧对比可见），见 §8.5 与 `PORTING-NET10.md` §7.3。
+
+### 3. 已知限制
+
+- `UI4Pivot` / `UI4Tab` / `UI4NavigationView` 的内容区文本在 net10 不进 UIA 树（同源码的 net48 会进），
+  屏幕阅读器与 UIA 自动化因此拿不到页面主体；渲染不受影响（进程内 I13~I16 已证）。需要库侧补 `AutomationPeer`。
+- 需要 Windows 7 / 8.1 的场景请继续用 net48 版仓库，或按 `PORTING-NET10.md` §2 的方案 C 改多目标。
+- 附录 B / D / E / F 中的产物清单与宿主机制描述仍以 net48 基线为口径（历史留档），
+  net10 的对应内容看本节与 `PORTING-NET10.md`。
 
 ---
 
