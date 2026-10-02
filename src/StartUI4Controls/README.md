@@ -244,6 +244,7 @@ DP 变更 → OnStyleRefresh → Style = BuildXxxStyle() → 完整重建
 | **P0** | UI4ListView/UI4Tab 实现 IThemeAware | 2 个控件 | 小 |
 | **P0** | DP 默认值在构造函数中初始化为主题令牌 | 全部控件 | 中 |
 | **P1** | 提取共享 ScrollBarFadeHelper | 3 个文件 | 小 |
+| **P1** | 悬浮缩放 + 阴影在 `UI4ListView` / `UI4GridView` / `UI4Panel` 三处逐字复制；缩放余量契约（`FitHoverScale` / `HoverMaxGrow` / `EdgeReserve`）已在前两处同步，**改第三处时必须同步**，否则不越界保证会破 | 3 个文件 | 中 |
 | **P1** | 提取共享 ColorToBrushConverter / BoolToVisibilityConverter | 5 个文件 | 小 |
 | **P1** | 统一回调命名为 `OnStyleRefresh` | 3 个文件 | 小 |
 | **P2** | 补全冻结 Brush（至少覆盖常用 10 个） | UI4Theme | 小 |

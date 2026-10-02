@@ -78,19 +78,6 @@ namespace StartUI4Controls
             set => SetValue(ItemBorderBrushProperty, value);
         }
 
-        public static readonly DependencyProperty ItemHoverBorderBrushProperty =
-            DependencyProperty.Register(
-                nameof(ItemHoverBorderBrush),
-                typeof(Color),
-                typeof(UI4ListView),
-                new PropertyMetadata(Color.FromRgb(0, 120, 212), OnStyleUpdate));
-
-        public Color ItemHoverBorderBrush
-        {
-            get => (Color)GetValue(ItemHoverBorderBrushProperty);
-            set => SetValue(ItemHoverBorderBrushProperty, value);
-        }
-
         public static readonly DependencyProperty ItemBorderThicknessProperty =
             DependencyProperty.Register(
                 nameof(ItemBorderThickness),
@@ -122,7 +109,7 @@ namespace StartUI4Controls
                 nameof(ItemMargin),
                 typeof(Thickness),
                 typeof(UI4ListView),
-                new PropertyMetadata(new Thickness(5), OnStyleUpdate));
+                new PropertyMetadata(new Thickness(10), OnStyleUpdate));
 
         public Thickness ItemMargin
         {
@@ -203,6 +190,26 @@ namespace StartUI4Controls
             set => SetValue(HoverScaleProperty, value);
         }
 
+        public static readonly DependencyProperty HoverMaxGrowProperty =
+            DependencyProperty.Register(
+                nameof(HoverMaxGrow),
+                typeof(double),
+                typeof(UI4ListView),
+                new PropertyMetadata(8.0, OnStyleUpdate));
+
+        /// <summary>悬浮放大时单项每边允许外扩的最大像素数。等比缩放的外扩量随行宽线性增长，
+        /// 这个上限把观感固定在像素上，使各窗口尺寸下放大幅度一致。</summary>
+        public double HoverMaxGrow
+        {
+            get => (double)GetValue(HoverMaxGrowProperty);
+            set => SetValue(HoverMaxGrowProperty, value);
+        }
+
+        // 内层 ScrollViewer 给 items host 留的内容内缩，与 FitHoverScale 的可用余量同源，改一处要改两处。
+        private const double ContentPadding = 4.0;
+        // 放大态与控件边界之间硬留的空白：小于这个距离悬浮边框看着就像被控件边界切掉。
+        private const double EdgeReserve = 6.0;
+
         private static void OnStyleUpdate(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             if (d is UI4ListView list)
@@ -222,6 +229,78 @@ namespace StartUI4Controls
             Style = BuildTechCardStyle();
         }
 
+        protected override void PrepareContainerForItemOverride(DependencyObject element, object item)
+        {
+            base.PrepareContainerForItemOverride(element, item);
+
+            if (!(element is ListBoxItem container))
+                return;
+
+            // 缩放必须放在不带 Effect 的根节点上：带 Effect 的元素会先被光栅化成位图，
+            // 再经 RenderTransform 缩放就会把文字拉虚。结构参照 UI4Panel。
+            // 放在容器本体而不是模板里，是因为 FrameworkElementFactory.SetValue 传进去的
+            // 对象由所有容器共享一份，悬浮一项会把其它项一起放大。
+            container.RenderTransform = new ScaleTransform(1, 1);
+            container.RenderTransformOrigin = new Point(0.5, 0.5);
+
+            container.MouseEnter -= OnItemMouseEnter;
+            container.MouseEnter += OnItemMouseEnter;
+            container.MouseLeave -= OnItemMouseLeave;
+            container.MouseLeave += OnItemMouseLeave;
+        }
+
+        private void OnItemMouseEnter(object sender, RoutedEventArgs e)
+        {
+            AnimateItemScale(sender as ListBoxItem, true);
+        }
+
+        private void OnItemMouseLeave(object sender, RoutedEventArgs e)
+        {
+            AnimateItemScale(sender as ListBoxItem, false);
+        }
+
+        private void AnimateItemScale(ListBoxItem container, bool enter)
+        {
+            if (container == null)
+                return;
+            if (!(container.RenderTransform is ScaleTransform scale))
+                return;
+
+            double toX = enter ? FitHoverScale(container.ActualWidth, ItemMargin.Left) : 1.0;
+            double toY = enter ? FitHoverScale(container.ActualHeight, ItemMargin.Top) : 1.0;
+
+            DoubleAnimation scaleXAnim = new DoubleAnimation
+            {
+                To = toX,
+                Duration = HoverAnimationDuration,
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+            };
+            DoubleAnimation scaleYAnim = new DoubleAnimation
+            {
+                To = toY,
+                Duration = HoverAnimationDuration,
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+            };
+
+            scale.BeginAnimation(ScaleTransform.ScaleXProperty, scaleXAnim);
+            scale.BeginAnimation(ScaleTransform.ScaleYProperty, scaleYAnim);
+        }
+
+        // 放大后的矩形要落在 ItemMargin + 内容内缩 组成的余量之内，并再留 EdgeReserve 不贴边。
+        // 余量折成像素后反解出缩放上限，与 HoverScale 取小：窄卡片仍按设计者的比例走，
+        // 铺满一行的宽项则自动收敛，越界不会随窗口变宽而放大。
+        private double FitHoverScale(double slotSize, double sideSlack)
+        {
+            if (slotSize <= 0 || HoverScale <= 1.0)
+                return Math.Max(1.0, HoverScale);
+
+            double allowed = Math.Min(HoverMaxGrow, sideSlack + ContentPadding - EdgeReserve);
+            if (allowed <= 0)
+                return 1.0;
+
+            return Math.Min(HoverScale, 1.0 + 2.0 * allowed / slotSize);
+        }
+
         private Style BuildTechCardStyle()
         {
             Style listStyle = new Style(typeof(ListBox));
@@ -239,7 +318,7 @@ namespace StartUI4Controls
             scrollHost.SetValue(ScrollViewer.HorizontalScrollBarVisibilityProperty, ScrollBarVisibility.Disabled);
             scrollHost.SetValue(ScrollViewer.VerticalScrollBarVisibilityProperty, ScrollBarVisibility.Auto);
             scrollHost.SetValue(ScrollViewer.BackgroundProperty, Brushes.Transparent);
-            scrollHost.SetValue(ScrollViewer.PaddingProperty, new Thickness(4, 4, 4, 4));
+            scrollHost.SetValue(ScrollViewer.PaddingProperty, new Thickness(ContentPadding));
             scrollHost.SetValue(FrameworkElement.FocusableProperty, false);
             scrollHost.SetValue(Control.BorderThicknessProperty, new Thickness(0));
 
@@ -264,12 +343,9 @@ namespace StartUI4Controls
 
             ControlTemplate itemTemplate = new ControlTemplate(typeof(ListBoxItem));
 
-            // 缩放必须放在不带 Effect 的根节点上：带 Effect 的元素会先被光栅化成位图，
-            // 再经 RenderTransform 缩放就会把文字拉虚。结构参照 UI4Panel。
+            // 缩放动画不在这里：见 PrepareContainerForItemOverride，缩放节点挂在容器本体上。
             FrameworkElementFactory itemRoot = new FrameworkElementFactory(typeof(Grid));
             itemRoot.Name = "PART_ItemRoot";
-            itemRoot.SetValue(UIElement.RenderTransformOriginProperty, new Point(0.5, 0.5));
-            itemRoot.SetValue(UIElement.RenderTransformProperty, new ScaleTransform(1, 1));
 
             FrameworkElementFactory itemBorder = new FrameworkElementFactory(typeof(Border));
             itemBorder.Name = "PART_ItemBorder";
@@ -301,74 +377,7 @@ namespace StartUI4Controls
 
             itemTemplate.VisualTree = itemRoot;
 
-            ColorAnimation hoverAnim = new ColorAnimation
-            {
-                To = ItemHoverBorderBrush,
-                Duration = HoverAnimationDuration
-            };
-
-            DoubleAnimation scaleXHoverAnim = new DoubleAnimation
-            {
-                To = HoverScale,
-                Duration = HoverAnimationDuration,
-                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
-            };
-            DoubleAnimation scaleYHoverAnim = new DoubleAnimation
-            {
-                To = HoverScale,
-                Duration = HoverAnimationDuration,
-                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
-            };
-
-            Storyboard hoverStoryboard = new Storyboard();
-            hoverStoryboard.Children.Add(hoverAnim);
-            hoverStoryboard.Children.Add(scaleXHoverAnim);
-            hoverStoryboard.Children.Add(scaleYHoverAnim);
-            Storyboard.SetTargetName(hoverAnim, "PART_ItemBorder");
-            Storyboard.SetTargetProperty(hoverAnim, new PropertyPath("(Border.BorderBrush).(SolidColorBrush.Color)"));
-            Storyboard.SetTargetName(scaleXHoverAnim, "PART_ItemRoot");
-            Storyboard.SetTargetProperty(scaleXHoverAnim, new PropertyPath("(UIElement.RenderTransform).(ScaleTransform.ScaleX)"));
-            Storyboard.SetTargetName(scaleYHoverAnim, "PART_ItemRoot");
-            Storyboard.SetTargetProperty(scaleYHoverAnim, new PropertyPath("(UIElement.RenderTransform).(ScaleTransform.ScaleY)"));
-
-            ColorAnimation leaveAnim = new ColorAnimation
-            {
-                To = ItemBorderBrush,
-                Duration = HoverAnimationDuration
-            };
-
-            DoubleAnimation scaleXLeaveAnim = new DoubleAnimation
-            {
-                To = 1.0,
-                Duration = HoverAnimationDuration,
-                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
-            };
-
-            DoubleAnimation scaleYLeaveAnim = new DoubleAnimation
-            {
-                To = 1.0,
-                Duration = HoverAnimationDuration,
-                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
-            };
-
-            Storyboard leaveStoryboard = new Storyboard();
-            leaveStoryboard.Children.Add(leaveAnim);
-            leaveStoryboard.Children.Add(scaleXLeaveAnim);
-            leaveStoryboard.Children.Add(scaleYLeaveAnim);
-            Storyboard.SetTargetName(leaveAnim, "PART_ItemBorder");
-            Storyboard.SetTargetProperty(leaveAnim, new PropertyPath("(Border.BorderBrush).(SolidColorBrush.Color)"));
-            Storyboard.SetTargetName(scaleXLeaveAnim, "PART_ItemRoot");
-            Storyboard.SetTargetProperty(scaleXLeaveAnim, new PropertyPath("(UIElement.RenderTransform).(ScaleTransform.ScaleX)"));
-            Storyboard.SetTargetName(scaleYLeaveAnim, "PART_ItemRoot");
-            Storyboard.SetTargetProperty(scaleYLeaveAnim, new PropertyPath("(UIElement.RenderTransform).(ScaleTransform.ScaleY)"));
-
-            EventTrigger mouseEnterTrigger = new EventTrigger(UIElement.MouseEnterEvent);
-            mouseEnterTrigger.Actions.Add(new BeginStoryboard { Storyboard = hoverStoryboard });
-            itemTemplate.Triggers.Add(mouseEnterTrigger);
-
-            EventTrigger mouseLeaveTrigger = new EventTrigger(UIElement.MouseLeaveEvent);
-            mouseLeaveTrigger.Actions.Add(new BeginStoryboard { Storyboard = leaveStoryboard });
-            itemTemplate.Triggers.Add(mouseLeaveTrigger);
+            // 悬浮不再改边框色：整项的反馈只留放大与投影，边框始终保持 ItemBorderBrush。
 
             itemStyle.Setters.Add(new Setter(Control.TemplateProperty, itemTemplate));
             listStyle.Setters.Add(new Setter(ListBox.ItemContainerStyleProperty, itemStyle));
