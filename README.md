@@ -1928,8 +1928,8 @@ UI4Theme.Apply(UI4ThemePacks.DataConsole);   // 全局；或写进 UI4ThemeScope
 |---|---|---|---|---|
 | `UI4ThemePacks.DataConsole` | `data-console` | 数据台 | 亮 | 表格/列表密集的后台：面板比底白一档、网格线可辨，正文近黑拿高对比 |
 | `UI4ThemePacks.Reading` | `reading` | 阅读 | 亮 | 长文与文档：暖纸底、低饱和，强调色只用于链接与焦点 |
-| `UI4ThemePacks.PaperWhite` | `paper-white` | 纸白 | 亮 | 最亮的一档纸质阅读：底近纯白只留一丝暖，强调用墨褐而不是蓝，让"纸"当主角 |
-| `UI4ThemePacks.PaperGrey` | `paper-grey` | 灰纸 | 亮 | 白灰纸质阅读：底压一档到中性浅灰、面板仍留白分层，强调用石墨灰蓝，长时最不着眼 |
+| `UI4ThemePacks.PaperWhite` | `paper-white` | 纸白 | 亮 | 暖白纸质的亮档：底 `#F7F2EF`、紫粉强调，长文与阅读器首选（色板参考 100-themes 的 `polaroid/day`） |
+| `UI4ThemePacks.PaperGrey` | `paper-grey` | 灰纸 | 亮 | 冷灰纸档：底 `#EFF5F7`、紫强调，与纸白同亮度只差色温，长时间最不着眼（参考 `tundra/day`） |
 | `UI4ThemePacks.Form` | `form` | 录入 | 亮 | 表单与设置页：字段边界清晰、焦点环醒目 |
 | `UI4ThemePacks.OnCall` | `oncall` | 值守 | 暗 | 夜间长时监控：压暗纯白、琥珀强调，不与业务的红/绿告警色抢位 |
 | `UI4ThemePacks.Terminal` | `terminal` | 终端 | 暗 | 日志与代码：冷青强调，层次主要靠边框而非底色台阶 |
@@ -1941,8 +1941,11 @@ UI4Theme.Apply(UI4ThemePacks.DataConsole);   // 全局；或写进 UI4ThemeScope
 - **深浅标记只加在套装上**：内置三套不加（`light` / `dark` / `highcontrast` 的中文名自带深浅义，宿主自定义键的深浅也不由键名承诺）。
   标记与实测底色深浅由探针互相校验（`ShadeName` 说「暗」的，底色亮度必须 <128，即 `UI4WindowTitleBar.IsDark` 的判据）。
 - 每套的取值理由写在 `UI4ThemePacks.cs` 对应工厂方法的注释里；改色板只改那里。
-- **对比度门槛**：8 套实测最低 3.49:1 ~ 4.55:1（纸白 4.53、灰纸 4.09），门槛与逐对数据见
-  `src/StartUI4Controls/README.md` §九 9.9。内置 `light` / `dark` 仍有 4 处不达标，属既有项，未随本次改动调整。
+  纸白 / 灰纸两套的色板取自 [100-themes](https://github.com/MagicFollower/100-themes) 的 `day` 档（`polaroid` / `tundra`），
+  按**层级**映射（底 / 表头 / 面板边框 / 字段边框 / 选中底 / 四级文本各归各档），不是只抄三个值；
+  其中 `tundra` 的 accent 承白字只有 4.43:1，压深到 `#7A5F9C` 才过 AA。
+- **对比度门槛**：8 套实测最低 3.49:1 ~ 4.55:1（纸白 3.59、灰纸 3.64），门槛与逐对数据见
+  `src/StartUI4Controls/README.md` §九 9.9 ~ 9.11。内置 `light` / `dark` 仍有 4 处不达标，属既有项，未随本次改动调整。
 - **深色套装的 `CurrentMode` / `ResolvedMode` 仍报 `Light`** —— 这是自定义键的既有限制（`ModeForKey` 只认三个内置键）。
   要判深浅，按底色亮度判（`UI4WindowTitleBar.IsDark` 即 `0.299R+0.587G+0.114B < 128`），标题栏染色就是走这条判据，
   所以套装的标题栏深浅都是对的。

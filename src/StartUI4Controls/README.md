@@ -577,6 +577,9 @@ XAML 里的写死选项已删，新增套装不必再改两处）；页脚与作
 
 ### 9.10 2026-10-02 追加：两套纸质阅读（`paper-white` / `paper-grey`）与展示文本的（亮/暗）标记
 
+> **色板部分已被 9.11 取代**：本节记录的墨褐 / 石墨两套取值只活了一轮，纸白与灰纸现已改按 100-themes 的
+> `polaroid/day` 与 `tundra/day` 重调。（亮/暗）标记的契约、探针改造与 Demo 布局改动仍然有效。
+
 **需求两件事**：① 再加 2 套亮色的"纸质阅读"（白色纸质、白灰色纸质）；② 套装的展示文本要带深浅标记，好在一串中文名里区分。
 
 **键怎么定**：给的选择是「阅读族 3 变体（`reading-white`/`reading-grey`）」/「独立场景键 `paper-*`」/「替换现有 `reading`」，
@@ -614,6 +617,46 @@ XAML 里的写死选项已删，新增套装不必再改两处）；页脚与作
 - `packs-shot.ps1` P1–P7 全 PASS：P1 项数 11 / 带标记 8（亮 5 暗 3）；P6 纸白墨褐 11392 像素、平均亮度 0.912；
   P7 灰纸石墨 11457 像素、平均亮度 0.878（比纸白暗 0.034，断言要求 >0.03）；P4 作用域下拉 12 项（11 套 + 撤销）。
   截图 `_bak_prompt\pack_shots\p6-paper-white.png`、`p7-paper-grey.png`。
+
+### 9.11 2026-10-02 再追加：纸白 / 灰纸改按 100-themes 的 day 档重调（含一处探针假失败的更正）
+
+**来源**：github.com/MagicFollower/100-themes（Omarchy 配色集，每套 5 变体，`day` 档 = 同色相浅底版）。
+抓的是 `<主题>/day/colors.toml`，字段 `background / dark_background / lighter_background / darker_background`、
+`foreground / light_foreground / dark_foreground / bright_foreground`、`accent / selection / muted`。
+**注意它的明度阶梯命名是反的**：`day` 档里 `dark_background`、`lighter_background`、`darker_background` **全都比 `background` 更暗**
+（命名沿用 dark 档逻辑），别按字面当"更浅的面板色"用。
+
+**两套的映射**（按层级搬，不是抄三个值）：
+
+| 令牌 | 纸白 ← `polaroid/day` | 灰纸 ← `tundra/day` |
+|---|---|---|
+| `Background` | `#F7F2EF`（暖白纸） | `#EFF5F7`（冷灰纸） |
+| `HeaderBackground` | `#EBE7E3` = `dark_background` | `#E3E9EB` = `dark_background` |
+| `PanelBorder` / `Separator` | `#E4DEDA` = `lighter_background` | `#DAE1E4` = `lighter_background` |
+| `BorderNormal` | `#DEDAD6` = `darker_background` | `#D6DCDE` = `darker_background` |
+| `ListSelected` / `RowSelectedBackground` | `#E4D0D9` = `selection` | `#D8D7E6` = `selection` |
+| 四级文本 | `#2E241D` / `#4F463E` / `#6B615A`（由 `dark_foreground` 向正文混） / 表头 `#1A120C` | `#1C292D` / `#3E4A4E` / `#5C686C` / 表头 `#0B1619` |
+| `Accent` | `#A1568C`（原值直接用，白字 4.98 ✅） | `#876BAB` → **压深到 `#7A5F9C`**（原值白字 4.43 不过线） |
+
+三条搬过来的结构，比换色相更影响观感：
+① **专用 `selection` 选中底**：不再拿强调色当选中底（选中一大片紫太扎眼），改用淡彩，正文深色字压上去 10.5:1；
+② **四级文本梯度**：表头用 `bright_foreground`（比正文更黑一档），次级/弱化分别落到 `light_foreground` 与混过的 `dark_foreground`；
+③ **灰阶阶梯**：表头、面板边框、字段边框各取 `dark_` / `lighter_` / `darker_background` 一档，层次靠色阶而不是靠描边加粗。
+**唯一没照搬**："面板比页面更灰"——本库 `Surface` 同时是输入框与列表的底色（`UI4TextBox.cs:177`、`UI4ComboBox.cs:199`、
+`UI4ListBox.cs:245` 都引用 `UI4.Brush.Surface`），压灰会让字段看着像禁用，所以 `Surface` 仍留白（纸白 `#FCFAF8`、灰纸 `#FAFCFD`），
+灰阶只落在表头/行悬浮/网格线/边框上。
+
+**门槛（T12 复测）**：纸白最低 **3.59:1**、灰纸 **3.64:1**（地板都是 占位/面板），其余 6 套数字不变。
+
+**过程中抓到一处探针自身的错（假失败，不是配色问题）**：`BetterOf(a, b)` 原实现是 `Rel(a) >= Rel(b) ? a : b`，
+即"谁亮谁上"，被用在「正文/列表选中」这一对上。浅底 + 淡彩选中色时它会挑白字，于是纸白报 1.47:1、灰纸报 1.42:1 ❌；
+而真正的深色正文字在那块底上是 10.5:1。已改成按**与该底的对比度**挑（与 `UI4Button.ForegroundFor` 同一判据）。
+这条对旧 6 套无影响（它们的 `ListSelected` 是深色强调色，两种判据同解），`dark` 的 3.84:1 也仍是 3.84:1 —— 不是靠改判据把失败改没的。
+
+**运行时取证（`packs-shot.ps1` P1–P7 全 PASS）**：两套底色亮度都是 243、平均亮度 0.887 / 0.888 —— **亮度分不出这两套**，
+所以判据换成整页 R-B 暖冷偏差：纸白 **+7.86**（暖）、灰纸 **−9.01**（冷），相差 16.86（门槛 >10）。
+P7 起初按"灰纸应比纸白更暗"断言而 FAIL —— 那是我把预期写错了（两套刻意同亮度、只差色温），改判据而不是改色板，
+理由写进脚本注释。强调色像素：纸白 11880、灰纸 11970。
 
 
 
