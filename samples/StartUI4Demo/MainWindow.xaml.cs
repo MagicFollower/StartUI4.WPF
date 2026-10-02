@@ -5,7 +5,9 @@ using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Threading;
 using StartUI4Controls;
 
 namespace StartUI4Demo
@@ -15,6 +17,8 @@ namespace StartUI4Demo
         private static readonly Random Rng = new Random();
         private UI4ContextMenu _hostMenu;
         private int _tabCounter;
+        private ListBoxItem _hoveredListItem;
+        private DispatcherTimer _listEchoTimer;
 
         public List<CardItem> Cards { get; private set; }
 
@@ -318,17 +322,95 @@ namespace StartUI4Demo
             }
         }
 
-        // 列数 = 可用宽度 ÷（基准单元宽度 + 单元间距），与 UI4GridView 内部算法同构，
-        // 用来把"自适应"这件事变成看得见的数字。
+        // 列数直接读控件算好的 ComputedColumns，不在 Demo 里再抄一遍算法（抄一遍就会错一次）。
         private void GridView1_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            UpdateGridEcho();
+        }
+
+        // 不缩窗口也能验到"列数随可用宽度当场重算"：换基准单元会触发样式重建，
+        // 而样式重建连带重建 UniformGrid，列数若不在重建时跟上就会滞留到下次缩放窗口。
+        private void GridUnit_Click(object sender, RoutedEventArgs e)
+        {
+            GridView1.ItemWidth = GridView1.ItemWidth > 300 ? 230 : 400;
+            UpdateGridEcho();
+        }
+
+        private void UpdateGridEcho()
         {
             if (GridEcho == null || GridView1 == null) return;
 
-            double unit = GridView1.ItemWidth + 8;
-            int columns = unit > 0 ? Math.Max(1, (int)(e.NewSize.Width / unit)) : 1;
-            GridEcho.Text = "UI4GridView 实际宽度 = " + ((int)e.NewSize.Width).ToString(CultureInfo.InvariantCulture)
-                + " px，基准单元 " + ((int)GridView1.ItemWidth).ToString(CultureInfo.InvariantCulture)
-                + " px → 当前约 " + columns.ToString(CultureInfo.InvariantCulture) + " 列";
+            GridEcho.Text = "UI4GridView 实际宽度 = " + Px(GridView1.ActualWidth)
+                + " px，基准单元 " + Px(GridView1.ItemWidth)
+                + " px → 当前 " + GridView1.ComputedColumns.ToString(CultureInfo.InvariantCulture)
+                + " 列，卡片铺满所在列";
+        }
+
+        // 悬浮放大的自证：动画跑完（200ms）后量一次真实几何，
+        // 报放大后的行左右两端距 UI4ListView 边界的距离；负数就是越出父容器。
+        private void ListView1_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (ListEcho == null || ListView1 == null) return;
+
+            ListBoxItem container = ListContainerUnderMouse();
+            if (container == null) return;
+
+            _hoveredListItem = container;
+
+            if (_listEchoTimer == null)
+            {
+                _listEchoTimer = new DispatcherTimer();
+                _listEchoTimer.Interval = TimeSpan.FromMilliseconds(260);
+                _listEchoTimer.Tick += ListEchoTimer_Tick;
+            }
+            _listEchoTimer.Stop();
+            _listEchoTimer.Start();
+        }
+
+        private void ListEchoTimer_Tick(object sender, EventArgs e)
+        {
+            _listEchoTimer.Stop();
+
+            ListBoxItem container = _hoveredListItem;
+            if (container == null || ListView1 == null || ListEcho == null) return;
+
+            ScaleTransform scale = container.RenderTransform as ScaleTransform;
+            double sx = scale == null ? 1.0 : scale.ScaleX;
+            double sy = scale == null ? 1.0 : scale.ScaleY;
+
+            Point origin = container.TranslatePoint(new Point(0, 0), ListView1);
+            double leftGap = origin.X;
+            double rightGap = ListView1.ActualWidth - (origin.X + container.ActualWidth * sx);
+            double topGap = origin.Y;
+            double bottomGap = ListView1.ActualHeight - (origin.Y + container.ActualHeight * sy);
+
+            ListEcho.Text = "行宽 " + Px(container.ActualWidth) + " px，生效 ScaleX "
+                + sx.ToString("0.0000", CultureInfo.InvariantCulture) + " / ScaleY "
+                + sy.ToString("0.0000", CultureInfo.InvariantCulture)
+                + "；放大后距控件内边 左 " + Px(leftGap) + "、右 " + Px(rightGap)
+                + "、上 " + Px(topGap) + "、下 " + Px(bottomGap)
+                + " px（负数＝越出父容器）";
+        }
+
+        private ListBoxItem ListContainerUnderMouse()
+        {
+            Point p = Mouse.GetPosition(ListView1);
+            foreach (object data in ListView1.Items)
+            {
+                ListBoxItem container = ListView1.ItemContainerGenerator.ContainerFromItem(data) as ListBoxItem;
+                if (container == null) continue;
+
+                Point origin = container.TranslatePoint(new Point(0, 0), ListView1);
+                if (p.X >= origin.X && p.X <= origin.X + container.ActualWidth &&
+                    p.Y >= origin.Y && p.Y <= origin.Y + container.ActualHeight)
+                    return container;
+            }
+            return null;
+        }
+
+        private static string Px(double value)
+        {
+            return ((int)Math.Round(value)).ToString(CultureInfo.InvariantCulture);
         }
 
         // ---------- UI4Tab ----------

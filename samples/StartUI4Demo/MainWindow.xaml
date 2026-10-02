@@ -277,8 +277,11 @@
 
             <!-- ============ 6. 列表与网格 ============ -->
             <TabItem Header="列表与网格">
-                <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <StackPanel Margin="16" MinWidth="760">
+                <!-- 横向 Disabled：页宽 = 视口宽。默认横向可滚会让 StackPanel 拿到无限宽，
+                     整页被撑到比窗口宽得多（曾实测 2398px），控件静止态就冲出窗口右缘。
+                     不用 MaxWidth 锁死，是为了保住下面 UI4GridView「拖窗口看列数变化」的演示。 -->
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Margin="16">
 
                         <TextBlock Text="UI4ListBox（三种列表样式）" Style="{StaticResource SectionTitle}"/>
                         <StackPanel Orientation="Horizontal">
@@ -301,9 +304,10 @@
                         </StackPanel>
 
                         <TextBlock Text="UI4ListView（数据绑定）" Style="{StaticResource SectionTitle}"/>
-                        <ui:UI4ListView ItemsSource="{Binding Cards}" Height="200" ItemBackground="White"
-                                        ShadowDepth="15" ShadowOpacity="0.2" HoverScale="1.01"
-                                        SelectionChanged="Cards_SelectionChanged">
+                        <ui:UI4ListView x:Name="ListView1" ItemsSource="{Binding Cards}" Height="200" ItemBackground="White"
+                                        ShadowDepth="15" ShadowOpacity="0.2" HoverScale="1.06"
+                                        SelectionChanged="Cards_SelectionChanged"
+                                        MouseMove="ListView1_MouseMove">
                             <ui:UI4ListView.ItemTemplate>
                                 <DataTemplate>
                                     <Border Background="LightYellow" CornerRadius="10">
@@ -315,11 +319,16 @@
                                 </DataTemplate>
                             </ui:UI4ListView.ItemTemplate>
                         </ui:UI4ListView>
+                        <TextBlock x:Name="ListEcho" Style="{StaticResource SectionHint}" TextWrapping="Wrap"
+                                   Text="把鼠标移到上面任意一行：这里打印放大稳定后的实际几何（左留/右留为负即越出控件边界）。"/>
 
                         <TextBlock Text="UI4GridView（自适应网格）" Style="{StaticResource SectionTitle}"/>
                         <TextBlock Style="{StaticResource SectionHint}" TextWrapping="Wrap"
-                                   Text="ItemWidth 是「基准单元宽度」，列数 = 可用宽度 ÷ 单元宽度 自动算出来。拖动窗口右边缘变宽变窄，看下面这行实时宽度与列数变化。"/>
-                        <TextBlock x:Name="GridEcho" Style="{StaticResource SectionHint}"/>
+                                   Text="ItemWidth 是「基准单元宽度」，只用来算列数；卡片本身铺满所在列。拖动窗口右边缘变宽变窄，或按下面的按钮换基准单元，看列数与卡片宽度一起变。"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                            <ui:UI4Button Content="换基准单元" Width="130" Height="36" Click="GridUnit_Click"/>
+                            <TextBlock x:Name="GridEcho" Style="{StaticResource SectionHint}" Margin="12,0,0,0" VerticalAlignment="Center"/>
+                        </StackPanel>
                         <ui:UI4GridView x:Name="GridView1" ItemsSource="{Binding Cards}" ItemHeight="170" ItemWidth="230"
                                         ShadowDepth="15" ShadowOpacity="0.3" HoverScale="1.06"
                                         SelectionChanged="Cards_SelectionChanged"

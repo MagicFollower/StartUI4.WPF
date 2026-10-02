@@ -990,7 +990,7 @@ private void MyTab_CloseTab(object sender, TabCloseRoutedEventArgs e)
 
 ### UI4ListView
 
-卡片式列表：每项为带阴影的圆角卡片，悬浮描边 + 轻微缩放（文字保持清晰）。
+卡片式列表：每项为带阴影的圆角卡片，悬浮时轻微放大（文字保持清晰），边框不随悬浮变色。
 
 **继承自**：`ListBox`
 
@@ -1001,17 +1001,27 @@ private void MyTab_CloseTab(object sender, TabCloseRoutedEventArgs e)
 | `ItemWidth` / `ItemHeight` | `double` | `NaN` | 项尺寸（NaN = 自适应） |
 | `ItemCornerRadius` | `CornerRadius` | `12` | 卡片圆角 |
 | `ItemBackground` | `Brush` | `White` | 卡片背景 |
-| `ItemBorderBrush` | `Color` | `#3C788CC8` | 卡片边框色 |
-| `ItemHoverBorderBrush` | `Color` | `#FF0078D4` | 悬浮边框色 |
+| `ItemBorderBrush` | `Color` | `#3C788CC8` | 卡片边框色（静止与悬浮同色，悬浮不再换色） |
 | `ItemBorderThickness` | `Thickness` | `1` | 边框厚度 |
 | `ItemPadding` | `Thickness` | `0` | 卡片内边距 |
-| `ItemMargin` | `Thickness` | `5` | 卡片外边距 |
-| `HoverScale` | `double` | `1.01` | 悬浮缩放倍率 |
+| `ItemMargin` | `Thickness` | `10` | 卡片外边距；也是悬浮放大的可用余量（与 `UI4GridView` 默认值对齐） |
+| `HoverScale` | `double` | `1.01` | 悬浮缩放倍率（上限，实际幅度受 `HoverMaxGrow` 钳制） |
+| `HoverMaxGrow` | `double` | `8` | 悬浮放大时每边最多外扩的像素数 |
 | `HoverAnimationDuration` | `Duration` | `200ms` | 悬浮动画时长 |
 | `ShadowColor` | `Color` | `#23000000` | 阴影颜色 |
 | `ShadowBlurRadius` | `double` | `12` | 阴影模糊 |
 | `ShadowDepth` | `double` | `0` | 阴影深度 |
 | `ShadowOpacity` | `double` | `0` | 阴影不透明度 |
+
+> **悬浮放大不会越出控件**：缩放是 `RenderTransform`，纯视觉，等比放大必然画到布局槽外面。
+> 因此生效倍率按像素预算反算取小：`s = min(HoverScale, 1 + 2·allowed / 项尺寸)`，
+> `allowed = min(HoverMaxGrow, ItemMargin + 内容内缩 4 − 硬留白 6)`。
+> 效果是——窄卡片（如 `ItemWidth=230`、`HoverScale=1.06`）仍按设计者的倍率走；
+> 未指定 `ItemWidth` 而铺满一行的宽项则自动收敛，每边外扩恒定在若干像素，
+> **窗口多宽都不会越界，各尺寸下放大幅度一致**。实测见 §八 第 5 条。
+> 缩放节点挂在容器本体（`PrepareContainerForItemOverride`）而不是模板里：
+> 一是模板 `SetValue` 的对象会被所有容器共享，悬浮一项会连带其它项；
+> 二是让越界量可以被 UIA 的 `ListItem.BoundingRectangle` 直接量到。
 
 #### 示例
 
@@ -1036,7 +1046,7 @@ private void MyTab_CloseTab(object sender, TabCloseRoutedEventArgs e)
 
 ### UI4GridView
 
-网格卡片视图：按可用宽度自适应列数，卡片悬浮缩放。
+网格卡片视图：按可用宽度自适应列数，卡片铺满所在列，卡片悬浮缩放。
 
 **继承自**：`ListBox`
 
@@ -1046,8 +1056,21 @@ private void MyTab_CloseTab(object sender, TabCloseRoutedEventArgs e)
 
 | 属性 | 类型 | 默认值 | 说明 |
 |---|---|---|---|
-| `ItemWidth` | `double` | `300` | 卡片宽度（决定列数） |
+| `ItemWidth` | `double` | `300` | 基准单元宽度，**只用来算列数**；卡片宽度由所在列决定 |
 | `ItemHeight` | `double` | `220` | 卡片高度 |
+| `ItemMargin` | `Thickness` | `10` | 卡片外边距（也是悬浮放大的可用余量） |
+| `ComputedColumns` | `int`（只读） | `1` | 控件按当前可用宽度算出的列数 |
+
+列数算法：`columns = min(round((ActualWidth − 纵向滚动条 − 2×内容内缩) ÷ (ItemWidth + ItemMargin 左右)), max(1, Items.Count))`
+
+- 用 `round` 不用 `floor`：可用宽度只够 2.9 个单元时排 2 列，卡片会被撑胖 45%。
+- 封顶到项数：`UniformGrid` 按列数等分宽度，列数多于项数时右侧整列空着，卡片"铺满所在列"反而更糟。
+  代价是项数少时卡片很宽——Demo 里 4 张卡片在全屏下各约 578 px。嫌胖就加项，或后续再引入 `MaxItemWidth` 上限。
+- 列数在样式重建时当场重算（`OnStyleUpdate` 里补了一次 `UpdateColumns()`，`UniformGrid` 工厂的初始列数也直接取算法结果），
+  所以运行期改 `ItemWidth` 不必先缩窗口才会跟上。
+
+悬浮放大的不越界契约与 `UI4ListView` 完全相同（`HoverMaxGrow` 默认 8，`ItemMargin` 默认 10 → 每边可用 14 px，扣掉 6 px 硬留白后每边最多外扩 8 px）。
+`ItemWidth` 为 `NaN` 时列数恒为 1、卡片铺满整个宽度，此时同样按像素预算收敛，不会越出网格边界。
 
 #### 示例
 
@@ -1561,6 +1584,24 @@ StartUI4Demo.exe --tab=5     # 直接打开第 5 页（0 起），便于自动�
    - `UI4TextBlock.GradientStart/End` 为未实现的死属性（渐变请用 `Foreground`）；
    - 5 个只写不读的私有字段（CS0414 警告保留）；
    - `UI4DataGrid` / `UI43DSphere` 为 internal 死代码，且 SQLite 原生 `SQLite.Interop.dll` 不随类库部署。
+5. **本仓库内新发现并修复（2026-10，与 net10 版同步）**：`UI4ListView` / `UI4GridView` 的悬浮放大越出父容器，以及 `UI4GridView` 不随窗口宽度调整卡片宽度。
+
+   - **成因四条，缺一不成立**：① `ItemWidth` 为 `NaN` 时不给容器设 `Width`，靠 `HorizontalContentAlignment=Stretch` 铺满整行；
+     ② 缩放是 `RenderTransform`，纯视觉，必然画到布局槽外面；③ 全库唯一的 `ClipToBounds=true` 在被缩放节点的**子级**上，裁不到父节点的放大输出；
+     ④ Demo「列表与网格」页是 `ScrollViewer + StackPanel(MinWidth=760)`，横向默认可滚 → 子级拿到无限宽 → 整页被撑到 2398 px，静止态就已出窗口右缘。
+   - **修法**：生效倍率按像素预算反算取小（契约见 `UI4ListView` 一节），并把缩放节点从模板子节点提到容器本体（每容器一份 `ScaleTransform`）。
+     **不采用 `ClipToBounds` 兜底**：`ShadowDepth=15 + BlurRadius=12` 的投影需要约 27 px 外溢空间，裁剪会把四边投影切平。
+   - **同批移除（破坏性 API 变更）**：`ItemHoverBorderBrush` 属性与"悬浮把边框换成蓝色"的动画一起去掉，悬浮反馈只剩放大 + 投影。
+     宿主若设过该属性会编译失败；要恢复就重新加回指向 `PART_ItemBorder` 的 `ColorAnimation` + `EventTrigger(MouseEnter/MouseLeave)`。
+     `UI4Panel` 的悬浮观感本次未动。
+   - **实测**（UIA 量 `ListItem.BoundingRectangle`；负数＝在控件边界内）：ListView 在窗口宽 1094 / 634 / 1742 / 2398 四档下，
+     悬浮放大后距控件左右内边恒为 6 / 6 / 6 / 6 px（`HoverScale=1.06` 时生效值被钳到 1.0150 / 1.0264 / 1.0093 / 1.0068，
+     与 `1 + 2×8/行宽` 四位小数吻合），且只有被悬浮那一项变化、其余各项与静止态逐像素相同；
+     GridView 卡片随列数铺满所在列（642 px→2 列各 297、1094→4 列各 252、1742→4 列各 414、2398→4 列各 578），
+     运行期把 `ItemWidth` 从 230 改到 400，列数在**不缩窗口**的情况下当场从 4 变 3。
+     以上数字与 net10 版逐项一致（同一套源码，net48 侧 `LangVersion 7.3` 编译 0 错误）。
+   - **仍未处理**：靠边界那侧的投影被视口裁（静止态就存在，与悬浮无关）；`UI4Panel` 里第三份复制的 hover 代码未同步；
+     项数少时卡片会被撑得很宽（见 `UI4GridView` 一节的代价说明）。
 
 ---
 
