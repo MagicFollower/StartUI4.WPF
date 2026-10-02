@@ -127,22 +127,21 @@ namespace PromptFavorites
 
         private void SelectNewFolder()
         {
-            using (var dialog = new System.Windows.Forms.FolderBrowserDialog())
+            var dialog = new Microsoft.Win32.OpenFolderDialog
             {
-                dialog.Description = "\u9009\u62E9 Prompt \u6839\u76EE\u5F55";
-                dialog.ShowNewFolderButton = true;
+                Title = "\u9009\u62E9 Prompt \u6839\u76EE\u5F55"
+            };
 
-                if (!string.IsNullOrEmpty(App.RootPath) && Directory.Exists(App.RootPath))
-                    dialog.SelectedPath = App.RootPath;
+            if (!string.IsNullOrEmpty(App.RootPath) && Directory.Exists(App.RootPath))
+                dialog.InitialDirectory = App.RootPath;
 
-                if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-                {
-                    var newPath = dialog.SelectedPath;
-                    if (newPath == App.RootPath) return;
+            if (dialog.ShowDialog() == true)
+            {
+                var newPath = dialog.FolderName;
+                if (newPath == App.RootPath) return;
 
-                    if (!App.ChangeRootPath(newPath)) return;
-                    AttachVm(DataContext as ViewModels.MainViewModel);
-                }
+                if (!App.ChangeRootPath(newPath)) return;
+                AttachVm(DataContext as ViewModels.MainViewModel);
             }
         }
     }

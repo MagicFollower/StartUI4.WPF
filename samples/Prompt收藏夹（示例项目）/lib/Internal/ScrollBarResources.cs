@@ -161,7 +161,7 @@ namespace StartUI4Controls.Internal
 
         // ────────────────────────────────────────────────────────────
         //  2. 带 Key 的 ScrollBar 样式片段（供 ScrollViewer Style 内嵌）
-        //     用于 UI4ListBox / UI4ScrollViewer / UI4CodeEditor / UI4DataGrid
+        //     用于 UI4ListBox / UI4ScrollViewer / UI4CodeEditor
         // ────────────────────────────────────────────────────────────
 
         private const string KeyedScrollBarStylesFragment = @"

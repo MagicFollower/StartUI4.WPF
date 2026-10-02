@@ -11,8 +11,9 @@ namespace PromptFavorites.Helpers
     public static class RootPathResolver
     {
         /// <summary>
-        /// net48 在未开启系统长路径支持时受 MAX_PATH=260 限制，
-        /// 这里留出余量给下面的 "\模块名\标题.md"。
+        /// 根目录长度上限。net48 时代它是为了躲 MAX_PATH=260；迁到 .NET 10 后
+        /// 运行时本身已不受 260 限制，但这里仍按原值保留——它是既有校验规则，
+        /// 放开等于接受一批以前会被拒的路径，要改得和清单里的 longPathAware 一起决策。
         /// </summary>
         public const int MaxRootLength = 240;
 

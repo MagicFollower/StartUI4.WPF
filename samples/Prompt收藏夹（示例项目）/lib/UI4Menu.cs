@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
@@ -285,7 +286,25 @@ namespace StartUI4Controls
             }
             catch (Exception ex)
             {
-                MessageBox.Show("UI4Menu error " + ex.Message + "\n" + ex.StackTrace);
+                // 上游在 net48 版这里是 MessageBox.Show：模态框会卡死自动化回归，也把「菜单整块没样式」
+                // 这种致命状态压成一次点击。改为落盘 + 抛出，让宿主立刻看见并能在启动阶段处理。
+                TryRecordStyleInitFailure(ex);
+                throw;
+            }
+        }
+
+        private static void TryRecordStyleInitFailure(Exception error)
+        {
+            try
+            {
+                string path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ui4menu-style-error.log");
+                File.AppendAllText(path,
+                    DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture) +
+                    " UI4Menu.InitStyles failed: " + error + Environment.NewLine);
+            }
+            catch (Exception)
+            {
+                // 记录失败不能盖住真正的异常
             }
         }
     }

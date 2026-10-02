@@ -132,15 +132,29 @@ namespace PromptFavorites.Services
                 ? "PASS 断言组=" + (hostile.Length * 2 + 3)
                 : report.ToString();
 
+            var body = "SettingsSelfTest " + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
+                + " failed=" + failed + "\r\n" + status;
+
+            // 单文件发布下 AppDomain.CurrentDomain.BaseDirectory 可能指向会被清理的临时解包目录，
+            // 产物优先落设置目录旁边；写失败不影响退出码（契约仍是"退出码＝失败断言数"）。
             try
             {
-                File.WriteAllText(
-                    Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "selftest.txt"),
-                    "SettingsSelfTest " + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
-                    + " failed=" + failed + "\r\n" + status);
+                var appData = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                    "PromptFavorites");
+                Directory.CreateDirectory(appData);
+                File.WriteAllText(Path.Combine(appData, "selftest.txt"), body);
             }
             catch
             {
+                try
+                {
+                    File.WriteAllText(
+                        Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "selftest.txt"), body);
+                }
+                catch
+                {
+                }
             }
 
             return failed;

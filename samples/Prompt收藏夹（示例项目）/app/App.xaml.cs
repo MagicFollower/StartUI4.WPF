@@ -130,13 +130,13 @@ namespace PromptFavorites
                 "\u672A\u627E\u5230\u53EF\u7528\u7684 Prompt \u6839\u76EE\u5F55\uFF0C\u8BF7\u9009\u62E9\u4E00\u4E2A\u76EE\u5F55\u3002",
                 "\u9700\u8981\u9009\u62E9\u76EE\u5F55", UI4MessageBoxButtons.OK, 420);
 
-            using (var dialog = new System.Windows.Forms.FolderBrowserDialog())
+            var dialog = new Microsoft.Win32.OpenFolderDialog
             {
-                dialog.Description = "\u9009\u62E9 Prompt \u6839\u76EE\u5F55";
-                dialog.ShowNewFolderButton = true;
-                if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-                    ChangeRootPath(dialog.SelectedPath);
-            }
+                Title = "\u9009\u62E9 Prompt \u6839\u76EE\u5F55"
+            };
+
+            if (dialog.ShowDialog() == true)
+                ChangeRootPath(dialog.FolderName);
         }
 
         private static void ApplyWindowGeometry(Window window, SettingsService settings)
