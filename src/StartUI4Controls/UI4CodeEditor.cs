@@ -62,6 +62,11 @@ namespace StartUI4Controls
 
             menu.Attach(this);
 
+            // 编辑器外壳（底 / 前景）跟随主题。语法高亮配色由 AvalonEdit 的 XSHD 决定，
+            // 不走 WPF 资源体系，无法声明式化——属已知限制，见 README 第十节。
+            SetResourceReference(BackgroundProperty, "UI4.Brush.Surface");
+            SetResourceReference(ForegroundProperty, "UI4.Brush.TextForeground");
+
             // 控件加载完成后为内部的 ScrollViewer 应用自定义样式
             Loaded += OnLoaded;
         }

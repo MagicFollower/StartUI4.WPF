@@ -330,6 +330,15 @@ namespace StartUI4Controls
             Loaded += OnLoaded;
             SelectionChanged += (s, e) => ApplySelection();
             RebuildStyle();
+
+            // 声明式跟随主题：令牌变化触发 OnStyleChanged 重建，快照式取色随之刷新
+            SetResourceReference(HeaderBackgroundProperty, "UI4.Color.TrackBackground");
+            SetResourceReference(TabSelectedBackgroundProperty, "UI4.Color.Surface");
+            SetResourceReference(TabHoverBackgroundProperty, "UI4.Color.HoverOverlay");
+            SetResourceReference(TabForegroundProperty, "UI4.Color.TextMuted");
+            SetResourceReference(TabSelectedForegroundProperty, "UI4.Color.TextForeground");
+            SetResourceReference(CloseButtonColorProperty, "UI4.Color.TextMuted");
+            SetResourceReference(AddButtonColorProperty, "UI4.Color.TextMuted");
         }
 
         private void OnLoaded(object sender, RoutedEventArgs e)

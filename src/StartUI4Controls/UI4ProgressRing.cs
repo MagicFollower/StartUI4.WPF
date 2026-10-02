@@ -17,9 +17,10 @@ namespace StartUI4Controls
 
         static UI4ProgressRing()
         {
+            // 默认值留空：前景交给继承或主题令牌（见 TextBrush），不再烘焙系统黑
             ForegroundProperty.OverrideMetadata(typeof(UI4ProgressRing),
                 new FrameworkPropertyMetadata(
-                    SystemColors.ControlTextBrush,
+                    null,
                     FrameworkPropertyMetadataOptions.Inherits,
                     OnForegroundChanged));
         }
@@ -32,6 +33,16 @@ namespace StartUI4Controls
             this.Height = 80;
             this.Loaded += OnLoaded;
             this.SizeChanged += OnSizeChanged;
+
+            // 声明式跟随主题：令牌变化即触发 OnRingPropertyChanged 重绘，无需任何命令式刷新
+            SetResourceReference(RingForegroundProperty, "UI4.Brush.Accent");
+            SetResourceReference(RingBackgroundProperty, "UI4.Brush.TrackBackground");
+        }
+
+        /// <summary>数值文字色：显式或继承的 Foreground 优先，否则取主题正文令牌。</summary>
+        private Brush TextBrush()
+        {
+            return Foreground ?? TryFindResource("UI4.Brush.TextForeground") as Brush ?? Brushes.Black;
         }
 
         public bool IsActive
@@ -243,12 +254,10 @@ namespace StartUI4Controls
 
         private static void OnForegroundChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
+            // 不再把 Foreground 抄进 RingForeground：环色由令牌驱动，抄写会覆盖主题跟随。
+            // 旧实现靠 ReadLocalValue == UnsetValue 判断"用户没设过"，而 SetResourceReference
+            // 会让 ReadLocalValue 返回 ResourceReferenceExpression，该判定会静默失效。
             var ring = (UI4ProgressRing)d;
-            if (ring.ReadLocalValue(ForegroundProperty) != DependencyProperty.UnsetValue &&
-                ring.ReadLocalValue(RingForegroundProperty) == DependencyProperty.UnsetValue)
-            {
-                ring.RingForeground = e.NewValue as Brush;
-            }
             ring.Dispatcher.BeginInvoke(new Action(() => ring.UpdateRing()));
         }
         private void StartTransitionAnimation(double targetValue)
@@ -427,7 +436,7 @@ namespace StartUI4Controls
                     Text = ((int)animatedVal).ToString(),
                     HorizontalAlignment = HorizontalAlignment.Center,
                     VerticalAlignment = VerticalAlignment.Center,
-                    Foreground = this.Foreground,
+                    Foreground = TextBrush(),
                     FontSize = this.ValueFontSize,
                     FontWeight = FontWeights.SemiBold,
                     IsHitTestVisible = false

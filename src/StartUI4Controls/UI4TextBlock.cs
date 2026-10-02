@@ -48,18 +48,9 @@ namespace StartUI4Controls
             set => SetValue(TextProperty, value);
         }
 
-        public static new readonly DependencyProperty ForegroundProperty =
-            DependencyProperty.Register(
-                nameof(Foreground),
-                typeof(Brush),
-                typeof(UI4TextBlock),
-                new PropertyMetadata(null, OnStyleRefresh));
-
-        public new Brush Foreground
-        {
-            get => (Brush)GetValue(ForegroundProperty);
-            set => SetValue(ForegroundProperty, value);
-        }
+        // Foreground / Padding / FontSize / FontWeight 不再用 new 隐藏基类属性：
+        // 隐藏会让 SetResourceReference 与属性继承产生歧义（资源引用挂到哪个 DP 说不清）。
+        // 默认值改在静态构造函数里 OverrideMetadata，主题跟随在构造函数里 SetResourceReference。
 
         public static readonly DependencyProperty CornerRadiusProperty =
             DependencyProperty.Register(
@@ -74,31 +65,8 @@ namespace StartUI4Controls
             set => SetValue(CornerRadiusProperty, value);
         }
 
-        public static readonly DependencyProperty GradientStartProperty =
-            DependencyProperty.Register(
-                nameof(GradientStart),
-                typeof(Color),
-                typeof(UI4TextBlock),
-                new PropertyMetadata(Color.FromRgb(0, 120, 212), OnStyleRefresh));
-
-        public Color GradientStart
-        {
-            get => (Color)GetValue(GradientStartProperty);
-            set => SetValue(GradientStartProperty, value);
-        }
-
-        public static readonly DependencyProperty GradientEndProperty =
-            DependencyProperty.Register(
-                nameof(GradientEnd),
-                typeof(Color),
-                typeof(UI4TextBlock),
-                new PropertyMetadata(Color.FromRgb(147, 51, 234), OnStyleRefresh));
-
-        public Color GradientEnd
-        {
-            get => (Color)GetValue(GradientEndProperty);
-            set => SetValue(GradientEndProperty, value);
-        }
+        // GradientStart / GradientEnd 已删除：BuildTextStyle 从未消费它们，设了不生效（死属性）。
+        // 渐变文本的正确做法是给 Foreground 传一个 LinearGradientBrush。
 
         public static readonly DependencyProperty PanelBackgroundProperty =
             DependencyProperty.Register(
@@ -111,45 +79,6 @@ namespace StartUI4Controls
         {
             get => (Brush)GetValue(PanelBackgroundProperty);
             set => SetValue(PanelBackgroundProperty, value);
-        }
-
-        public static new readonly DependencyProperty PaddingProperty =
-            DependencyProperty.Register(
-                nameof(Padding),
-                typeof(Thickness),
-                typeof(UI4TextBlock),
-                new PropertyMetadata(new Thickness(8, 6, 8, 6), OnStyleRefresh));
-
-        public new Thickness Padding
-        {
-            get => (Thickness)GetValue(PaddingProperty);
-            set => SetValue(PaddingProperty, value);
-        }
-
-        public static new readonly DependencyProperty FontSizeProperty =
-            DependencyProperty.Register(
-                nameof(FontSize),
-                typeof(double),
-                typeof(UI4TextBlock),
-                new PropertyMetadata(15d, OnStyleRefresh));
-
-        public new double FontSize
-        {
-            get => (double)GetValue(FontSizeProperty);
-            set => SetValue(FontSizeProperty, value);
-        }
-
-        public static new readonly DependencyProperty FontWeightProperty =
-            DependencyProperty.Register(
-                nameof(FontWeight),
-                typeof(FontWeight),
-                typeof(UI4TextBlock),
-                new PropertyMetadata(FontWeights.Normal, OnStyleRefresh));
-
-        public new FontWeight FontWeight
-        {
-            get => (FontWeight)GetValue(FontWeightProperty);
-            set => SetValue(FontWeightProperty, value);
         }
 
         public static readonly DependencyProperty HorizontalContentAlignProperty =
@@ -250,12 +179,24 @@ namespace StartUI4Controls
         {
             DefaultStyleKeyProperty.OverrideMetadata(typeof(UI4TextBlock),
                 new FrameworkPropertyMetadata(typeof(UI4TextBlock)));
+
+            // 原 new 隐藏 DP 的默认值改在这里给出；继承链仍然生效（父级设 FontSize 会覆盖此默认值）
+            PaddingProperty.OverrideMetadata(typeof(UI4TextBlock),
+                new FrameworkPropertyMetadata(new Thickness(8, 6, 8, 6)));
+            FontSizeProperty.OverrideMetadata(typeof(UI4TextBlock),
+                new FrameworkPropertyMetadata(15d));
+            FontWeightProperty.OverrideMetadata(typeof(UI4TextBlock),
+                new FrameworkPropertyMetadata(FontWeights.Normal));
         }
 
         public UI4TextBlock()
         {
             Style = BuildTextStyle();
             Loaded += UI4TextBlock_Loaded;
+
+            // 声明式跟随主题：正文色与阴影色都挂令牌，用户本地赋值自动优先
+            SetResourceReference(ForegroundProperty, "UI4.Brush.TextForeground");
+            SetResourceReference(ShadowColorProperty, "UI4.Color.Shadow");
         }
 
         private static void OnStyleRefresh(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -325,14 +266,11 @@ namespace StartUI4Controls
         {
             Style style = new Style(typeof(ContentControl));
 
-            style.Setters.Add(new Setter(ContentControl.PaddingProperty, Padding));
-            style.Setters.Add(new Setter(ContentControl.HorizontalContentAlignmentProperty, HorizontalContentAlign));
-            style.Setters.Add(new Setter(ContentControl.VerticalContentAlignmentProperty, VerticalContentAlign));
-
             ControlTemplate template = new ControlTemplate(typeof(ContentControl));
             FrameworkElementFactory borderRoot = new FrameworkElementFactory(typeof(Border));
             borderRoot.SetBinding(Border.CornerRadiusProperty, new Binding(nameof(CornerRadius)) { RelativeSource = RelativeSource.TemplatedParent });
             borderRoot.SetBinding(Border.BackgroundProperty, new Binding(nameof(PanelBackground)) { RelativeSource = RelativeSource.TemplatedParent });
+            borderRoot.SetBinding(Border.PaddingProperty, new Binding(nameof(Padding)) { RelativeSource = RelativeSource.TemplatedParent });
 
             FrameworkElementFactory textBox = new FrameworkElementFactory(typeof(TextBox));
             textBox.Name = "PART_TextBox";
@@ -353,11 +291,8 @@ namespace StartUI4Controls
             textBox.SetBinding(TextBox.FontWeightProperty, new Binding(nameof(FontWeight)) { RelativeSource = RelativeSource.TemplatedParent });
             textBox.SetBinding(TextBox.HorizontalAlignmentProperty, new Binding(nameof(HorizontalContentAlign)) { RelativeSource = RelativeSource.TemplatedParent });
             textBox.SetBinding(TextBox.VerticalAlignmentProperty, new Binding(nameof(VerticalContentAlign)) { RelativeSource = RelativeSource.TemplatedParent });
-
-            if (Foreground != null)
-            {
-                textBox.SetValue(TextBox.ForegroundProperty, Foreground);
-            }
+            // 绑定而非快照：Foreground 挂着主题令牌，切换主题时内层 TextBox 自动跟随，无需重建 Style
+            textBox.SetBinding(TextBox.ForegroundProperty, new Binding(nameof(Foreground)) { RelativeSource = RelativeSource.TemplatedParent });
 
             borderRoot.AppendChild(textBox);
             template.VisualTree = borderRoot;

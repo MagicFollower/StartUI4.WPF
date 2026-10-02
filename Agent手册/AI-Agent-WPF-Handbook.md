@@ -1,5 +1,13 @@
 ﻿# 面向 AI Agent 的 WPF 业务应用接入操作手册
 
+> **机制更正（2026-10-02）**：本章出现的 `IThemeAware`、`UI4Theme.TrackControl`、`ThemeSync.Apply`、`SyncThemeColors` 属于 **2.0.0 及更早**的命令式刷新链路。
+> 3.0.0 起主题改为**单通道声明式**：每个主题键一份共享 `ResourceDictionary` 挂进 `Application.Resources.MergedDictionaries`，
+> 库内控件在构造函数里 `SetResourceReference(Dp, "UI4.Color.X")`（26 个文件 / 89 处），接口与弱引用追踪已整体删除。
+> 取令牌色请写 `UI4Theme.Current.ColorOf(UI4ThemeToken.X)` / `BrushOf(...)`——旧的 `*Color` / `*Brush` 实例属性已不存在（写它们会 `CS1061`）。
+> `UI4Theme.Register` 覆盖当前生效的键时，现在会立即整体重新应用（重建 Current、原位换入字典、重指向同键作用域、触发 `ThemeChanged`）。
+> 完整机制与优缺点评审见 `src/StartUI4Controls/README.md` §九。本章其余内容（选型理由、坑位、时序观察）仍有效，只是涉及上述 API 的代码片段要按本头改写后再用。
+
+
 > 本手册面向要在本组件库之上新建 WPF 业务应用、并继续做业务开发的 AI Agent。
 > 全文 24 章分五个区（分区口径同第 01 章 §1.3.2）：第 01–05 章认知与准备，第 06–11 章应用骨架，
 > 第 12–17 章主题与品牌，第 18–22 章控件实操，第 23–24 章业务接入与交付。

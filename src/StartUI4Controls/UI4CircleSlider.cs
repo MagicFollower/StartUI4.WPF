@@ -18,9 +18,10 @@ namespace StartUI4Controls
 
         static UI4CircleSlider()
         {
+            // 默认值留空：前景交给继承或主题令牌（见 TextBrush），不再烘焙系统黑
             ForegroundProperty.OverrideMetadata(typeof(UI4CircleSlider),
                 new FrameworkPropertyMetadata(
-                    SystemColors.ControlTextBrush,
+                    null,
                     FrameworkPropertyMetadataOptions.Inherits,
                     OnForegroundChanged));
         }
@@ -35,6 +36,22 @@ namespace StartUI4Controls
             this.SizeChanged += OnSizeChanged;
             this.Loaded += OnLoaded;
             this.Unloaded += OnUnloaded;
+
+            // 声明式跟随主题：令牌变化即触发 OnRingPropertyChanged 重绘，无需任何命令式刷新
+            SetResourceReference(RingForegroundProperty, "UI4.Brush.Accent");
+            SetResourceReference(RingBackgroundProperty, "UI4.Brush.TrackBackground");
+        }
+
+        /// <summary>数值文字色：显式或继承的 Foreground 优先，否则取主题正文令牌。</summary>
+        private Brush TextBrush()
+        {
+            return Foreground ?? TryFindResource("UI4.Brush.TextForeground") as Brush ?? Brushes.Black;
+        }
+
+        /// <summary>滑块描边色：强调色表面上的前景令牌（高对比度下为黑）。</summary>
+        private Brush ThumbStrokeBrush()
+        {
+            return TryFindResource("UI4.Brush.OnAccent") as Brush ?? Brushes.White;
         }
 
         public double Value
@@ -177,12 +194,10 @@ namespace StartUI4Controls
 
         private static void OnForegroundChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
+            // 不再把 Foreground 抄进 RingForeground：环色由令牌驱动，抄写会覆盖主题跟随。
+            // 旧实现靠 ReadLocalValue == UnsetValue 判断"用户没设过"，而 SetResourceReference
+            // 会让 ReadLocalValue 返回 ResourceReferenceExpression，该判定会静默失效。
             var slider = (UI4CircleSlider)d;
-            if (slider.ReadLocalValue(ForegroundProperty) != DependencyProperty.UnsetValue &&
-                slider.ReadLocalValue(RingForegroundProperty) == DependencyProperty.UnsetValue)
-            {
-                slider.RingForeground = e.NewValue as Brush;
-            }
             slider.Dispatcher.BeginInvoke(new Action(() => slider.UpdateSlider()));
         }
 
@@ -357,7 +372,7 @@ namespace StartUI4Controls
                 Width = thumbSize,
                 Height = thumbSize,
                 Fill = RingForeground,
-                Stroke = Brushes.White,
+                Stroke = ThumbStrokeBrush(),
                 StrokeThickness = 1.5,
                 HorizontalAlignment = HorizontalAlignment.Left,
                 VerticalAlignment = VerticalAlignment.Top,
@@ -373,7 +388,7 @@ namespace StartUI4Controls
                     Text = Value.ToString("0"),
                     HorizontalAlignment = HorizontalAlignment.Center,
                     VerticalAlignment = VerticalAlignment.Center,
-                    Foreground = this.Foreground,
+                    Foreground = TextBrush(),
                     FontSize = this.ValueFontSize,
                     FontWeight = FontWeights.SemiBold,
                     IsHitTestVisible = false

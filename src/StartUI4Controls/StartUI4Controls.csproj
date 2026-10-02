@@ -20,9 +20,9 @@
     <Title>StartUI4.WPF</Title>
     <Authors>KS.STUDIO</Authors>
     <Description>StartUI4 WPF control library for .NET 10 (LTS), ported from the .NET Framework 4.8 edition.</Description>
-    <FileVersion>2.0.0</FileVersion>
-    <AssemblyVersion>2.0.0</AssemblyVersion>
-    <Version>2.0.0</Version>
+    <FileVersion>3.0.0</FileVersion>
+    <AssemblyVersion>3.0.0</AssemblyVersion>
+    <Version>3.0.0</Version>
     <PackageProjectUrl>https://github.com/KSSTU/StartUI4.WPF</PackageProjectUrl>
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
   </PropertyGroup>

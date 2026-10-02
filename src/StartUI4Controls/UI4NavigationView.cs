@@ -108,7 +108,7 @@ namespace StartUI4Controls
     {
     }
 
-    public class UI4NavigationView : ItemsControl, IThemeAware
+    public class UI4NavigationView : ItemsControl
     {
 
         private const string PartLeftPanel = "PART_LeftPanel";
@@ -657,25 +657,12 @@ namespace StartUI4Controls
 
         public UI4NavigationView()
         {
-            SyncThemeColors();
-            UI4Theme.TrackControl(this);
-        }
-
-        void IThemeAware.OnThemeChanged()
-        {
-            SyncThemeColors();
-        }
-
-        private readonly Dictionary<DependencyProperty, object> _applied = new Dictionary<DependencyProperty, object>();
-
-        private void SyncThemeColors()
-        {
-            var theme = UI4Theme.Current;
-            Background = theme.BackgroundBrush;
-            Foreground = theme.TextForegroundBrush;
-            ThemeSync.Apply(this, LeftPanelBackgroundProperty, _applied, theme.SurfaceBrush);
-            ThemeSync.Apply(this, SelectedItemBackgroundProperty, _applied, theme.SurfaceBrush);
-            ThemeSync.Apply(this, SelectionIndicatorBrushProperty, _applied, theme.AccentBrush);
+            // 声明式跟随主题：整体底/正文/左栏/选中底/指示条都挂令牌
+            SetResourceReference(BackgroundProperty, "UI4.Brush.Background");
+            SetResourceReference(ForegroundProperty, "UI4.Brush.TextForeground");
+            SetResourceReference(LeftPanelBackgroundProperty, "UI4.Brush.Surface");
+            SetResourceReference(SelectedItemBackgroundProperty, "UI4.Brush.Surface");
+            SetResourceReference(SelectionIndicatorBrushProperty, "UI4.Brush.Accent");
         }
 
         public ObservableCollection<UI4NavigationViewItem> RegularItems => _regularItems;

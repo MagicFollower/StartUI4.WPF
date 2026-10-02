@@ -54,7 +54,7 @@ retarget 到 **.NET 10 (LTS)**，可在 Visual Studio 2026（18.x+）或安装 .
 - **丰富动画** —— 悬浮缩放、开关滑动、加载旋转、数字翻转等平滑动画
 - **高度可定制** —— 250+ 个依赖属性对外开放，几乎每个视觉细节都可调
 - **开箱即用** —— 引用程序集或 NuGet 包后直接在 XAML 中使用，无需额外资源字典
-- **主题系统** —— 亮/暗/跟随系统/高对比度一键切换，30 个颜色令牌经 `DynamicResource` 桥接到宿主；`UI4ThemeScope` 可对单张卡片或整个窗口局部换肤；`UI4WindowTitleBar` 经 DWM 让**系统标题栏**同步跟随（详见第十节）
+- **主题系统** —— 亮/暗/跟随系统/高对比度一键切换，38 个颜色令牌经一份共享资源字典 + `DynamicResource` 桥接到宿主；`UI4ThemeScope` 可对单张卡片或整个窗口局部换肤；`UI4WindowTitleBar` 经 DWM 让**系统标题栏**同步跟随（详见第十节）
 - **纯代码模板** —— 所有控件模板由代码构建，不依赖 Themes/generic.xaml，单 dll 即可分发
 - **.NET 10 原生** —— 单文件类库 + `.deps.json`/`.runtimeconfig.json` 由 SDK 生成；不需要 `IsExternalInit` 之类的 polyfill
 
@@ -161,7 +161,7 @@ xmlns:ui="clr-namespace:StartUI4Controls;assembly=StartUI4Controls"
 | `UI4Theme` | —（静态服务） | 全局主题：亮/暗/跟随系统/高对比度、令牌资源桥、`SetAccent`、自定义主题注册、持久化 |
 | `UI4ThemeScope` | —（附加属性） | 局部/每窗口主题：`ui:UI4ThemeScope.Theme="dark"`，子树独立换肤（见第十节） |
 | `UI4WindowTitleBar` | —（附加属性 + 静态方法） | 系统标题栏跟随主题：DWM 深/浅 + 标题栏底色/文字/边框染色，默认全自动，`ui:UI4WindowTitleBar.Enabled="False"` 可豁免（见第十节） |
-| `UI4ThemeMode` / `UI4ThemeToken` | —（枚举） | 主题模式（Light/Dark/System/HighContrast）与 30 个颜色令牌键 |
+| `UI4ThemeMode` / `UI4ThemeToken` | —（枚举） | 主题模式（Light/Dark/System/HighContrast）与 38 个颜色令牌键 |
 | `UI4ThemeDefinition` | —（sealed 类） | 一套主题的令牌取值：内置 `Light()` / `Dark()` / `HighContrast()`，可 `Clone()` + `With(token, color)` 定制后 `UI4Theme.Register` |
 | `RegistryThemePersistence` / `JsonThemePersistence` | `IThemePersistence` 实现 | 主题模式持久化后端：HKCU 注册表 / JSON 文件（宿主自选，见第十节） |
 | `UI4MenuItem` / `UI4MenuItemType` / `UI4MenuIcons` | —（配套类型） | 右键菜单条目数据、七种标准条目类型（Undo/Redo/Cut/Copy/Paste/Delete/SelectAll）与内置图标 |
@@ -1001,7 +1001,7 @@ private void MyTab_CloseTab(object sender, TabCloseRoutedEventArgs e)
 
 ### UI4ListView
 
-卡片式列表：每项为带阴影的圆角卡片，悬浮描边 + 轻微缩放（文字保持清晰）。
+卡片式列表：每项为带阴影的圆角卡片，悬浮时轻微放大（文字保持清晰），边框不随悬浮变色。
 
 **继承自**：`ListBox`
 
@@ -1029,7 +1029,7 @@ private void MyTab_CloseTab(object sender, TabCloseRoutedEventArgs e)
 > `allowed = min(HoverMaxGrow, ItemMargin + 内容内缩 4 − 硬留白 6)`。
 > 效果是——窄卡片（如 `ItemWidth=230`、`HoverScale=1.06`）仍按设计者的倍率走；
 > 未指定 `ItemWidth` 而铺满一行的宽项则自动收敛，每边外扩恒定在若干像素，
-> **窗口多宽都不会越界，各尺寸下放大幅度一致**。实测见 §八 第 3 条。
+> **窗口多宽都不会越界，各尺寸下放大幅度一致**。实测见 §八 第 6 条。
 > 缩放节点挂在容器本体（`PrepareContainerForItemOverride`）而不是模板里：
 > 一是模板 `SetValue` 的对象会被所有容器共享，悬浮一项会连带其它项；
 > 二是让越界量可以被 UIA 的 `ListItem.BoundingRectangle` 直接量到。
@@ -1818,7 +1818,18 @@ UI4Theme.SetTheme(UI4ThemeMode.System);   // 跟随系统（注册表 AppsUseLig
 UI4ThemeMode resolved = UI4Theme.ResolvedMode;  // System 时报告真正解析出的亮/暗
 ```
 
-`SetTheme` 会把 30 个颜色令牌写进 `Application.Resources`，宿主 XAML 用 `{DynamicResource}` 即可跟随，无需逐元素手工同步：
+`SetTheme` 会把 38 个颜色令牌写进 `Application.Resources`，宿主 XAML 用 `{DynamicResource}` 即可跟随，无需逐元素手工同步：
+
+> **3.0.0 机制变更（本节按此改写）**：每个主题键对应**一份共享 `ResourceDictionary`**（`UI4Theme.cs:283-295`），
+> 全局把它整份挂进 `Application.Resources.MergedDictionaries`，同键的 `UI4ThemeScope` 挂的是**同一个实例**；
+> 库内控件不再实现任何主题接口，而是在构造函数里 `SetResourceReference(Dp, "UI4.Color.X")`（全库 89 处 / 26 个文件）。
+> 因此 `UI4Theme` 上原有的 `*Color` / `*Brush` 实例属性已删除，取令牌色请写
+> `UI4Theme.Current.ColorOf(UI4ThemeToken.BorderNormal)`（或 `BrushOf`）。旧写法 `UI4Theme.BorderNormalColor`
+> 现在会编译报 `CS1061`。重构的优缺点评审见
+> [`src/StartUI4Controls/README.md`](src/StartUI4Controls/README.md) §九。
+>
+> **更正（2026-10-02）**：本段原写「`samples/StartUI4Demo` 仍待按此迁移」——Demo 与四份副本已全部迁完，
+> 3 处 `CS1061`（`BorderNormalColor` / `HoverOverlayColor` / `AccentColor`）改成了 `ColorOf(令牌)`，见 §九 9.7。
 
 ```xml
 <Window Background="{DynamicResource UI4.Brush.Background}">
@@ -1828,6 +1839,7 @@ UI4ThemeMode resolved = UI4Theme.ResolvedMode;  // System 时报告真正解析�
 ```
 
 另有 `UI4.Color.<令牌>`（`Color` 值）与 `UI4Theme.SetAccent(Color)`（自动派生 AccentDark，全部控件跟随）。
+不想自定义配色时，直接套 §5 的 6 套预置业务场景套装。
 
 ### 2. 局部 / 每窗口主题（`UI4ThemeScope`）
 
@@ -1854,9 +1866,10 @@ string key = UI4ThemeScope.GetTheme(card);        // 只读该元素自身声明
 
 - 键大小写不敏感，取值 `light` / `dark` / `highcontrast` / 通过 `UI4Theme.Register(...)` 注册的自定义键；
   **空串与未注册键都表示撤销作用域**（XAML 写错键名不会导致崩溃）。
-- 两条生效通道：① 向该元素 `Resources` 注入令牌字典，故 `{DynamicResource}` 宿主画刷与库内引用式控件
-  （`UI4CheckBox`/`UI4Radio`/`UI4TextBox`/`UI4PasswordBox`/`UI4Switch`/`UI4ProgressBar`/`UI4Slider`/`UI4Pivot` 等）自动跟随；
-  ② 仍走命令式刷新的控件（`UI4Button`/`UI4ComboBox`/`UI4Menu`…）在子树刷新时被同步换入该主题，因此**无需改任何控件代码**。
+- **单通道生效**（3.0.0 起）：向该元素 `Resources` 注入该键的**共享令牌字典**（与全局同一实例），
+  故 `{DynamicResource}` 宿主画刷与库内全部引用式控件（`SetResourceReference`，26 个文件 / 89 处）自动跟随，
+  **无需改任何控件代码**；2.0.0 的「第二条命令式子树刷新通道」已随 `IThemeAware`/`TrackControl` 一起删除。
+  同键的作用域与全局共享一次 `SetAccent` 的原地改动；异键作用域互不影响（实测，见 §九 9.2 第 2 条）。
 - 支持嵌套：子树内再声明一个键即为内层作用域，内外层各自正确；向上查找可穿过 Popup 与控件模板。
 - 元素自身 `Resources` 里的同名直接键优先于作用域字典（标准 WPF 资源语义）。
 - Demo 第 11 页「局部主题」提供左右对照卡片、作用域键下拉与嵌套示例；「打开异主题窗口」演示整窗作用域。
@@ -1868,14 +1881,16 @@ UI4Theme.Apply("highcontrast");              // 直接切
 UI4Theme.FollowSystemHighContrast = true;    // 可选：开启后 SetTheme(System) 在系统高对比度下优先用 highcontrast
 ```
 
-定义为黑底 / 白字白框 / 黄强调，选中态用深蓝承托白色前景，覆盖全部 30 个令牌。
+定义为黑底 / 白字白框 / 黄强调，覆盖全部 38 个令牌。亮黄作底的地方前景一律走 `OnAccent`（该主题取**黑**）——
+按钮的常态底/悬停底、编号角标都是黑字（实测黄底黑字 19.56:1、`#DDDD00` 上 14.42:1）；
+`UI4Button` 的前景是在 `OnAccent` 与正文色之间**取对比度更高的那个**，不是按亮度阈值判（阈值判法会在亮黄上选出白字，1.07:1）。
 `FollowSystemHighContrast` 默认为 `false`（避免未经宿主同意就改变观感），开启后会订阅系统
 `UserPreferenceChanged` 并在 Dispatcher 上编组刷新。
 
 ### 4. 自定义主题与持久化
 
 ```csharp
-// 自定义主题：克隆内置定义（30 个令牌齐全），再改想改的令牌
+// 自定义主题：克隆内置定义（38 个令牌齐全），再改想改的令牌
 var ocean = UI4ThemeDefinition.Dark().Clone();
 ocean.With(UI4ThemeToken.Accent, Color.FromRgb(0, 150, 136));
 ocean.With(UI4ThemeToken.Background, Color.FromRgb(0, 20, 26));
@@ -1888,7 +1903,51 @@ UI4Theme.Save();
 UI4Theme.ApplyPersisted();
 ```
 
-### 5. 窗口标题栏跟随主题（`UI4WindowTitleBar`）
+两条与 3.0.0 机制直接相关的注意事项（均实测，成因见 `src/StartUI4Controls/README.md` §九 9.3）：
+
+- **别对「当前正在用的键」重复 `Register`。** `Register` 会重建共享字典，但 `Apply(同一个键)` 判定「键没变」而不重建
+  `UI4Theme.Current` → 引用式控件已用新令牌、`UI4Theme.Current` 驱动的命令式路径（标题栏染色、角标数字）仍是旧令牌，
+  且不触发 `ThemeChanged`。请为每个可切换的方案用**独立键**（如 `my-light`），或先切到别的键再切回来。
+- **给控件的令牌属性赋本地值 = 该属性退订主题（设计如此，不是缺陷）。** 本地值压过样式赋值是 WPF 的优先级规则，
+  「我指定的颜色不该被主题改掉」正是意图。机制上：控件构造函数用 `SetResourceReference` 挂令牌，它占的也是本地值槽，
+  宿主再写 `GradientStart="#090909"`（XAML 或 `SetValue`）就把这条引用顶掉；之后 `ClearValue` 回落到
+  **代码里的默认色而不是主题色**。只想改一处观感就照上面写；想整棵子树换观感，用异键 `UI4ThemeScope`。
+
+### 5. 预置业务场景套装（`UI4ThemePacks`）
+
+内置的 `light` / `dark` / `highcontrast` 是「通用底」，业务页往往要更贴场景的色板。`UI4ThemePacks` 在内置定义之上
+派生 8 套**手调、开箱即用**的套装（亮 5 + 暗 3，38 个令牌全部覆盖），宿主直接按键应用，不必自己调配色：
+
+```csharp
+UI4ThemePacks.RegisterAll();                 // 启动时一次，幂等；也可只注册一套：
+UI4Theme.Register(UI4ThemePacks.DefinitionFor(UI4ThemePacks.PaperGrey));
+UI4Theme.Apply(UI4ThemePacks.DataConsole);   // 全局；或写进 UI4ThemeScope.Theme="paper-grey" 做局部
+```
+
+| 常量 | 键（稳定契约） | 展示名 | 底 | 场景 |
+|---|---|---|---|---|
+| `UI4ThemePacks.DataConsole` | `data-console` | 数据台 | 亮 | 表格/列表密集的后台：面板比底白一档、网格线可辨，正文近黑拿高对比 |
+| `UI4ThemePacks.Reading` | `reading` | 阅读 | 亮 | 长文与文档：暖纸底、低饱和，强调色只用于链接与焦点 |
+| `UI4ThemePacks.PaperWhite` | `paper-white` | 纸白 | 亮 | 最亮的一档纸质阅读：底近纯白只留一丝暖，强调用墨褐而不是蓝，让"纸"当主角 |
+| `UI4ThemePacks.PaperGrey` | `paper-grey` | 灰纸 | 亮 | 白灰纸质阅读：底压一档到中性浅灰、面板仍留白分层，强调用石墨灰蓝，长时最不着眼 |
+| `UI4ThemePacks.Form` | `form` | 录入 | 亮 | 表单与设置页：字段边界清晰、焦点环醒目 |
+| `UI4ThemePacks.OnCall` | `oncall` | 值守 | 暗 | 夜间长时监控：压暗纯白、琥珀强调，不与业务的红/绿告警色抢位 |
+| `UI4ThemePacks.Terminal` | `terminal` | 终端 | 暗 | 日志与代码：冷青强调，层次主要靠边框而非底色台阶 |
+| `UI4ThemePacks.Showcase` | `showcase` | 展示 | 暗 | 投屏看板与媒体页：深靛底配紫→品红渐变，远距离可读 |
+
+- **键是英文且不会改**（写进 XAML、配置与代码），中文与深浅标记只用于展示：`DisplayName(key)` 给「纸白」，
+  `ShadeName(key)` 给「亮」，`DisplayLabel(key)` 给「纸白（亮） · paper-white」那种整行（下拉用）。
+  未登记的键（含宿主自定义主题）原样回显，排错时看到的仍是真键名。
+- **深浅标记只加在套装上**：内置三套不加（`light` / `dark` / `highcontrast` 的中文名自带深浅义，宿主自定义键的深浅也不由键名承诺）。
+  标记与实测底色深浅由探针互相校验（`ShadeName` 说「暗」的，底色亮度必须 <128，即 `UI4WindowTitleBar.IsDark` 的判据）。
+- 每套的取值理由写在 `UI4ThemePacks.cs` 对应工厂方法的注释里；改色板只改那里。
+- **对比度门槛**：8 套实测最低 3.49:1 ~ 4.55:1（纸白 4.53、灰纸 4.09），门槛与逐对数据见
+  `src/StartUI4Controls/README.md` §九 9.9。内置 `light` / `dark` 仍有 4 处不达标，属既有项，未随本次改动调整。
+- **深色套装的 `CurrentMode` / `ResolvedMode` 仍报 `Light`** —— 这是自定义键的既有限制（`ModeForKey` 只认三个内置键）。
+  要判深浅，按底色亮度判（`UI4WindowTitleBar.IsDark` 即 `0.299R+0.587G+0.114B < 128`），标题栏染色就是走这条判据，
+  所以套装的标题栏深浅都是对的。
+
+### 6. 窗口标题栏跟随主题（`UI4WindowTitleBar`）
 
 **需求**：切到深色/高对比度后，客户区已整片变暗，但窗口顶部那条系统标题栏仍是亮色白条——
 标题栏属于**非客户区**，由 DWM 绘制，WPF 的属性、`DynamicResource`、控件模板全都够不着它。
@@ -1957,20 +2016,25 @@ int  cref    = UI4WindowTitleBar.ToColorRef(color);       // Color -> DWM COLORR
 > 代码改动清单（库内 4 处挂钩 + 1 个新文件）、`Apply` 的执行序列、四条通路的时序表、失败降级矩阵与断言↔实现对应关系，
 > 见 `主题方案分析与改进.md` 第十二节；选型过程见同文档第十一节。
 
-### 6. 已知限制
+### 7. 已知限制
 
 - 标题栏染色维度由系统给出：Windows 10 1903~2004 只认深/浅标志（标题栏变深但底色仍是系统深色，非主题 `Background`）；
   配色属性在更早系统与 Windows Server 上会静默失败，此时只保留深/浅标志。圆角、阴影与动画由 DWM 掌控，库不改。
 - **不含任何 UI4 控件**的窗口没有加载钩子可挂，需自行调用一次 `UI4WindowTitleBar.Apply(this)`（否则要等到下一次主题切换才被清扫）。
-- 命令式控件（`UI4Button`/`UI4ComboBox`/`UI4Menu`/`UI4ListBox`/`UI4NavigationView` 等）在
-  **作用域子树内**切换时仍会重建 `Style`；待 P2 把这些模板逐批改用令牌引用后，该开销归零（见 `PORTING.md` 第 11、12、13、14 节）。
+- **声明式只到依赖属性为止，`Style` 仍整份重建。** 挂了令牌引用的 DP 各自带 `OnStyleRefresh` 回调，
+  实测一次 `SetTheme` 会让单个 `UI4Button` 重建 6 份新 `Style`+`ControlTemplate`（dark→highcontrast 8 份），
+  其中 2 份是「新旧令牌混色」的中间态；300 个按钮 light→dark 到全部生效 78 ms，`SetAccent` 277 ms。
+  开销归零要把模板内的颜色改用 `TemplateBinding`／动态 brush，而不是每次 `new`（见 `src/StartUI4Controls/README.md` §九 A1-4）。
 - `UI4ComboBox`（含闭合选中框背景、焦点渐变）、`UI4ListBox`（面板背景、悬浮色）的背景**已跟随主题**，
   深色与高对比度下文字与底面对比度成立（`p3verify.ps1` H 组逐主题断言）。浅色主题下有一处**有意的观感变化**：
   `UI4ListBox` 项悬浮色由上游遗留的青色 `#0AF5FFFF` 改为主题令牌 `HoverOverlay`（浅色即 `#14000000` 半透黑）。
-- 仍**未接入主题**的控件：`UI4Button` 恒为「蓝→紫渐变 + 白字」的强调按钮（三主题取值相同，对比度成立，但在高对比度黑底上
-  不与黄/白体系呼应）；`UI4ListView`/`UI4GridView`/`UI4TabControl` 无 `IThemeAware`，卡片与文字恒为浅色（可读，观感不统一）。
-  二者均归入 P2 批次 ②。
-- `UI4ListBox` 编号样式的角标**数字颜色**在 `Dispatcher.BeginInvoke` 中重绘，作用域下该项可能取到全局色（同一处遗留，P2 批次 ② 消除）。
+- `UI4Button`（改挂 `Accent`/`AccentEnd`/`AccentDark`/`OnAccent`）、`UI4ListView`/`UI4GridView`/`UI4TabControl`
+  （各 3/3/7 处引用）**3.0.0 起已跟随主题**；2.0.0 里它们恒为「蓝→紫渐变 + 白字」「卡片恒浅色」。
+- 仍**未挂引用**的：`UI4ListBox` 的 `PressedBackground`/`NumberCircleBackground`（`UI4ListBox.cs:73,162,207`
+  硬编码 `Color.FromRgb (37, 99, 235)`，注意 `FromRgb` 后有个空格，用 `FromRgb(` 扫不到）与 `HoverForeground`
+  （恒 `#DC000000`）。实测深色与高对比度下都不变 → 选中项黑字压黑底。2.0.0 同样没接，非回归；
+  宿主侧可像收藏夹示例那样写 `PressedBackground="{DynamicResource UI4.Color.RowSelectedBackground}"` 自救。
+- `UI4ListBox` 编号样式的角标**数字颜色**在 `Dispatcher.BeginInvoke` 中重绘（`UI4ListBox.cs:324`），作用域下该项可能取到全局色（同一处遗留，P2 批次 ② 消除）。
 - 主题切换为瞬时生效，无交叉淡入动画。
 
 ---

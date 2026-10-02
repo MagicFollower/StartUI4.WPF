@@ -227,6 +227,11 @@ namespace StartUI4Controls
         {
             FontSize = 15;
             Style = BuildTechCardStyle();
+
+            // 声明式跟随主题：卡片底 / 卡片描边 / 投影色都挂令牌
+            SetResourceReference(ItemBackgroundProperty, "UI4.Brush.Surface");
+            SetResourceReference(ItemBorderBrushProperty, "UI4.Color.PanelBorder");
+            SetResourceReference(ShadowColorProperty, "UI4.Color.Shadow");
         }
 
         protected override void PrepareContainerForItemOverride(DependencyObject element, object item)
@@ -351,7 +356,11 @@ namespace StartUI4Controls
             itemBorder.Name = "PART_ItemBorder";
             itemBorder.SetBinding(Border.CornerRadiusProperty, new Binding(nameof(ItemCornerRadius)) { RelativeSource = new RelativeSource(RelativeSourceMode.FindAncestor, typeof(UI4ListView), 1) });
             itemBorder.SetBinding(Border.BackgroundProperty, new Binding(nameof(ItemBackground)) { RelativeSource = new RelativeSource(RelativeSourceMode.FindAncestor, typeof(UI4ListView), 1) });
-            itemBorder.SetValue(Border.BorderBrushProperty, new SolidColorBrush(ItemBorderBrush));
+            itemBorder.SetBinding(Border.BorderBrushProperty, new Binding(nameof(ItemBorderBrush))
+            {
+                RelativeSource = new RelativeSource(RelativeSourceMode.FindAncestor, typeof(UI4ListView), 1),
+                Converter = Internal.ColorToBrushConverter.Instance
+            });
             itemBorder.SetBinding(Border.BorderThicknessProperty, new Binding(nameof(ItemBorderThickness)) { RelativeSource = new RelativeSource(RelativeSourceMode.FindAncestor, typeof(UI4ListView), 1) });
 
             DropShadowEffect cardShadow = new DropShadowEffect
@@ -398,7 +407,7 @@ namespace StartUI4Controls
                 <Setter.Value>
                     <ControlTemplate TargetType='{x:Type Thumb}'>
                         <Grid>
-                            <Rectangle Fill='#50000000' RadiusX='3' RadiusY='3'/>
+                            <Rectangle Fill='{DynamicResource UI4.Brush.ScrollBarThumb}' RadiusX='3' RadiusY='3'/>
                         </Grid>
                     </ControlTemplate>
                 </Setter.Value>
@@ -534,7 +543,7 @@ namespace StartUI4Controls
             </Style.Triggers>
         </Style>
     </Style.Resources>
-    <Setter Property='BorderBrush' Value='LightGray'/>
+    <Setter Property='BorderBrush' Value='{DynamicResource UI4.Brush.BorderWeak}'/>
     <Setter Property='BorderThickness' Value='0'/>
     <Setter Property='HorizontalContentAlignment' Value='Left'/>
     <Setter Property='HorizontalScrollBarVisibility' Value='Auto'/>

@@ -23,7 +23,7 @@ namespace StartUI4Controls
             throw new NotImplementedException();
         }
     }
-    public class UI4Menu : Menu, IThemeAware
+    public class UI4Menu : Menu
     {
         public static readonly DependencyProperty BarBackgroundProperty =
             DependencyProperty.Register(
@@ -100,26 +100,15 @@ namespace StartUI4Controls
         public UI4Menu()
         {
             EnsureStylesInitialized();
-            SyncThemeColors();
-            UI4Theme.TrackControl(this);
+
+            // 声明式跟随主题：菜单栏/悬停/正文/弹出底/KeyTip 都挂令牌
+            SetResourceReference(BarBackgroundProperty, "UI4.Brush.MenuBackground");
+            SetResourceReference(ItemHoverBrushProperty, "UI4.Brush.HoverOverlay");
+            SetResourceReference(TextForegroundProperty, "UI4.Brush.TextForeground");
+            SetResourceReference(PopupBackgroundProperty, "UI4.Brush.Surface");
+            SetResourceReference(KeyTipForegroundProperty, "UI4.Brush.Icon");
         }
 
-        void IThemeAware.OnThemeChanged()
-        {
-            SyncThemeColors();
-        }
-
-        private readonly Dictionary<DependencyProperty, object> _applied = new Dictionary<DependencyProperty, object>();
-
-        private void SyncThemeColors()
-        {
-            var theme = UI4Theme.Current;
-            ThemeSync.Apply(this, BarBackgroundProperty, _applied, theme.MenuBackgroundBrush);
-            ThemeSync.Apply(this, ItemHoverBrushProperty, _applied, theme.HoverOverlayBrush);
-            ThemeSync.Apply(this, TextForegroundProperty, _applied, theme.TextForegroundBrush);
-            ThemeSync.Apply(this, PopupBackgroundProperty, _applied, theme.SurfaceBrush);
-            ThemeSync.Apply(this, KeyTipForegroundProperty, _applied, theme.IconBrush);
-        }
         private static void EnsureStylesInitialized()
         {
             if (_stylesInitialized) return;

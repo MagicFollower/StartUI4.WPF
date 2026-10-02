@@ -9,7 +9,7 @@ using System.Windows.Threading;
 
 namespace StartUI4Controls
 {
-    public class UI4FlipTextBlock : ContentControl, IThemeAware
+    public class UI4FlipTextBlock : ContentControl
     {
         //外部可设置属性
 
@@ -180,17 +180,13 @@ namespace StartUI4Controls
         {
             BuildVisualTree();
             this.Loaded += OnLoaded;
-            UI4Theme.TrackControl(this);
-        }
 
-        void IThemeAware.OnThemeChanged()
-        {
-            if (_userset_ui4panel != null && ReadLocalValue(CardBackgroundProperty) == DependencyProperty.UnsetValue)
-                _userset_ui4panel.Background = new SolidColorBrush(UI4Theme.Current.SurfaceColor);
-            if (_t_num != null && ReadLocalValue(CardForegroundProperty) == DependencyProperty.UnsetValue)
-                _t_num.Foreground = new SolidColorBrush(UI4Theme.Current.TextForegroundColor);
-            if (_userset_ui4panel != null && ReadLocalValue(CardBorderBrushProperty) == DependencyProperty.UnsetValue)
-                _userset_ui4panel.BorderColor = UI4Theme.Current.BorderNormalColor;
+            // 声明式跟随主题：卡底/卡前景/卡边框挂令牌，既有 DP 回调负责把值推进内部元素。
+            // 旧实现靠 ReadLocalValue == UnsetValue 判断"用户没设过"，而 SetResourceReference
+            // 会让 ReadLocalValue 返回 ResourceReferenceExpression，该判定会静默失效。
+            SetResourceReference(CardBackgroundProperty, "UI4.Color.Surface");
+            SetResourceReference(CardForegroundProperty, "UI4.Color.TextForeground");
+            SetResourceReference(CardBorderBrushProperty, "UI4.Color.BorderNormal");
         }
 
         private void BuildVisualTree()

@@ -74,21 +74,21 @@ namespace StartUI4Controls
     /// </summary>
     public static class UI4MenuIcons
     {
-        private static ImageSource _undoIcon;
-        private static ImageSource _redoIcon;
-        private static ImageSource _cutIcon;
-        private static ImageSource _copyIcon;
-        private static ImageSource _pasteIcon;
-        private static ImageSource _deleteIcon;
-        private static ImageSource _selectAllIcon;
+        // 图标不再静态缓存：笔画色取自主题 Icon 令牌，菜单每次打开重建时按当前主题取色
+        public static ImageSource Undo => CreateUndoIcon();
+        public static ImageSource Redo => CreateRedoIcon();
+        public static ImageSource Cut => CreateCutIcon();
+        public static ImageSource Copy => CreateCopyIcon();
+        public static ImageSource Paste => CreatePasteIcon();
+        public static ImageSource Delete => CreateDeleteIcon();
+        public static ImageSource SelectAll => CreateSelectAllIcon();
 
-        public static ImageSource Undo => _undoIcon ?? (_undoIcon = CreateUndoIcon());
-        public static ImageSource Redo => _redoIcon ?? (_redoIcon = CreateRedoIcon());
-        public static ImageSource Cut => _cutIcon ?? (_cutIcon = CreateCutIcon());
-        public static ImageSource Copy => _copyIcon ?? (_copyIcon = CreateCopyIcon());
-        public static ImageSource Paste => _pasteIcon ?? (_pasteIcon = CreatePasteIcon());
-        public static ImageSource Delete => _deleteIcon ?? (_deleteIcon = CreateDeleteIcon());
-        public static ImageSource SelectAll => _selectAllIcon ?? (_selectAllIcon = CreateSelectAllIcon());
+        /// <summary>菜单图标笔画色：主题 Icon 令牌；无应用上下文时退回黑。</summary>
+        private static Brush IconStroke()
+        {
+            var app = Application.Current;
+            return (app != null ? app.TryFindResource("UI4.Brush.Icon") as Brush : null) ?? Brushes.Black;
+        }
 
         public static ImageSource GetIcon(UI4MenuItemType type)
         {
@@ -138,7 +138,7 @@ namespace StartUI4Controls
                 ctx.LineTo(new Point(7, 10), true, false);
             }
             geo.Freeze();
-            return CreateIconFromGeometry(geo, Brushes.Black);
+            return CreateIconFromGeometry(geo, IconStroke());
         }
 
         private static ImageSource CreateRedoIcon()
@@ -157,7 +157,7 @@ namespace StartUI4Controls
                 ctx.LineTo(new Point(13, 10), true, false);
             }
             geo.Freeze();
-            return CreateIconFromGeometry(geo, Brushes.Black);
+            return CreateIconFromGeometry(geo, IconStroke());
         }
 
         private static ImageSource CreateCutIcon()
@@ -181,7 +181,7 @@ namespace StartUI4Controls
                 ctx.ArcTo(new Point(15, 2), new Size(2, 2), 0, false, SweepDirection.Clockwise, true, false);
             }
             geo.Freeze();
-            return CreateIconFromGeometry(geo, Brushes.Black);
+            return CreateIconFromGeometry(geo, IconStroke());
         }
 
         private static ImageSource CreateCopyIcon()
@@ -190,7 +190,7 @@ namespace StartUI4Controls
             group.Children.Add(new RectangleGeometry(new Rect(6, 2, 10, 12), 1, 1).GetOutlinedGeometry());
             group.Children.Add(new RectangleGeometry(new Rect(2, 6, 10, 12), 1, 1).GetOutlinedGeometry());
             group.Freeze();
-            return CreateIconFromGeometry(group, Brushes.Black);
+            return CreateIconFromGeometry(group, IconStroke());
         }
 
         private static ImageSource CreatePasteIcon()
@@ -199,7 +199,7 @@ namespace StartUI4Controls
             group.Children.Add(new RectangleGeometry(new Rect(7, 1, 6, 3), 1, 1).GetOutlinedGeometry());
             group.Children.Add(new RectangleGeometry(new Rect(4, 4, 12, 14), 1, 1).GetOutlinedGeometry());
             group.Freeze();
-            return CreateIconFromGeometry(group, Brushes.Black);
+            return CreateIconFromGeometry(group, IconStroke());
         }
 
         private static ImageSource CreateDeleteIcon()
@@ -210,7 +210,7 @@ namespace StartUI4Controls
             group.Children.Add(new LineGeometry(new Point(8, 9), new Point(8, 15)));
             group.Children.Add(new LineGeometry(new Point(12, 9), new Point(12, 15)));
             group.Freeze();
-            return CreateIconFromGeometry(group, Brushes.Black);
+            return CreateIconFromGeometry(group, IconStroke());
         }
 
         private static ImageSource CreateSelectAllIcon()
@@ -221,7 +221,7 @@ namespace StartUI4Controls
             group.Children.Add(new RectangleGeometry(new Rect(2, 11, 7, 7), 1, 1).GetOutlinedGeometry());
             group.Children.Add(new RectangleGeometry(new Rect(11, 11, 7, 7), 1, 1).GetOutlinedGeometry());
             group.Freeze();
-            return CreateIconFromGeometry(group, Brushes.Black);
+            return CreateIconFromGeometry(group, IconStroke());
         }
     }
 
@@ -242,83 +242,47 @@ namespace StartUI4Controls
         public double Width { get; set; } = 180;
         public Thickness ItemPadding { get; set; } = new Thickness(12, 8, 12, 8);
 
-        /// <summary>边框色；显式赋值后主题切换不再覆盖。</summary>
+        /// <summary>边框色；未显式赋值时由内部 UI4ListBox 的资源引用跟随主题。</summary>
         public Color BorderColor
         {
             get { return _borderColor; }
-            set { _borderColor = value; MarkCustomized(nameof(BorderColor)); ApplyColorsToListBox(); }
+            set { _borderColor = value; _borderColorSet = true; ApplyColorsToListBox(); }
         }
         private Color _borderColor;
+        private bool _borderColorSet;
 
-        /// <summary>菜单背景；显式赋值后主题切换不再覆盖。</summary>
+        /// <summary>菜单背景；未显式赋值时跟随主题。</summary>
         public Brush Background
         {
             get { return _background; }
-            set { _background = value; MarkCustomized(nameof(Background)); ApplyColorsToListBox(); }
+            set { _background = value; _backgroundSet = true; ApplyColorsToListBox(); }
         }
         private Brush _background;
+        private bool _backgroundSet;
 
-        /// <summary>悬停背景色；显式赋值后主题切换不再覆盖。</summary>
+        /// <summary>悬停背景色；未显式赋值时跟随主题。</summary>
         public Color HoverBackground
         {
             get { return _hoverBackground; }
-            set { _hoverBackground = value; MarkCustomized(nameof(HoverBackground)); ApplyColorsToListBox(); }
+            set { _hoverBackground = value; _hoverBackgroundSet = true; ApplyColorsToListBox(); }
         }
         private Color _hoverBackground;
+        private bool _hoverBackgroundSet;
 
         public bool IsOpen => _popup?.IsOpen ?? false;
 
         public UI4ContextMenu()
         {
             _menuItems = new List<UI4MenuItem>();
-            _borderColor = UI4Theme.Current.BorderNormalColor;
-            _background = UI4Theme.Current.SurfaceBrush;
-            _hoverBackground = UI4Theme.Current.HoverOverlayColor;
-            UI4Theme.ThemeChanged += OnGlobalThemeChanged;
         }
 
-        private void OnGlobalThemeChanged(object sender, EventArgs e)
-        {
-            var customized = _customizedColors;
-            if (customized == null || !customized.Contains(nameof(BorderColor)))
-                _borderColor = UI4Theme.Current.BorderNormalColor;
-            if (customized == null || !customized.Contains(nameof(Background)))
-                _background = UI4Theme.Current.SurfaceBrush;
-            if (customized == null || !customized.Contains(nameof(HoverBackground)))
-                _hoverBackground = UI4Theme.Current.HoverOverlayColor;
-            ApplyColorsToListBox();
-        }
-
-        private HashSet<string> _customizedColors;
-
-        private void MarkCustomized(string propertyName)
-        {
-            if (_customizedColors == null)
-                _customizedColors = new HashSet<string>();
-            _customizedColors.Add(propertyName);
-        }
-
+        /// <summary>只把用户显式设置过的颜色下推给内部列表；未设置的不碰，让内部列表的资源引用生效。</summary>
         private void ApplyColorsToListBox()
         {
             if (_listBox == null) return;
-            _listBox.BorderNormalColor = BorderColor;
-            // UI4ListBox 样式的表面背景取自 PanelBackground
-            _listBox.PanelBackground = Background;
-            _listBox.HoverBackground = HoverBackground;
-        }
-
-        /// <summary>弹出前补齐失联期间错过的主题（未弹出的 Popup 子元素不触发 Loaded）。</summary>
-        private void SyncBeforeOpen()
-        {
-            if (_listBox == null) return;
-            var customized = _customizedColors;
-            if (customized == null || !customized.Contains(nameof(BorderColor)))
-                _listBox.BorderNormalColor = _borderColor;
-            if (customized == null || !customized.Contains(nameof(HoverBackground)))
-                _listBox.HoverBackground = _hoverBackground;
-            if (customized == null || !customized.Contains(nameof(Background)))
-                _listBox.PanelBackground = _background;
-            _listBox.RefreshTheme();
+            if (_borderColorSet) _listBox.BorderNormalColor = _borderColor;
+            if (_backgroundSet) _listBox.PanelBackground = _background;
+            if (_hoverBackgroundSet) _listBox.HoverBackground = _hoverBackground;
         }
 
         public void AddItem(UI4MenuItem item)
@@ -363,7 +327,6 @@ namespace StartUI4Controls
 
         public void Detach()
         {
-            UI4Theme.ThemeChanged -= OnGlobalThemeChanged;
             if (_placementTarget != null)
             {
                 _placementTarget.MouseRightButtonUp -= OnTargetRightButtonUp;
@@ -379,10 +342,8 @@ namespace StartUI4Controls
                 Width = this.Width,
                 ItemPadding = this.ItemPadding,
                 FontFamily = new FontFamily("Microsoft YaHei UI, Segoe UI, sans-serif"),
-                BorderNormalColor = this.BorderColor,
-                PanelBackground = this.Background,
-                HoverBackground = this.HoverBackground,
             };
+            ApplyColorsToListBox();
 
             foreach (var item in _menuItems)
             {
@@ -456,7 +417,6 @@ namespace StartUI4Controls
         {
             if (_popup == null || _listBox == null || _placementTarget == null) return;
 
-            SyncBeforeOpen();
             Close();
 
             UpdateCanExecuteStates();
