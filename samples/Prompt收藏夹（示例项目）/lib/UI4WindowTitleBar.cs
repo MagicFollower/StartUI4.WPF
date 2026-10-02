@@ -163,15 +163,15 @@ namespace StartUI4Controls
         private static bool SetCaptionColors(IntPtr hwnd, UI4Theme theme)
         {
             if (_captionColorSupport == 2) return false;
-            int caption = ToColorRef(theme.BackgroundColor);
+            int caption = ToColorRef(theme.ColorOf(UI4ThemeToken.Background));
             if (DwmSetWindowAttribute(hwnd, DWMWA_CAPTION_COLOR, ref caption, SIZEOF_INT) != 0)
             {
                 _captionColorSupport = 2;
                 return false;
             }
-            int text = ToColorRef(theme.TextForegroundColor);
+            int text = ToColorRef(theme.ColorOf(UI4ThemeToken.TextForeground));
             DwmSetWindowAttribute(hwnd, DWMWA_TEXT_COLOR, ref text, SIZEOF_INT);
-            int border = ToColorRef(theme.BorderNormalColor);
+            int border = ToColorRef(theme.ColorOf(UI4ThemeToken.BorderNormal));
             DwmSetWindowAttribute(hwnd, DWMWA_BORDER_COLOR, ref border, SIZEOF_INT);
             _captionColorSupport = 1;
             return true;
@@ -180,7 +180,7 @@ namespace StartUI4Controls
         /// <summary>以底色亮度判定深浅，自定义主题同样适用，无需枚举主题键。</summary>
         private static bool IsDark(UI4Theme theme)
         {
-            Color c = theme.BackgroundColor;
+            Color c = theme.ColorOf(UI4ThemeToken.Background);
             return 0.299 * c.R + 0.587 * c.G + 0.114 * c.B < 128d;
         }
 

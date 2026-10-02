@@ -55,7 +55,10 @@ namespace StartUI4Controls
             Color check, Color icon, Color iconHover, Color panelBorder,
             Color off, Color menu, Color listSelected, Color headerBg, Color headerFg,
             Color rowHover, Color rowSelected, Color gridLine, Color progressStart,
-            Color checkBoxUnchecked, Color hoverBorderLight)
+            Color checkBoxUnchecked, Color hoverBorderLight,
+            Color onAccent, Color shadow, Color scrollBarThumb,
+            Color separator, Color borderWeak, Color textMuted,
+            Color backgroundGradientStart, Color backgroundGradientEnd)
         {
             return new UI4ThemeDefinition(key)
                 .With(UI4ThemeToken.Accent, accent)
@@ -87,7 +90,15 @@ namespace StartUI4Controls
                 .With(UI4ThemeToken.GridLine, gridLine)
                 .With(UI4ThemeToken.ProgressStart, progressStart)
                 .With(UI4ThemeToken.CheckBoxUnchecked, checkBoxUnchecked)
-                .With(UI4ThemeToken.HoverBorderColorLight, hoverBorderLight);
+                .With(UI4ThemeToken.HoverBorderColorLight, hoverBorderLight)
+                .With(UI4ThemeToken.OnAccent, onAccent)
+                .With(UI4ThemeToken.Shadow, shadow)
+                .With(UI4ThemeToken.ScrollBarThumb, scrollBarThumb)
+                .With(UI4ThemeToken.Separator, separator)
+                .With(UI4ThemeToken.BorderWeak, borderWeak)
+                .With(UI4ThemeToken.TextMuted, textMuted)
+                .With(UI4ThemeToken.BackgroundGradientStart, backgroundGradientStart)
+                .With(UI4ThemeToken.BackgroundGradientEnd, backgroundGradientEnd);
         }
 
         /// <summary>内置亮色主题（与移植时点的 CreateLight 取值一致）。</summary>
@@ -123,7 +134,15 @@ namespace StartUI4Controls
                 gridLine: Color.FromRgb(230, 230, 235),
                 progressStart: Color.FromRgb(0, 150, 230),
                 checkBoxUnchecked: Colors.LightGray,
-                hoverBorderLight: Color.FromRgb(140, 140, 170));
+                hoverBorderLight: Color.FromRgb(140, 140, 170),
+                onAccent: Colors.White,
+                shadow: Colors.Black,
+                scrollBarThumb: Color.FromArgb(0x50, 0, 0, 0),
+                separator: Color.FromRgb(220, 220, 220),
+                borderWeak: Color.FromArgb(0x1A, 0, 0, 0),
+                textMuted: Color.FromArgb(0xC8, 0, 0, 0),
+                backgroundGradientStart: Color.FromRgb(225, 236, 245),
+                backgroundGradientEnd: Colors.White);
         }
 
         /// <summary>内置暗色主题（与移植时点的 CreateDark 取值一致）。</summary>
@@ -159,7 +178,15 @@ namespace StartUI4Controls
                 gridLine: Color.FromRgb(58, 58, 69),
                 progressStart: Color.FromRgb(0, 170, 255),
                 checkBoxUnchecked: Color.FromRgb(80, 80, 88),
-                hoverBorderLight: Color.FromRgb(96, 96, 120));
+                hoverBorderLight: Color.FromRgb(96, 96, 120),
+                onAccent: Colors.White,
+                shadow: Colors.Black,
+                scrollBarThumb: Color.FromArgb(0x66, 255, 255, 255),
+                separator: Color.FromRgb(64, 64, 72),
+                borderWeak: Color.FromArgb(0x33, 255, 255, 255),
+                textMuted: Color.FromArgb(0x99, 255, 255, 255),
+                backgroundGradientStart: Color.FromRgb(38, 38, 46),
+                backgroundGradientEnd: Color.FromRgb(32, 32, 38));
         }
 
         /// <summary>
@@ -199,7 +226,16 @@ namespace StartUI4Controls
                 gridLine: Colors.White,
                 progressStart: Color.FromRgb(255, 255, 0),
                 checkBoxUnchecked: Colors.Black,
-                hoverBorderLight: Color.FromRgb(255, 255, 0));
+                hoverBorderLight: Color.FromRgb(255, 255, 0),
+                // 高对比度强调色为黄，黄底上必须黑字才成立对比度
+                onAccent: Colors.Black,
+                shadow: Colors.Black,
+                scrollBarThumb: Colors.White,
+                separator: Colors.White,
+                borderWeak: Colors.White,
+                textMuted: Colors.White,
+                backgroundGradientStart: Colors.Black,
+                backgroundGradientEnd: Colors.Black);
         }
     }
 }

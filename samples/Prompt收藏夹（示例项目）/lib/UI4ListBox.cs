@@ -49,7 +49,7 @@ namespace StartUI4Controls
     /// <remarks>
     /// <para>继承自 <see cref="System.Windows.Controls.ListBox"/>，提供自定义 ScrollViewer 样式和滚动条样式。</para>
     /// </remarks>
-    public class UI4ListBox : ListBox, IThemeAware
+    public class UI4ListBox : ListBox
     {
 
         public static readonly DependencyProperty CornerRadiusProperty =
@@ -237,33 +237,19 @@ namespace StartUI4Controls
         public UI4ListBox()
         {
             FontSize = 15d;
-            SyncThemeColors();
             Style = BuildListStyle();
-            UI4Theme.TrackControl(this);
-        }
 
-        void IThemeAware.OnThemeChanged()
-        {
-            SyncThemeColors();
-            Style = BuildListStyle();
-        }
-
-        private readonly Dictionary<DependencyProperty, object> _applied = new Dictionary<DependencyProperty, object>();
-
-        /// <summary>未被用户显式设置的颜色令牌跟随当前主题。</summary>
-        private void SyncThemeColors()
-        {
-            var theme = UI4Theme.Current;
-            ThemeSync.Apply(this, TextColorProperty, _applied, theme.TextForegroundColor);
-            ThemeSync.Apply(this, BorderNormalColorProperty, _applied, theme.BorderNormalColor);
-            ThemeSync.Apply(this, PanelBackgroundProperty, _applied, theme.SurfaceBrush);
-            ThemeSync.Apply(this, HoverBackgroundProperty, _applied, theme.HoverOverlayColor);
+            // 声明式跟随主题：文本/边框/面板底/悬停底都挂令牌，切换主题触发 OnStyleRefresh 重建
+            SetResourceReference(TextColorProperty, "UI4.Color.TextForeground");
+            SetResourceReference(BorderNormalColorProperty, "UI4.Color.BorderNormal");
+            SetResourceReference(PanelBackgroundProperty, "UI4.Brush.Surface");
+            SetResourceReference(HoverBackgroundProperty, "UI4.Color.HoverOverlay");
         }
 
         /// <summary>立即按当前主题刷新（用于未挂载到可视树、收不到 Loaded 的场景，如 Popup 预构建内容）。</summary>
         public void RefreshTheme()
         {
-            SyncThemeColors();
+            // 颜色已改由资源引用驱动，此处只需重建 Style；保留方法以兼容既有调用方
             Style = BuildListStyle();
         }
 
@@ -400,7 +386,7 @@ namespace StartUI4Controls
                 numberCircle.SetBinding(Border.BackgroundProperty,
                     new Binding(nameof(NumberCircleBackground)) { RelativeSource = new RelativeSource(RelativeSourceMode.FindAncestor, typeof(UI4ListBox), 1) });
                 FrameworkElementFactory numberText = new FrameworkElementFactory(typeof(TextBlock));
-                numberText.SetValue(TextBlock.ForegroundProperty, UI4Theme.Current.OnWhiteBrush);
+                numberText.SetValue(TextBlock.ForegroundProperty, new DynamicResourceExtension("UI4.Brush.OnAccent"));
                 numberText.SetValue(TextBlock.FontWeightProperty, FontWeights.Medium);
                 numberText.SetValue(TextBlock.FontSizeProperty, 13.0);
                 numberText.SetValue(TextBlock.HorizontalAlignmentProperty, HorizontalAlignment.Center);

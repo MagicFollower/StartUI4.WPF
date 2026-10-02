@@ -22,14 +22,16 @@ namespace StartUI4Controls
     /// </summary>
     /// <remarks>
     /// <para>继承自 <see cref="System.Windows.Window"/>，提供现代化的消息提示界面，
-    /// 支持淡入淡出动画和圆角边框。实现 <see cref="IThemeAware"/> 以响应主题切换。</para>
+    /// 支持淡入淡出动画和圆角边框。容器与文字颜色经资源引用跟随主题切换。</para>
     /// </remarks>
-    public class UI4MessageBox : Window, IThemeAware
+    public class UI4MessageBox : Window
     {
         private const double DefaultWidth = 460;
         private const double DefaultMinHeight = 160;
         private const double DefaultMaxHeight = 400;
 
+        private static readonly FontFamily WindowFontFamily =
+            new FontFamily("Segoe UI Variable Display, Segoe UI, sans-serif");
         private static readonly FontFamily IconFontFamily =
             new FontFamily("Segoe MDL2 Assets");
         private static readonly DropShadowEffect ContainerShadow;
@@ -64,15 +66,12 @@ namespace StartUI4Controls
             BuildContentLayout(title, content);
             AttachDragAndResize();
             Loaded += Window_LoadedAnim;
-            UI4Theme.TrackControl(this);
-        }
 
-        void IThemeAware.OnThemeChanged()
-        {
-            _mainContainer.Background = UI4Theme.Current.SurfaceBrush;
-            _headingText.Foreground = UI4Theme.Current.TextForegroundBrush;
-            _messageText.Foreground = UI4Theme.Current.TextForegroundBrush;
-            _iconText.Foreground = new SolidColorBrush(UI4Theme.Current.IconColor);
+            // 声明式跟随主题：容器底与三处文字都挂令牌，无需命令式刷新
+            _mainContainer.SetResourceReference(Border.BackgroundProperty, "UI4.Brush.Surface");
+            _headingText.SetResourceReference(TextBlock.ForegroundProperty, "UI4.Brush.TextForeground");
+            _messageText.SetResourceReference(TextBlock.ForegroundProperty, "UI4.Brush.TextForeground");
+            _iconText.SetResourceReference(TextBlock.ForegroundProperty, "UI4.Brush.Icon");
         }
 
         /// <summary>配置窗口基本属性（尺寸、样式、启动位置等）。</summary>
@@ -86,7 +85,7 @@ namespace StartUI4Controls
             ResizeMode = ResizeMode.CanResize;
             WindowStartupLocation = WindowStartupLocation.CenterOwner;
             ShowInTaskbar = false;
-            // 字体故意不设：跟随 SystemFonts.MessageFontFamily，与宿主主窗口同一口径
+            FontFamily = WindowFontFamily;
             Background = Brushes.Transparent;
             WindowStyle = WindowStyle.None;
             AllowsTransparency = true;
@@ -99,7 +98,6 @@ namespace StartUI4Controls
             _mainContainer = new Border
             {
                 Margin = new Thickness(28),
-                Background = UI4Theme.Current.SurfaceBrush,
                 CornerRadius = new CornerRadius(10),
                 Effect = ContainerShadow
             };
@@ -124,8 +122,7 @@ namespace StartUI4Controls
                 FontSize = 28,
                 VerticalAlignment = VerticalAlignment.Center,
                 Margin = new Thickness(0, 0, 12, 0),
-                Text = "\uE134",
-                Foreground = new SolidColorBrush(UI4Theme.Current.IconColor)
+                Text = "\uE134"
             };
             Grid.SetColumn(_iconText, 0);
             headerGrid.Children.Add(_iconText);
@@ -136,8 +133,7 @@ namespace StartUI4Controls
                 FontWeight = FontWeights.SemiBold,
                 VerticalAlignment = VerticalAlignment.Center,
                 TextTrimming = TextTrimming.CharacterEllipsis,
-                Text = title,
-                Foreground = UI4Theme.Current.TextForegroundBrush
+                Text = title
             };
             Grid.SetColumn(_headingText, 1);
             headerGrid.Children.Add(_headingText);
@@ -152,8 +148,7 @@ namespace StartUI4Controls
                 VerticalAlignment = VerticalAlignment.Center,
                 Margin = new Thickness(0, 12, 0, 0),
                 Opacity = 0.85,
-                Text = content,
-                Foreground = UI4Theme.Current.TextForegroundBrush
+                Text = content
             };
             Grid.SetRow(_messageText, 1);
             rootGrid.Children.Add(_messageText);

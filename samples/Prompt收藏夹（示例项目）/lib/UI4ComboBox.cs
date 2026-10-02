@@ -28,7 +28,7 @@ namespace StartUI4Controls
     ///   <item><see cref="EditBackground"/> — 编辑区域背景</item>
     /// </list>
     /// </remarks>
-    public class UI4ComboBox : ComboBox, IThemeAware
+    public class UI4ComboBox : ComboBox
     {
         public static readonly DependencyProperty CornerRadiusProperty =
             DependencyProperty.Register(
@@ -191,28 +191,16 @@ namespace StartUI4Controls
         public UI4ComboBox()
         {
             FontSize = 15d;
-            SyncThemeColors();
             Style = BuildComboStyle();
-            UI4Theme.TrackControl(this);
+
+            // 声明式跟随主题：文本/边框/编辑区底/焦点渐变两端都挂令牌，切换主题触发 OnStyleRefresh 重建
+            SetResourceReference(TextColorProperty, "UI4.Color.TextForeground");
+            SetResourceReference(BorderNormalColorProperty, "UI4.Color.BorderNormal");
+            SetResourceReference(EditBackgroundProperty, "UI4.Brush.Surface");
+            SetResourceReference(FocusGradientStartProperty, "UI4.Color.Accent");
+            SetResourceReference(FocusGradientEndProperty, "UI4.Color.AccentEnd");
         }
 
-        void IThemeAware.OnThemeChanged()
-        {
-            SyncThemeColors();
-            Style = BuildComboStyle();
-        }
-
-        private readonly Dictionary<DependencyProperty, object> _applied = new Dictionary<DependencyProperty, object>();
-
-        private void SyncThemeColors()
-        {
-            var theme = UI4Theme.Current;
-            ThemeSync.Apply(this, TextColorProperty, _applied, theme.TextForegroundColor);
-            ThemeSync.Apply(this, BorderNormalColorProperty, _applied, theme.BorderNormalColor);
-            ThemeSync.Apply(this, EditBackgroundProperty, _applied, theme.SurfaceBrush);
-            ThemeSync.Apply(this, FocusGradientStartProperty, _applied, theme.AccentColor);
-            ThemeSync.Apply(this, FocusGradientEndProperty, _applied, theme.AccentEndColor);
-        }
         private Style BuildComboStyle()
         {
             Style style = new Style(typeof(ComboBox));
@@ -235,11 +223,11 @@ namespace StartUI4Controls
             itemTemplate.VisualTree = itemBorder;
             itemStyle.Setters.Add(new Setter(Control.TemplateProperty, itemTemplate));
             Trigger itemHoverTrigger = new Trigger { Property = UIElement.IsMouseOverProperty, Value = true };
-            itemHoverTrigger.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(UI4Theme.Current.HoverOverlayColor)));
+            itemHoverTrigger.Setters.Add(new Setter(Control.BackgroundProperty, new DynamicResourceExtension("UI4.Brush.HoverOverlay")));
             itemHoverTrigger.Setters.Add(new Setter(CursorProperty, Cursors.Hand));
             itemStyle.Triggers.Add(itemHoverTrigger);
             Trigger itemSelectedTrigger = new Trigger { Property = ListBoxItem.IsSelectedProperty, Value = true };
-            itemSelectedTrigger.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(UI4Theme.Current.SelectedOverlayColor)));
+            itemSelectedTrigger.Setters.Add(new Setter(Control.BackgroundProperty, new DynamicResourceExtension("UI4.Brush.SelectedOverlay")));
             itemSelectedTrigger.Setters.Add(new Setter(CursorProperty, Cursors.Hand));
             itemStyle.Triggers.Add(itemSelectedTrigger);
             style.Setters.Add(new Setter(ComboBox.ItemContainerStyleProperty, itemStyle));
@@ -249,7 +237,7 @@ namespace StartUI4Controls
             itemStyle.Setters.Add(new Setter(Control.HorizontalContentAlignmentProperty, HorizontalAlignment.Left));
             itemStyle.Setters.Add(new Setter(Control.BackgroundProperty, Brushes.Transparent));
             Trigger hoverTrigger = new Trigger { Property = UIElement.IsMouseOverProperty, Value = true };
-            hoverTrigger.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(UI4Theme.Current.HoverOverlayColor)));
+            hoverTrigger.Setters.Add(new Setter(Control.BackgroundProperty, new DynamicResourceExtension("UI4.Brush.HoverOverlay")));
             hoverTrigger.Setters.Add(new Setter(CursorProperty, Cursors.Hand));
             itemStyle.Triggers.Add(hoverTrigger);
             style.Setters.Add(new Setter(ComboBox.ItemContainerStyleProperty, itemStyle));
@@ -271,14 +259,14 @@ namespace StartUI4Controls
             toggleBtnStyle.Setters.Add(new Setter(ToggleButton.BackgroundProperty, Brushes.Transparent));
             toggleBtnStyle.Setters.Add(new Setter(ToggleButton.BorderThicknessProperty, new Thickness(0)));
             toggleBtnStyle.Setters.Add(new Setter(ToggleButton.CursorProperty, Cursors.Hand));
-            toggleBtnStyle.Setters.Add(new Setter(ToggleButton.ForegroundProperty, new SolidColorBrush(UI4Theme.Current.IconColor)));
+            toggleBtnStyle.Setters.Add(new Setter(ToggleButton.ForegroundProperty, new DynamicResourceExtension("UI4.Brush.Icon")));
             ControlTemplate toggleBtnTemplate = new ControlTemplate(typeof(ToggleButton));
             FrameworkElementFactory toggleBtnBorder = new FrameworkElementFactory(typeof(Border));
             toggleBtnBorder.SetValue(Border.BackgroundProperty, Brushes.Transparent);
             toggleBtnBorder.SetBinding(Border.BackgroundProperty, new Binding(nameof(Background)) { RelativeSource = RelativeSource.TemplatedParent });
             FrameworkElementFactory arrowPath = new FrameworkElementFactory(typeof(Path));
             arrowPath.SetValue(Path.DataProperty, Geometry.Parse("M 0 0 L 6 6 L 12 0"));
-            arrowPath.SetValue(Path.StrokeProperty, new SolidColorBrush(UI4Theme.Current.IconColor));
+            arrowPath.SetValue(Path.StrokeProperty, new DynamicResourceExtension("UI4.Brush.Icon"));
             arrowPath.SetValue(Path.StrokeThicknessProperty, 1.5);
             arrowPath.SetValue(Path.FillProperty, Brushes.Transparent);
             arrowPath.SetValue(Path.HorizontalAlignmentProperty, HorizontalAlignment.Center);
@@ -292,7 +280,7 @@ namespace StartUI4Controls
                 Property = UIElement.IsMouseOverProperty,
                 Value = true
             };
-            toggleBtnHoverTrigger.Setters.Add(new Setter(Path.StrokeProperty, new SolidColorBrush(UI4Theme.Current.IconHoverColor)) { TargetName = "ArrowPath" });
+            toggleBtnHoverTrigger.Setters.Add(new Setter(Path.StrokeProperty, new DynamicResourceExtension("UI4.Brush.IconHover")) { TargetName = "ArrowPath" });
             toggleBtnTemplate.Triggers.Add(toggleBtnHoverTrigger);
             Trigger toggleBtnCheckedTrigger = new Trigger
             {
@@ -386,9 +374,9 @@ namespace StartUI4Controls
             dropPopup.SetBinding(FrameworkElement.MinWidthProperty, new Binding(nameof(ActualWidth)) { RelativeSource = RelativeSource.TemplatedParent });
             FrameworkElementFactory dropBorder = new FrameworkElementFactory(typeof(Border));
             dropBorder.SetBinding(Border.CornerRadiusProperty, new Binding(nameof(DropCornerRadius)) { RelativeSource = RelativeSource.TemplatedParent });
-            dropBorder.SetValue(Border.BackgroundProperty, UI4Theme.Current.SurfaceBrush);
+            dropBorder.SetValue(Border.BackgroundProperty, new DynamicResourceExtension("UI4.Brush.Surface"));
             dropBorder.SetValue(Border.BorderThicknessProperty, new Thickness(1, 1, 1, 1));
-            dropBorder.SetValue(Border.BorderBrushProperty, UI4Theme.Current.BorderNormalBrush);
+            dropBorder.SetValue(Border.BorderBrushProperty, new DynamicResourceExtension("UI4.Brush.BorderNormal"));
             FrameworkElementFactory dropScroll = new FrameworkElementFactory(typeof(ScrollViewer));
             dropScroll.SetBinding(FrameworkElement.MaxHeightProperty, new Binding(nameof(MaxDropDownHeight)) { RelativeSource = RelativeSource.TemplatedParent });
             dropScroll.SetValue(ScrollViewer.VerticalScrollBarVisibilityProperty, ScrollBarVisibility.Auto);
@@ -433,7 +421,7 @@ namespace StartUI4Controls
                 Property = UIElement.IsMouseOverProperty,
                 Value = true
             };
-            hoverTrigger1.Setters.Add(new Setter(Border.BorderBrushProperty, new SolidColorBrush(UI4Theme.Current.HoverBorderColorLight)) { TargetName = "PART_Border" });
+            hoverTrigger1.Setters.Add(new Setter(Border.BorderBrushProperty, new DynamicResourceExtension("UI4.Brush.HoverBorderColorLight")) { TargetName = "PART_Border" });
             template.Triggers.Add(hoverTrigger1);
             style.Setters.Add(new Setter(Control.TemplateProperty, template));
             return style;

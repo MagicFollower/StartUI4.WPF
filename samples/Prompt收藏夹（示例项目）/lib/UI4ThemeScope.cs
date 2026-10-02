@@ -11,11 +11,10 @@ namespace StartUI4Controls
     /// <code>
     /// &lt;Border ui:UI4ThemeScope.Theme="dark"&gt; ... &lt;/Border&gt;
     /// </code>
-    /// 两条生效通道（控件无需任何改动）：
-    /// ① 向元素自身 <see cref="FrameworkElement.Resources"/> 的 MergedDictionaries 末位插入一份该主题的令牌字典
-    ///   （<c>UI4.Color.X</c> / <c>UI4.Brush.X</c>），因此宿主 <c>{DynamicResource}</c> 与构造函数里
-    ///   <c>SetResourceReference</c> 的控件（UI4CheckBox/UI4Radio/UI4TextBox/UI4PasswordBox 等）自动跟随；
-    /// ② 仍走命令式刷新的控件（UI4Button/UI4ComboBox/UI4Menu…）在子树刷新时被同步换入该主题实例。
+    /// 生效通道只有一条：向元素自身 <see cref="FrameworkElement.Resources"/> 的 MergedDictionaries 末位插入
+    /// 该主题的令牌字典（<c>UI4.Color.X</c> / <c>UI4.Brush.X</c>，与全局共用同一实例）。
+    /// 因此宿主 <c>{DynamicResource}</c> 与构造函数里 <c>SetResourceReference</c> 的控件
+    /// （全库 26 个文件 / 89 处引用）都自动跟随，控件本身不需要实现任何主题接口。
     /// 置空或未知键 = 撤销作用域，子树回到全局主题。
     /// </summary>
     public static class UI4ThemeScope
@@ -73,16 +72,61 @@ namespace StartUI4Controls
 
             if (key == null)
             {
-                if (existing != null) RefreshSubtree(element, null);
                 return;
             }
 
-            UI4Theme theme = UI4Theme.InstanceOf(key);
-            var dictionary = new ResourceDictionary();
-            UI4Theme.WriteTokens(dictionary, theme);
+            // 与全局共用同一份共享字典实例：SetAccent 原地改一次，全局与本作用域同时跟随
+            ResourceDictionary dictionary = UI4Theme.SharedResourcesFor(key);
             element.Resources.MergedDictionaries.Add(dictionary);
             _scopes.Add(new ScopeEntry(element, key, dictionary));
-            RefreshSubtree(element, theme);
+
+            // 作用域根若是整窗，标题栏（非客户区，DWM 绘制）也要跟着换；
+            // 子树内的控件无需任何刷新——颜色全部走资源引用
+            Window scopeWindow = element as Window;
+            if (scopeWindow != null) UI4WindowTitleBar.Apply(scopeWindow);
+        }
+
+        /// <summary>
+        /// 把某个键下所有作用域仍挂着的旧令牌字典就地换成新实例。
+        /// <see cref="UI4Theme.Register"/> 覆盖一个已用过的键时会新建字典、作废旧实例，
+        /// 若不同步这里，那些作用域会一直显示旧主题（撤销作用域时还会去摘一个已经不在树里的字典）。
+        /// </summary>
+        internal static void ReplaceSharedDictionary(string key, ResourceDictionary replacement)
+        {
+            for (int i = 0; i < _scopes.Count; i++)
+            {
+                ScopeEntry entry = _scopes[i];
+                FrameworkElement element;
+                if (!entry.Element.TryGetTarget(out element)) continue;
+                if (!string.Equals(entry.Key, key, StringComparison.OrdinalIgnoreCase)) continue;
+                if (ReferenceEquals(entry.Dictionary, replacement)) continue;
+
+                int index = element.Resources.MergedDictionaries.IndexOf(entry.Dictionary);
+                if (index < 0) continue;
+                element.Resources.MergedDictionaries[index] = replacement;
+                _scopes[i] = new ScopeEntry(element, entry.Key, replacement);
+
+                // 作用域根是整窗时，标题栏（DWM 绘制，够不着资源引用）跟着重染
+                Window scopeWindow = element as Window;
+                if (scopeWindow != null) UI4WindowTitleBar.Apply(scopeWindow);
+            }
+        }
+
+        /// <summary>
+        /// 若有存活的作用域正用着这个键，就请 <see cref="UI4Theme"/> 重建该键的字典并就地重指向。
+        /// <see cref="UI4Theme.Register"/> 覆盖一个<b>不是当前生效键</b>的定义时走这里——
+        /// 那种情况下不会有 apply 流程来触发重建，作用域就会一直挂着被作废的旧字典。
+        /// </summary>
+        internal static void RebindIfScoped(string key)
+        {
+            for (int i = 0; i < _scopes.Count; i++)
+            {
+                FrameworkElement element;
+                if (!_scopes[i].Element.TryGetTarget(out element)) continue;
+                if (!string.Equals(_scopes[i].Key, key, StringComparison.OrdinalIgnoreCase)) continue;
+                UI4Theme.SharedResourcesFor(key);
+                return;
+            }
         }
 
         private static ScopeEntry Find(FrameworkElement element)
@@ -119,65 +163,5 @@ namespace StartUI4Controls
             return VisualTreeHelper.GetParent(d);
         }
 
-        /// <summary>
-        /// 全局主题刚被重写（含 <see cref="UI4Theme.SetAccent"/>）后同步各作用域字典的令牌值。
-        /// 只改资源，不刷新命令式控件——那由 <see cref="UI4Theme"/> 的批量刷新按每个控件的有效主题处理。
-        /// </summary>
-        internal static void RefreshDefinitions()
-        {
-            if (_scopes.Count == 0) return;
-            for (int i = _scopes.Count - 1; i >= 0; i--)
-            {
-                ScopeEntry entry = _scopes[i];
-                FrameworkElement element;
-                if (!entry.Element.TryGetTarget(out element))
-                {
-                    _scopes.RemoveAt(i);
-                    continue;
-                }
-                UI4Theme.WriteTokens(entry.Dictionary, UI4Theme.InstanceOf(entry.Key));
-            }
-        }
-
-        /// <summary>
-        /// 作用域变更时刷新其子树内的命令式控件。<paramref name="theme"/> 为 null 表示回到全局主题。
-        /// </summary>
-        private static void RefreshSubtree(DependencyObject scopeRoot, UI4Theme theme)
-        {
-            // 撤销时 scopeKey 为 null：只刷新「向上已找不到任何作用域」的控件，外层/嵌套作用域各自保持不变
-            string scopeKey = theme == null ? null : GetTheme(scopeRoot);
-            // 作用域根若是整窗，标题栏（非客户区）也要跟着换
-            Window scopeWindow = scopeRoot as Window;
-            if (scopeWindow != null) UI4WindowTitleBar.Apply(scopeWindow);
-            RefreshDescendants(scopeRoot, theme, scopeKey);
-        }
-
-        private static void RefreshDescendants(DependencyObject node, UI4Theme theme, string scopeKey)
-        {
-            foreach (object child in LogicalTreeHelper.GetChildren(node))
-            {
-                DependencyObject dep = child as DependencyObject;
-                if (dep != null) RefreshDescendants(dep, theme, scopeKey);
-            }
-
-            if (node is Visual)
-            {
-                int count = VisualTreeHelper.GetChildrenCount(node);
-                for (int i = 0; i < count; i++)
-                    RefreshDescendants(VisualTreeHelper.GetChild(node, i), theme, scopeKey);
-            }
-
-            FrameworkElement control = node as FrameworkElement;
-            if (control == null) return;
-            // 嵌套作用域由它自己负责：有效键与本作用域键不一致即跳过
-            if (!KeyMatches(ResolveKey(control), scopeKey)) return;
-            UI4Theme.RefreshControl(control, theme);
-        }
-
-        private static bool KeyMatches(string actual, string expected)
-        {
-            if (actual == null || expected == null) return actual == null && expected == null;
-            return string.Equals(actual, expected, StringComparison.OrdinalIgnoreCase);
-        }
     }
 }

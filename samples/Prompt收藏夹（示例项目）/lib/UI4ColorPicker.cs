@@ -17,7 +17,7 @@ namespace StartUI4Controls
     /// <para>继承自 <see cref="System.Windows.Window"/>，提供完整的颜色选择界面，
     /// 包括色彩区域、色相滑块和透明度滑块。</para>
     /// </remarks>
-    public class UI4ColorPicker : Window, IThemeAware
+    public class UI4ColorPicker : Window
     {
         private bool _isClosingAnimating;
         private bool _isUpdating;
@@ -60,9 +60,9 @@ namespace StartUI4Controls
             ResizeMode = ResizeMode.CanResize;
             WindowStartupLocation = WindowStartupLocation.CenterOwner;
             ShowInTaskbar = false;
+            FontFamily = new FontFamily("Segoe UI Variable Display, Segoe UI, sans-serif");
             Background = Brushes.Transparent;
-            Foreground = UI4Theme.Current.TextForegroundBrush;
-            UI4Theme.TrackControl(this);
+            SetResourceReference(ForegroundProperty, "UI4.Brush.TextForeground");
             WindowStyle = WindowStyle.None;
             AllowsTransparency = true;
             TextOptions.SetTextFormattingMode(this, TextFormattingMode.Display);
@@ -84,7 +84,6 @@ namespace StartUI4Controls
             _mainContainer = new Border
             {
                 Margin = new Thickness(28),
-                Background = UI4Theme.Current.SurfaceBrush,
                 CornerRadius = new CornerRadius(10),
                 Effect = new DropShadowEffect
                 {
@@ -94,6 +93,7 @@ namespace StartUI4Controls
                     Opacity = 0.3
                 }
             };
+            _mainContainer.SetResourceReference(Border.BackgroundProperty, "UI4.Brush.Surface");
 
             Grid rootGrid = new Grid { Margin = new Thickness(20) };
             rootGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
@@ -149,10 +149,10 @@ namespace StartUI4Controls
                 Height = 200,
                 CornerRadius = new CornerRadius(8),
                 ClipToBounds = true,
-                BorderBrush = new SolidColorBrush(UI4Theme.Current.BorderNormalColor),
                 BorderThickness = new Thickness(1),
                 Child = _colorMapImage
             };
+            _colorMapBorder.SetResourceReference(Border.BorderBrushProperty, "UI4.Brush.BorderNormal");
             UpdateColorMap();
 
             _colorMapImage.MouseDown += ColorMap_MouseDown;
@@ -410,15 +410,6 @@ namespace StartUI4Controls
             rootBorder.Child = resizeGrid;
             this.Content = rootBorder;
             this.Loaded += Window_LoadedAnim;
-        }
-
-        void IThemeAware.OnThemeChanged()
-        {
-            Foreground = UI4Theme.Current.TextForegroundBrush;
-            if (_mainContainer != null)
-                _mainContainer.Background = UI4Theme.Current.SurfaceBrush;
-            if (_colorMapBorder != null)
-                _colorMapBorder.BorderBrush = UI4Theme.Current.BorderNormalBrush;
         }
 
         private static void RgbToHsv(Color color, out double h, out double s, out double v)

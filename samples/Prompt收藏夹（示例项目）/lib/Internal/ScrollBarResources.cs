@@ -24,7 +24,7 @@ namespace StartUI4Controls.Internal
         <Setter Property='Template'>
             <Setter.Value>
                 <ControlTemplate TargetType='{x:Type Thumb}'>
-                    <Rectangle Fill='#90000000' RadiusX='3' RadiusY='3'/>
+                    <Rectangle Fill='{DynamicResource UI4.Brush.ScrollBarThumb}' RadiusX='3' RadiusY='3'/>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
@@ -171,7 +171,7 @@ namespace StartUI4Controls.Internal
         <Setter Property='Template'>
             <Setter.Value>
                 <ControlTemplate TargetType='{x:Type Thumb}'>
-                    <Rectangle Fill='#50000000' RadiusX='3' RadiusY='3'/>
+                    <Rectangle Fill='{DynamicResource UI4.Brush.ScrollBarThumb}' RadiusX='3' RadiusY='3'/>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
@@ -359,7 +359,7 @@ namespace StartUI4Controls.Internal
                 + KeyedScrollBarStylesFragment +
                 @"
     </Style.Resources>
-    <Setter Property='BorderBrush' Value='LightGray'/>
+    <Setter Property='BorderBrush' Value='{DynamicResource UI4.Brush.BorderWeak}'/>
     <Setter Property='BorderThickness' Value='0'/>
     <Setter Property='HorizontalContentAlignment' Value='Left'/>
     <Setter Property='HorizontalScrollBarVisibility' Value='Auto'/>

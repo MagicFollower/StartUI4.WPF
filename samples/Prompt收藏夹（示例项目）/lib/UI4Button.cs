@@ -3,6 +3,7 @@ using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
+using System.Windows.Markup;
 using System.Windows.Media;
 
 namespace StartUI4Controls
@@ -18,7 +19,7 @@ namespace StartUI4Controls
     ///   <item><see cref="HoverBackground"/> — 鼠标悬停背景</item>
     /// </list>
     /// </remarks>
-    public class UI4Button : Button, IThemeAware
+    public class UI4Button : Button
     {
         /// <summary>获取或设置按钮的圆角半径。默认值为 6。</summary>
         public static readonly DependencyProperty CornerRadiusProperty =
@@ -119,12 +120,12 @@ namespace StartUI4Controls
         public UI4Button()
         {
             Style = BuildPrimaryStyle();
-            UI4Theme.TrackControl(this);
-        }
 
-        void IThemeAware.OnThemeChanged()
-        {
-            Style = BuildPrimaryStyle();
+            // 声明式跟随主题：渐变两端、悬停底、悬停前景都挂令牌，切换主题触发 OnStyleRefresh 重建
+            SetResourceReference(GradientStartProperty, "UI4.Color.Accent");
+            SetResourceReference(GradientEndProperty, "UI4.Color.AccentEnd");
+            SetResourceReference(HoverBackgroundProperty, "UI4.Brush.AccentDark");
+            SetResourceReference(HoverForegroundProperty, "UI4.Brush.OnAccent");
         }
 
         private Style BuildPrimaryStyle()
@@ -191,13 +192,15 @@ namespace StartUI4Controls
             FrameworkElementFactory borderDisabled = new FrameworkElementFactory(typeof(Border));
             borderDisabled.SetBinding(Border.CornerRadiusProperty, new Binding(nameof(CornerRadius)) { RelativeSource = RelativeSource.TemplatedParent });
             borderDisabled.SetBinding(Border.PaddingProperty, new Binding(nameof(Padding)) { RelativeSource = RelativeSource.TemplatedParent });
-            borderDisabled.SetValue(Border.BackgroundProperty, UI4Theme.Current.BorderNormalBrush);
+            // 禁用态：OffBackground 在三套主题下都是中性灰阶（HC 为深灰），配 TextMuted 保证对比度；
+            // 不能用 BorderNormal —— 高对比度下它是纯白，会和白字叠成不可读
+            borderDisabled.SetValue(Border.BackgroundProperty, new DynamicResourceExtension("UI4.Brush.OffBackground"));
             borderDisabled.SetValue(Border.BorderThicknessProperty, new Thickness(0));
 
             FrameworkElementFactory cpDisabled = new FrameworkElementFactory(typeof(ContentPresenter));
             cpDisabled.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Center);
             cpDisabled.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center);
-            cpDisabled.SetValue(TextElement.ForegroundProperty, ForegroundFor(UI4Theme.Current.BorderNormalColor));
+            cpDisabled.SetValue(TextElement.ForegroundProperty, new DynamicResourceExtension("UI4.Brush.TextMuted"));
             borderDisabled.AppendChild(cpDisabled);
             disabledTemplate.VisualTree = borderDisabled;
 
@@ -213,14 +216,28 @@ namespace StartUI4Controls
         }
 
         /// <summary>
-        /// 前景色跟随背景亮度：深色底用白字，浅色底（禁用态、中性灰按钮等）用主题正文色。
+        /// 前景色在 <c>OnAccent</c> 与主题正文色之间<b>取与底色对比度更高的那个</b>，而不是按亮度阈值判。
+        /// 阈值判法在高对比度主题下会翻车：那里的强调色是亮黄（相对亮度 0.93，会被当成「浅底」），
+        /// 而该主题的正文色本就是给黑底准备的白，于是白字压黄底（实测 1.07:1）。
         /// 只是样式 Setter 的默认值，使用方本地显式设置的 Foreground 仍然优先。
         /// </summary>
-        private static SolidColorBrush ForegroundFor(Color background)
+        private SolidColorBrush ForegroundFor(Color background)
         {
-            return Luminance(background) < 0.45
-                ? UI4Theme.Current.OnWhiteBrush
-                : UI4Theme.Current.TextForegroundBrush;
+            SolidColorBrush onAccent = TryFindResource("UI4.Brush.OnAccent") as SolidColorBrush;
+            SolidColorBrush text = TryFindResource("UI4.Brush.TextForeground") as SolidColorBrush;
+            if (onAccent == null) return text ?? Brushes.White;
+            if (text == null) return onAccent;
+            return Contrast(text.Color, background) >= Contrast(onAccent.Color, background) ? text : onAccent;
+        }
+
+        /// <summary>WCAG 2.x 对比度：(较亮 + 0.05) / (较暗 + 0.05)。</summary>
+        private static double Contrast(Color a, Color b)
+        {
+            double x = Luminance(a);
+            double y = Luminance(b);
+            double lighter = System.Math.Max(x, y);
+            double darker = System.Math.Min(x, y);
+            return (lighter + 0.05) / (darker + 0.05);
         }
 
         private static Color Blend(Color a, Color b)

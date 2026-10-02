@@ -178,7 +178,14 @@ namespace StartUI4Controls
         }
 
         private static Brush CreateDefaultRevealBrush()
-            => new SolidColorBrush(Color.FromArgb(150, UI4Theme.Current.IconColor.R, UI4Theme.Current.IconColor.G, UI4Theme.Current.IconColor.B));
+        {
+            // 从资源桥取 Icon 令牌再压 60% 不透明度；每次调用都重读，故交互时总是当前主题
+            var app = Application.Current;
+            Color icon = (app != null ? app.TryFindResource("UI4.Color.Icon") as Color? : null) ?? Colors.Gray;
+            var brush = new SolidColorBrush(Color.FromArgb(150, icon.R, icon.G, icon.B));
+            brush.Freeze();
+            return brush;
+        }
 
         private static void OnPasswordModeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
@@ -566,7 +573,7 @@ namespace StartUI4Controls
                 var btn = sender as Button;
                 if (btn != null)
                 {
-                    btn.Foreground = UI4Theme.Current.AccentBrush;
+                    btn.SetResourceReference(ForegroundProperty, "UI4.Brush.Accent");
                     btn.CaptureMouse();
                 }
                 e.Handled = true;

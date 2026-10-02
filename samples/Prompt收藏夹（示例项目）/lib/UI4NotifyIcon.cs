@@ -181,35 +181,9 @@ namespace StartUI4Controls
             DependencyProperty.Register(nameof(MenuItemPadding), typeof(Thickness), typeof(UI4NotifyIcon),
                 new FrameworkPropertyMetadata(new Thickness(12, 8, 12, 8)));
 
-        public Color MenuBorderColor
-        {
-            get => (Color)GetValue(MenuBorderColorProperty);
-            set => SetValue(MenuBorderColorProperty, value);
-        }
-
-        public static readonly DependencyProperty MenuBorderColorProperty =
-            DependencyProperty.Register(nameof(MenuBorderColor), typeof(Color), typeof(UI4NotifyIcon),
-                new FrameworkPropertyMetadata(Color.FromArgb(255, 200, 200, 220)));
-
-        public Brush MenuBackground
-        {
-            get => (Brush)GetValue(MenuBackgroundProperty);
-            set => SetValue(MenuBackgroundProperty, value);
-        }
-
-        public static readonly DependencyProperty MenuBackgroundProperty =
-            DependencyProperty.Register(nameof(MenuBackground), typeof(Brush), typeof(UI4NotifyIcon),
-                new FrameworkPropertyMetadata(Brushes.White));
-
-        public Color MenuHoverBg
-        {
-            get => (Color)GetValue(MenuHoverBgProperty);
-            set => SetValue(MenuHoverBgProperty, value);
-        }
-
-        public static readonly DependencyProperty MenuHoverBgProperty =
-            DependencyProperty.Register(nameof(MenuHoverBg), typeof(Color), typeof(UI4NotifyIcon),
-                new FrameworkPropertyMetadata(Color.FromArgb(10, 0, 0, 0)));
+        // MenuBorderColor / MenuBackground / MenuHoverBg 已删除：托盘不在任何窗口的可视化树上，
+        // 拿不到 UI4ThemeScope，这三个 DP 又没有 PropertyChangedCallback（运行期改色根本不生效）。
+        // 菜单配色改由内部 UI4ListBox 的资源引用驱动，跟随全局主题。
 
         public CornerRadius MenuCornerRadius
         {
@@ -300,9 +274,6 @@ namespace StartUI4Controls
             {
                 Width = MenuWidth,
                 ItemPadding = MenuItemPadding,
-                BorderNormalColor = MenuBorderColor,
-                Background = MenuBackground,
-                HoverBackground = MenuHoverBg,
                 CornerRadius = MenuCornerRadius,
             };
             _listBox.PreviewMouseLeftButtonUp += OnListBoxClick;

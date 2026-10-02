@@ -21,7 +21,7 @@ namespace StartUI4Controls
     ///   <item><see cref="Title"/> — 标题栏文字</item>
     /// </list>
     /// </remarks>
-    public class UI4Panel : ContentControl, IThemeAware
+    public class UI4Panel : ContentControl
     {
         public static readonly DependencyProperty CornerRadiusProperty =
             DependencyProperty.Register(
@@ -175,16 +175,11 @@ namespace StartUI4Controls
 
         public UI4Panel()
         {
-            Background = UI4Theme.Current.BackgroundBrush;
+            // 声明式跟随主题：面板底与投影色挂令牌
+            SetResourceReference(BackgroundProperty, "UI4.Brush.Background");
+            SetResourceReference(ShadowColorProperty, "UI4.Color.Shadow");
             Style = BuildPanelStyle();
             Cursor = Cursors.Arrow;
-            UI4Theme.TrackControl(this);
-        }
-
-        void IThemeAware.OnThemeChanged()
-        {
-            Background = UI4Theme.Current.BackgroundBrush;
-            Style = BuildPanelStyle();
         }
 
         private Style BuildPanelStyle()
