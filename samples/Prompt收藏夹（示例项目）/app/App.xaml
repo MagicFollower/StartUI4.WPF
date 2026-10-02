@@ -12,10 +12,11 @@
         <c:DateTimeFormatConverter x:Key="DateTimeFormat"/>
         <c:SortModeMatchConverter x:Key="SortModeMatch"/>
 
-        <SolidColorBrush x:Key="App.Brush.Accent" Color="#3D9BD9"/>
-        <SolidColorBrush x:Key="App.Brush.AccentHover" Color="#1C76B4"/>
-        <SolidColorBrush x:Key="App.Brush.Neutral" Color="#C8C8D2"/>
-        <SolidColorBrush x:Key="App.Brush.NeutralHover" Color="#9AC9EE"/>
+        <!-- 配色取自 Helpers/Theme.cs（终端靛浅色方案）；FavoriteHover 是"收藏"语义色的 hover，不随界面配色走 -->
+        <SolidColorBrush x:Key="App.Brush.Accent" Color="#4F6BE8"/>
+        <SolidColorBrush x:Key="App.Brush.AccentHover" Color="#435AC5"/>
+        <SolidColorBrush x:Key="App.Brush.Neutral" Color="#D3DBE6"/>
+        <SolidColorBrush x:Key="App.Brush.NeutralHover" Color="#EFF2FE"/>
         <SolidColorBrush x:Key="App.Brush.FavoriteHover" Color="#E08A00"/>
     </Application.Resources>
 </Application>

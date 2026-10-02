@@ -54,6 +54,26 @@ echo $LASTEXITCODE      # 失败断言数，0 = 全通过
 
 窗口标题在 `MainWindow.xaml` 的 `Title`（当前为「收藏夹」）；应用图标是 `tools\make-icon.ps1` 手绘生成的 `app\AppIcon.ico`（7 挡尺寸）。改法、exe 图标与窗口图标两条链路的区别、以及运行时怎么验，见 [标题与图标设置教程.md](标题与图标设置教程.md)。
 
+### 配色
+
+界面是单一定死的浅色方案「终端靛」：底 `#f9fbff`、正文 `#1b2737`、主色 `#4f6be8`、强调 `#0c8ba8`、边框 `#bcc7d6`、选中行 `#e2e5fb`。源色取自 [100-themes](https://github.com/MagicFollower/100-themes) 的 `terminal-blue/day/colors.toml`，按"浅亮、低干扰"重调：底色亮度 0.964，边框降到 1.65:1 的发丝线，列表选中行用浅底黑字而不是主色块。
+
+| 关系 | 实测对比 |
+|---|---|
+| 正文 / 底 | 14.56:1 |
+| 次级文本 / 底 | 5.73:1 |
+| 白字 / 主色（填充按钮） | 4.56:1 |
+| 正文 / 中性按钮底 | 10.81:1 |
+| 正文 / 选中行 | 12.09:1 |
+
+改配色只动一处：`Helpers/Theme.cs` 的源色常量。`App.RegisterAppTheme()` 据此派生全部 30 个 `UI4ThemeToken`（面板=背景向白提亮 85%、中性按钮底=背景混边框色 62%、行悬浮=背景混主色 6%、次级文本向正文混 18% 以过 AA），覆盖 `light` 键后由 `UI4Theme.SetTheme(Light)` 生效，`lib/` 一行未改。三条约束：
+
+- **主色不能再往淡走**：`UI4Button` 按底色亮度自动挑字色（`Luminance < 0.45` 给白字），而白字要 ≥4.5:1 就得主色亮度 ≤0.183——再淡就掉进"白字配中底"的不可读区。要浅就浅底、线、选中块。
+- **中性按钮（收藏/复制/保存/取消）的底必须是浅的**（现在 L≈0.70）。踩过的坑：把它映射成中灰 `muted`（L≈0.37）时库自动配白字，实测只有 2.46:1，几乎读不出字。
+- **`UI4ListBox` 的选中行不参与主题同步**：`PressedBackground`/`PressedForeground` 是硬编码默认值，所以两个列表上显式绑了 `UI4.Color.RowSelectedBackground` / `UI4.Color.TextForeground`；`TextColor`/`BorderNormalColor`/`PanelBackground`/`HoverBackground` 由库自动跟随，不用管。
+
+收藏星标的金色是语义色，不跟界面配色走。
+
 ### 数据与设置位置
 
 | 内容 | 位置 |

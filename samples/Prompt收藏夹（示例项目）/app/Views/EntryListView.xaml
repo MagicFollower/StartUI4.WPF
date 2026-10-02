@@ -60,6 +60,8 @@
                        Grid.Row="2"
                        Margin="8,4,8,0"
                        ListStyleType="None"
+                       PressedBackground="{DynamicResource UI4.Color.RowSelectedBackground}"
+                       PressedForeground="{DynamicResource UI4.Color.TextForeground}"
                        ItemsSource="{Binding Entries}"
                        SelectedItem="{Binding SelectedEntry}">
             <ui:UI4ListBox.ItemTemplate>

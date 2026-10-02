@@ -49,6 +49,8 @@
                        Grid.Row="1"
                        Margin="8,0"
                        ListStyleType="None"
+                       PressedBackground="{DynamicResource UI4.Color.RowSelectedBackground}"
+                       PressedForeground="{DynamicResource UI4.Color.TextForeground}"
                        ItemsSource="{Binding Modules}"
                        SelectedItem="{Binding SelectedModule}">
             <ui:UI4ListBox.ItemTemplate>
