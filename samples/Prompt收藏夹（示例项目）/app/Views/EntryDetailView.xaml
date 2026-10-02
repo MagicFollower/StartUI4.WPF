@@ -4,6 +4,10 @@
              xmlns:ui="clr-namespace:StartUI4Controls;assembly=StartUI4Controls"
              xmlns:h="clr-namespace:PromptFavorites.Helpers"
              Background="{DynamicResource UI4.Brush.Background}">
+    <UserControl.InputBindings>
+        <KeyBinding Modifiers="Control" Key="S" Command="{Binding SaveCommand}"/>
+    </UserControl.InputBindings>
+
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>

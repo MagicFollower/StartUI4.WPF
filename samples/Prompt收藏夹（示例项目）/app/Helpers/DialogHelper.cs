@@ -74,6 +74,7 @@ namespace PromptFavorites.Helpers
                 Width = 70,
                 Height = 30,
                 Margin = new Thickness(0, 0, 8, 0),
+                IsDefault = true,
                 GradientStart = Theme.Accent,
                 GradientEnd = Theme.Accent,
                 HoverBackground = Theme.AccentHoverBrush
@@ -90,6 +91,7 @@ namespace PromptFavorites.Helpers
                 Content = "\u53D6\u6D88",
                 Width = 70,
                 Height = 30,
+                IsCancel = true,
                 GradientStart = Theme.Neutral,
                 GradientEnd = Theme.Neutral,
                 HoverBackground = Theme.NeutralHoverBrush
