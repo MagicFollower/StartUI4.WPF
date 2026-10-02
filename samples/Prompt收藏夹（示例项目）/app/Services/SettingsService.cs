@@ -30,6 +30,66 @@ namespace PromptFavorites.Services
         public bool FavoriteFilter { get; set; }
         public string RootPath { get; set; }
 
+        /// <summary>左栏拖动顺序；null 表示从没拖过，此时以视图当前顺序为起点且不写配置。</summary>
+        public IList<string> ModuleOrder { get { return _moduleOrder; } }
+
+        /// <summary>某模块的条目拖动顺序；没有记录过时返回 null。</summary>
+        public IList<string> GetEntryOrder(string moduleName)
+        {
+            if (string.IsNullOrEmpty(moduleName)) return null;
+
+            List<string> order;
+            return _entryOrders.TryGetValue(moduleName, out order) ? order : null;
+        }
+
+        public void SetModuleOrder(IEnumerable<string> names)
+        {
+            var list = CustomOrderCodec.DecodeNames(CustomOrderCodec.EncodeNames(names));
+            _moduleOrder = list.Count > 0 ? list : null;
+        }
+
+        public void SetEntryOrder(string moduleName, IEnumerable<string> titles)
+        {
+            if (string.IsNullOrEmpty(moduleName)) return;
+
+            var list = CustomOrderCodec.DecodeNames(CustomOrderCodec.EncodeNames(titles));
+            if (list.Count == 0)
+            {
+                _entryOrders.Remove(moduleName);
+                return;
+            }
+            _entryOrders[moduleName] = list;
+        }
+
+        /// <summary>模块改名：换掉顺序表里的名字，并把它名下记的条目顺序表搬到新模块名。</summary>
+        public void RenameModuleInOrders(string oldName, string newName)
+        {
+            if (string.IsNullOrEmpty(oldName) || string.IsNullOrEmpty(newName)) return;
+            if (string.Equals(oldName, newName, StringComparison.Ordinal)) return;
+
+            if (_moduleOrder != null) CustomOrderCodec.Rename(_moduleOrder, oldName, newName);
+
+            List<string> entryOrder;
+            if (_entryOrders.TryGetValue(oldName, out entryOrder))
+            {
+                _entryOrders.Remove(oldName);
+                _entryOrders[newName] = entryOrder;
+            }
+        }
+
+        /// <summary>条目改名：顺序表里就地换名，位置不变。旧名不在表里时什么都不做。</summary>
+        public void RenameEntryInOrder(string moduleName, string oldTitle, string newTitle)
+        {
+            if (string.IsNullOrEmpty(moduleName)) return;
+
+            List<string> entryOrder;
+            if (_entryOrders.TryGetValue(moduleName, out entryOrder))
+                CustomOrderCodec.Rename(entryOrder, oldTitle, newTitle);
+        }
+
+        /// <summary>顺序表只占设置文件预算的一半，超了就先丢顺序，不能拖累其余设置写不进去。</summary>
+        internal const int MaxOrderChars = 32 * 1024;
+
         /// <summary>健康文件约 200~300 字节；超限即判损坏，避免脏数据拖死启动。</summary>
         internal const int MaxSettingsBytes = 64 * 1024;
 
@@ -41,8 +101,15 @@ namespace PromptFavorites.Services
 
         private static readonly string SettingsFile = Path.Combine(SettingsDir, "settings.json");
 
+        /// <summary>设置文件所在目录，只给"查看"用；不保证已存在（首次保存时才创建）。</summary>
+        public static string SettingsDirectory { get { return SettingsDir; } }
+
         private string _lastWrittenText;
         private bool _loadedLegacyFormat;
+        private List<string> _moduleOrder;
+
+        private readonly Dictionary<string, List<string>> _entryOrders =
+            new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
 
         public void Load()
         {
@@ -147,6 +214,21 @@ namespace PromptFavorites.Services
             entries.Add(Pair("favoriteFilter", Text(FavoriteFilter)));
             entries.Add(Pair("rootPath", RootPath));
 
+            var moduleOrderText = CustomOrderCodec.EncodeNames(_moduleOrder);
+            var entryOrderText = CustomOrderCodec.EncodeScopes(_entryOrders);
+            if (moduleOrderText.Length + entryOrderText.Length > MaxOrderChars)
+            {
+                TryAppendDiagnostics("refuse-order", new IOException(
+                    "custom order too large: " + moduleOrderText.Length + "+" + entryOrderText.Length));
+            }
+            else
+            {
+                if (moduleOrderText.Length > 0)
+                    entries.Add(Pair("moduleCustomOrder", moduleOrderText));
+                if (entryOrderText.Length > 0)
+                    entries.Add(Pair("entryCustomOrder", entryOrderText));
+            }
+
             return entries;
         }
 
@@ -182,6 +264,18 @@ namespace PromptFavorites.Services
             WindowState windowState;
             if (map.TryGetValue("windowState", out value) && Enum.TryParse(value, out windowState))
                 WindowState = windowState;
+
+            if (map.TryGetValue("moduleCustomOrder", out value))
+            {
+                var moduleOrder = CustomOrderCodec.DecodeNames(value);
+                _moduleOrder = moduleOrder.Count > 0 ? moduleOrder : null;
+            }
+
+            if (map.TryGetValue("entryCustomOrder", out value))
+            {
+                foreach (var pair in CustomOrderCodec.DecodeScopes(value))
+                    _entryOrders[pair.Key] = pair.Value;
+            }
         }
 
         private static KeyValuePair<string, string> Pair(string key, string value)
@@ -219,6 +313,8 @@ namespace PromptFavorites.Services
             SortMode = SortMode.UseCount;
             ModuleSortMode = ModuleSortMode.CreatedAt;
             FavoriteFilter = false;
+            _moduleOrder = null;
+            _entryOrders.Clear();
         }
 
         /// <summary>只改名不删除，保留用户数据的取证可能。</summary>

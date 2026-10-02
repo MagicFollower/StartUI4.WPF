@@ -30,8 +30,6 @@ namespace StartUI4Controls
         private const double DefaultMinHeight = 160;
         private const double DefaultMaxHeight = 400;
 
-        private static readonly FontFamily WindowFontFamily =
-            new FontFamily("Segoe UI Variable Display, Segoe UI, sans-serif");
         private static readonly FontFamily IconFontFamily =
             new FontFamily("Segoe MDL2 Assets");
         private static readonly DropShadowEffect ContainerShadow;
@@ -88,7 +86,7 @@ namespace StartUI4Controls
             ResizeMode = ResizeMode.CanResize;
             WindowStartupLocation = WindowStartupLocation.CenterOwner;
             ShowInTaskbar = false;
-            FontFamily = WindowFontFamily;
+            // 字体故意不设：跟随 SystemFonts.MessageFontFamily，与宿主主窗口同一口径
             Background = Brushes.Transparent;
             WindowStyle = WindowStyle.None;
             AllowsTransparency = true;

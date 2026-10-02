@@ -6,6 +6,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
+using PromptFavorites.Services;
 using StartUI4Controls;
 
 namespace PromptFavorites
@@ -99,8 +100,34 @@ namespace PromptFavorites
                 UI4MenuItemType.Copy, "\u5207\u6362\u6839\u76EE\u5F55...", null,
                 delegate { SelectNewFolder(); }));
 
+            menu.AddItem(new UI4MenuItem(
+                UI4MenuItemType.Copy, "\u6253\u5F00\u8BBE\u7F6E\u76EE\u5F55", null,
+                delegate { OpenSettingsFolder(); }));
+
             menu.Attach(FolderBtn);
             menu.Open();
+        }
+
+        private void OpenSettingsFolder()
+        {
+            var path = SettingsService.SettingsDirectory;
+
+            try
+            {
+                if (!Directory.Exists(path)) Directory.CreateDirectory(path);
+
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = path,
+                    UseShellExecute = true,
+                    Verb = "open"
+                });
+            }
+            catch (Exception ex)
+            {
+                UI4MessageBox.Show("\u65E0\u6CD5\u6253\u5F00\u76EE\u5F55: " + ex.Message,
+                    "\u9519\u8BEF", UI4MessageBoxButtons.OK, 360);
+            }
         }
 
         private void OpenCurrentFolder()

@@ -51,7 +51,10 @@ namespace StartUI4Demo
             UpdateScopeStatus();
             UpdateThemeFooter();
             AttachValueWatchers();
+            // 场景套装一次性注册：之后 ThemeKeys 就是「内置 3 套 + 套装 6 套」，下拉与作用域都从这里取
+            UI4ThemePacks.RegisterAll();
             RefreshThemeKeyCombo();
+            RefreshScopeKeyCombo();
         }
 
         /// <summary>
@@ -62,7 +65,7 @@ namespace StartUI4Demo
         private void UpdateThemeFooter()
         {
             if (ThemeFooter == null) return;
-            ThemeFooter.Text = "主题: " + UI4Theme.ResolvedKey
+            ThemeFooter.Text = "主题: " + UI4ThemePacks.DisplayLabel(UI4Theme.ResolvedKey)
                 + "　CurrentMode=" + UI4Theme.CurrentMode
                 + "　ResolvedMode=" + UI4Theme.ResolvedMode;
         }
@@ -95,12 +98,12 @@ namespace StartUI4Demo
 
         private void BuildHostContextMenu()
         {
+            // 不写 BorderColor / HoverBackground：这两个属性一旦显式赋值，UI4ContextMenu 就会把颜色
+            // 下推给内部列表并从此不再跟随主题（库内靠「未赋值 = 交给资源引用」区分）。
             _hostMenu = new UI4ContextMenu
             {
                 Width = 200,
-                ItemPadding = new Thickness(12, 8, 12, 8),
-                BorderColor = UI4Theme.Current.BorderNormalColor,
-                HoverBackground = UI4Theme.Current.HoverOverlayColor
+                ItemPadding = new Thickness(12, 8, 12, 8)
             };
 
             // 用 AddItem(type, Action, Func<bool>) 重载：文案由 UI4MultiLanguage 本地化，
@@ -495,8 +498,9 @@ namespace StartUI4Demo
 
         private void ScopeKeyCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            // XAML 解析阶段 SelectedIndex="0" 会先触发一次，此时 ScopeCard 字段尚未赋值。
-            if (ScopeCard == null || ScopeKeyCombo == null) return;
+            // 选项由 RefreshScopeKeyCombo 在构造末尾填入，那时命名元素才全部就绪；
+            // 这里的空值守卫留作兜底，_suppressScopeCombo 则挡住「重填选项」触发的回调。
+            if (_suppressScopeCombo || ScopeCard == null || ScopeKeyCombo == null) return;
 
             ComboBoxItem item = ScopeKeyCombo.SelectedItem as ComboBoxItem;
             string key = item == null ? null : item.Tag as string;
@@ -514,7 +518,7 @@ namespace StartUI4Demo
         private void HighContrast_Click(object sender, RoutedEventArgs e)
         {
             UI4Theme.Apply("highcontrast");
-            SetStatus("全局主题 → highcontrast");
+            SetStatus("全局主题 → " + UI4ThemePacks.DisplayLabel("highcontrast"));
         }
 
         private void FollowSystem_Click(object sender, RoutedEventArgs e)
@@ -527,8 +531,8 @@ namespace StartUI4Demo
         {
             if (ScopeStatus == null) return;
             string scopeKey = UI4ThemeScope.GetTheme(ScopeCard);
-            ScopeStatus.Text = "全局主题 ResolvedMode=" + UI4Theme.ResolvedMode + " Key=" + UI4Theme.ResolvedKey +
-                               "　　作用域卡片 Theme=" + (string.IsNullOrEmpty(scopeKey) ? "(none)" : scopeKey);
+            ScopeStatus.Text = "全局 " + UI4ThemePacks.DisplayLabel(UI4Theme.ResolvedKey) +
+                               "　　作用域卡片 Theme=" + (string.IsNullOrEmpty(scopeKey) ? "(none)" : UI4ThemePacks.DisplayLabel(scopeKey));
         }
 
         // ---------- 菜单 / 托盘 / 多语言 ----------
@@ -688,6 +692,7 @@ namespace StartUI4Demo
 
         private const string OceanKey = "ocean";
         private bool _suppressThemeCombo;
+        private bool _suppressScopeCombo;
 
         private string PersistedPath
         {
@@ -708,7 +713,8 @@ namespace StartUI4Demo
 
         private void AccentPicker_Click(object sender, RoutedEventArgs e)
         {
-            Color? picked = UI4ColorPicker.ShowDialog("选择强调色", UI4Theme.Current.AccentColor, this);
+            Color? picked = UI4ColorPicker.ShowDialog("选择强调色",
+                UI4Theme.Current.ColorOf(UI4ThemeToken.Accent), this);
             if (!picked.HasValue) return;
 
             UI4Theme.SetAccent(picked.Value);
@@ -717,7 +723,9 @@ namespace StartUI4Demo
 
         private void AccentReset_Click(object sender, RoutedEventArgs e)
         {
-            // SetAccent 改的是当前主题定义，重新注册内置定义即可恢复
+            // SetAccent 改的是当前主题定义，重新注册内置定义即可恢复：
+            // Register 覆盖的若正是当前生效的键，库内会立即整体重新应用（重建 Current、原位换入新字典、
+            // 重指向同键作用域、触发 ThemeChanged 让标题栏重染），不需要额外调 SetTheme。
             UI4Theme.Register(UI4ThemeDefinition.Light());
             UI4Theme.Register(UI4ThemeDefinition.Dark());
             UI4Theme.Register(UI4ThemeDefinition.HighContrast());
@@ -735,7 +743,8 @@ namespace StartUI4Demo
             UI4Theme.Register(def);
             UI4Theme.Apply(OceanKey);
             RefreshThemeKeyCombo();
-            ThemeEcho.Text = "已注册并应用自定义主题 \"" + OceanKey + "\"（克隆自 light，改了 3 个令牌）";
+            RefreshScopeKeyCombo();
+            ThemeEcho.Text = "已注册并应用自定义主题 \"" + OceanKey + "\"（克隆自 light，改了 3 个令牌）；未登记中文名，下拉按原键回显";
         }
 
         private void RefreshThemeKeyCombo()
@@ -745,8 +754,9 @@ namespace StartUI4Demo
             _suppressThemeCombo = true;
             string current = UI4Theme.ResolvedKey;
             ThemeKeyCombo.Items.Clear();
+            // 显示「中文 · key」，Tag 始终是英文键：宿主把键写进配置/代码，界面只负责说人话
             foreach (string key in UI4Theme.ThemeKeys)
-                ThemeKeyCombo.Items.Add(new ComboBoxItem { Content = key, Tag = key });
+                ThemeKeyCombo.Items.Add(new ComboBoxItem { Content = UI4ThemePacks.DisplayLabel(key), Tag = key });
 
             int index = 0;
             foreach (string key in UI4Theme.ThemeKeys)
@@ -754,8 +764,39 @@ namespace StartUI4Demo
                 if (string.Equals(key, current, StringComparison.OrdinalIgnoreCase)) break;
                 index++;
             }
-            ThemeKeyCombo.SelectedIndex = index >= 0 ? index : 0;
+            ThemeKeyCombo.SelectedIndex = index < ThemeKeyCombo.Items.Count ? index : 0;
             _suppressThemeCombo = false;
+        }
+
+        /// <summary>
+        /// 局部主题下拉：全局键 + 一个空 Tag 的「撤销作用域」。
+        /// XAML 里不写死选项，新增套装后不必再改两处。
+        /// </summary>
+        private void RefreshScopeKeyCombo()
+        {
+            if (ScopeKeyCombo == null) return;
+
+            _suppressScopeCombo = true;
+            string current = UI4ThemeScope.GetTheme(ScopeCard);
+            ScopeKeyCombo.Items.Clear();
+            ScopeKeyCombo.Items.Add(new ComboBoxItem { Content = "（撤销作用域）", Tag = string.Empty });
+            foreach (string key in UI4Theme.ThemeKeys)
+                ScopeKeyCombo.Items.Add(new ComboBoxItem { Content = UI4ThemePacks.DisplayLabel(key), Tag = key });
+            ScopeKeyCombo.SelectedIndex = IndexAfterUndo(current);
+            _suppressScopeCombo = false;
+        }
+
+        /// <summary>作用域下拉的序号：0 是「撤销」，未注册/为空的键回落到 0。</summary>
+        private int IndexAfterUndo(string key)
+        {
+            if (string.IsNullOrEmpty(key)) return 0;
+            int index = 1;
+            foreach (string k in UI4Theme.ThemeKeys)
+            {
+                if (string.Equals(k, key, StringComparison.OrdinalIgnoreCase)) return index;
+                index++;
+            }
+            return 0;
         }
 
         private void ThemeKeyCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -767,7 +808,7 @@ namespace StartUI4Demo
             if (string.IsNullOrEmpty(key)) return;
 
             bool applied = UI4Theme.Apply(key);
-            ThemeEcho.Text = (applied ? "已切换全局主题 → " : "切换失败（未注册的键）：") + key;
+            ThemeEcho.Text = (applied ? "已切换全局主题 → " : "切换失败（未注册的键）：") + UI4ThemePacks.DisplayLabel(key);
         }
 
         private void ThemeSave_Click(object sender, RoutedEventArgs e)

@@ -152,10 +152,18 @@ namespace PromptFavorites.Views
             UpdateSortButtons(ModuleSortMode.Name);
         }
 
+        private void SortCustom_Click(object sender, RoutedEventArgs e)
+        {
+            var vm = DataContext as ModuleListViewModel;
+            if (vm != null) vm.CurrentSort = ModuleSortMode.Custom;
+            UpdateSortButtons(ModuleSortMode.Custom);
+        }
+
         private void UpdateSortButtons(ModuleSortMode mode)
         {
             SetSortBtnStyle(SortCreatedAtBtn, mode == ModuleSortMode.CreatedAt);
             SetSortBtnStyle(SortNameBtn, mode == ModuleSortMode.Name);
+            SetSortBtnStyle(SortCustomBtn, mode == ModuleSortMode.Custom);
         }
 
         private static void SetSortBtnStyle(UI4Button btn, bool selected)

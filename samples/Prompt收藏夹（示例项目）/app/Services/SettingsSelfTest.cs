@@ -128,8 +128,89 @@ namespace PromptFavorites.Services
                 report.AppendLine("FAIL windowState 未还原");
             }
 
+            // 自定义拖动顺序：名字可以含 '=' 和引号，但绝不能含 '| > :'（Windows 文件名非法字符），
+            // 所以分隔符取这三个字符、值侧不做任何转义。下面断言这条不变量成立。
+            var orderNames = new[]
+            {
+                "编程模块",
+                "临时 目录",
+                "模块 (x86)",
+                "带\"引号\"的名字",
+                "a=b",
+                @"C:\风格路径"
+            };
+
+            var orderText = CustomOrderCodec.EncodeNames(orderNames);
+            var orderBack = CustomOrderCodec.DecodeNames(orderText);
+            if (orderBack.Count != orderNames.Length)
+            {
+                failed++;
+                report.AppendLine("FAIL 名称表往返数量: " + orderNames.Length + " -> " + orderBack.Count);
+            }
+            else
+            {
+                for (int i = 0; i < orderNames.Length; i++)
+                {
+                    if (!string.Equals(orderNames[i], orderBack[i], StringComparison.Ordinal))
+                    {
+                        failed++;
+                        report.AppendLine("FAIL 名称表往返位置 " + i + ": [" + orderNames[i] + "] -> [" + orderBack[i] + "]");
+                    }
+                }
+            }
+
+            var orderKv = new Dictionary<string, string>(StringComparer.Ordinal);
+            orderKv["moduleCustomOrder"] = orderText;
+            string orderKvBack;
+            SettingsCodec.Parse(SettingsCodec.Serialize(orderKv)).TryGetValue("moduleCustomOrder", out orderKvBack);
+            if (!string.Equals(orderText, orderKvBack ?? string.Empty, StringComparison.Ordinal))
+            {
+                failed++;
+                report.AppendLine("FAIL 顺序键经 kv1 往返发生变化: [" + orderKvBack + "]");
+            }
+
+            var scopes = new List<KeyValuePair<string, List<string>>>();
+            scopes.Add(new KeyValuePair<string, List<string>>("编程模块",
+                new List<string> { "无损转录器", "批量改名 a=b" }));
+            scopes.Add(new KeyValuePair<string, List<string>>("WebDAV 备份",
+                new List<string> { "手机端" }));
+
+            var scopeText = CustomOrderCodec.EncodeScopes(scopes);
+            var scopeBack = CustomOrderCodec.DecodeScopes(scopeText);
+            if (scopeBack.Count != 2
+                || scopeBack["编程模块"].Count != 2
+                || scopeBack["编程模块"][1] != "批量改名 a=b"
+                || scopeBack["WebDAV 备份"][0] != "手机端")
+            {
+                failed++;
+                report.AppendLine("FAIL 模块分组往返: [" + scopeText + "]");
+            }
+
+            var rows = new List<string> { "a", "b", "c", "新建的" };
+            var manual = CustomOrderCodec.Apply(rows, s => s, new List<string> { "c", "a", "已删除的" });
+            if (manual.Count != 4 || manual[0] != "c" || manual[1] != "a"
+                || manual[2] != "b" || manual[3] != "新建的")
+            {
+                failed++;
+                report.AppendLine("FAIL 手动顺序应用: 表内项在前、未记录者按原相对顺序落末尾");
+            }
+
+            if (CustomOrderCodec.Apply(rows, s => s, null).Count != 4)
+            {
+                failed++;
+                report.AppendLine("FAIL 空顺序表应原样返回且不改动");
+            }
+
+            var positions = new List<string> { "x", "y", "z" };
+            CustomOrderCodec.Rename(positions, "y", "改名后");
+            if (positions.Count != 3 || positions[1] != "改名后")
+            {
+                failed++;
+                report.AppendLine("FAIL 改名后位置发生变化: [" + string.Join("|", positions) + "]");
+            }
+
             var status = failed == 0
-                ? "PASS 断言组=" + (hostile.Length * 2 + 3)
+                ? "PASS 断言组=" + (hostile.Length * 2 + 9)
                 : report.ToString();
 
             var body = "SettingsSelfTest " + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")

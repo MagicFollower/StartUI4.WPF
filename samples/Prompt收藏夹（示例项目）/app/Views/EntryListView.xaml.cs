@@ -106,6 +106,7 @@ namespace PromptFavorites.Views
             SetSortBtnStyle(SortUpdatedAtBtn, mode == SortMode.UpdatedAt, accent, neutral);
             SetSortBtnStyle(SortCreatedAtBtn, mode == SortMode.CreatedAt, accent, neutral);
             SetSortBtnStyle(SortNameBtn, mode == SortMode.Name, accent, neutral);
+            SetSortBtnStyle(SortCustomBtn, mode == SortMode.Custom, accent, neutral);
         }
 
         private static void SetSortBtnStyle(UI4Button btn, bool selected, Color accent, Color neutral)
@@ -151,6 +152,13 @@ namespace PromptFavorites.Views
             var vm = DataContext as EntryListViewModel;
             if (vm != null) vm.CurrentSort = SortMode.Name;
             UpdateSortButtons(SortMode.Name);
+        }
+
+        private void SortCustom_Click(object sender, RoutedEventArgs e)
+        {
+            var vm = DataContext as EntryListViewModel;
+            if (vm != null) vm.CurrentSort = SortMode.Custom;
+            UpdateSortButtons(SortMode.Custom);
         }
 
         private void QuickCopy_Click(object sender, RoutedEventArgs e)

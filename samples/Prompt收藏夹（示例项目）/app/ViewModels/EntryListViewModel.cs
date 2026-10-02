@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows.Input;
+using PromptFavorites.Helpers;
 using PromptFavorites.Models;
 using PromptFavorites.Services;
 
@@ -11,8 +12,12 @@ namespace PromptFavorites.ViewModels
     public class EntryListViewModel : ViewModelBase
     {
         private readonly IPromptService _service;
+        private readonly SettingsService _settings;
         private List<PromptItem> _allEntries;
         private string _currentModuleName;
+
+        /// <summary>当前模块从没拖过就直接切到"自定义"时记的起点顺序，只在内存里，不写配置。</summary>
+        private List<string> _virtualOrder;
 
         public ObservableCollection<PromptItem> Entries { get; private set; }
 
@@ -44,8 +49,38 @@ namespace PromptFavorites.ViewModels
             get { return _currentSort; }
             set
             {
-                if (SetProperty(ref _currentSort, value))
-                    RefreshDisplay();
+                if (_currentSort == value) return;
+
+                if (value == SortMode.Custom && ActiveOrder == null)
+                    _virtualOrder = Entries.Select(e => e.Title).ToList();
+
+                _currentSort = value;
+                RefreshDisplay();
+            }
+        }
+
+        /// <summary>配置里的真快照优先；没有就用内存起点，两者都没有就按进来的顺序。</summary>
+        private IList<string> ActiveOrder
+        {
+            get
+            {
+                var stored = _settings != null ? _settings.GetEntryOrder(_currentModuleName) : null;
+                return stored ?? _virtualOrder;
+            }
+        }
+
+        /// <summary>
+        /// 只有"自定义"排序才允许拖；且收藏筛选与搜索态下看到的是子集，
+        /// 拖动会拿子集覆盖全集顺序，所以这两种状态一律禁拖。
+        /// </summary>
+        public bool CanReorder
+        {
+            get
+            {
+                return _currentSort == SortMode.Custom
+                    && !IsInSearchMode
+                    && !_isFavoriteFilter
+                    && Entries.Count > 1;
             }
         }
 
@@ -61,6 +96,7 @@ namespace PromptFavorites.ViewModels
         public ICommand SetSortCommand { get; private set; }
         public ICommand ToggleEntryFavoriteCommand { get; private set; }
         public ICommand QuickCopyCommand { get; private set; }
+        public ICommand ReorderCommand { get; private set; }
 
         public event Action<PromptItem> SelectedEntryChanged;
         public event Action<PromptItem> RequestQuickCopy;
@@ -69,9 +105,10 @@ namespace PromptFavorites.ViewModels
         /// <summary>中栏星标切换收藏后通知外部（文件路径 + 新状态），用于右栏联动。</summary>
         public event Action<string, bool> FavoriteToggled;
 
-        public EntryListViewModel(IPromptService service)
+        public EntryListViewModel(IPromptService service, SettingsService settings)
         {
             _service = service;
+            _settings = settings;
             _allEntries = new List<PromptItem>();
             Entries = new ObservableCollection<PromptItem>();
 
@@ -83,11 +120,35 @@ namespace PromptFavorites.ViewModels
             {
                 if (item != null) RequestQuickCopy?.Invoke(item);
             });
+            ReorderCommand = new RelayCommand<ReorderRequest>(OnReorder);
+        }
+
+        /// <summary>
+        /// 落点间隙换成集合下标后用 Move 移动（不用 Remove+Insert，那会把选中行冲成 null、连带清空右栏），
+        /// 移动成功后才写配置。
+        /// </summary>
+        private void OnReorder(ReorderRequest request)
+        {
+            if (request == null || !CanReorder) return;
+
+            var item = request.Item as PromptItem;
+            if (item == null) return;
+
+            var oldIndex = Entries.IndexOf(item);
+            if (oldIndex < 0) return;
+
+            var newIndex = request.Gap > oldIndex ? request.Gap - 1 : request.Gap;
+            newIndex = Math.Max(0, Math.Min(newIndex, Entries.Count - 1));
+            if (newIndex == oldIndex) return;
+
+            Entries.Move(oldIndex, newIndex);
+            CommitManualOrder();
         }
 
         public void LoadEntries(string moduleName, bool selectFirst = true)
         {
             _currentModuleName = moduleName;
+            _virtualOrder = null;
             IsInSearchMode = false;
             _allEntries = _service.LoadEntries(moduleName).ToList();
             RefreshDisplay();
@@ -159,17 +220,33 @@ namespace PromptFavorites.ViewModels
             }
         }
 
+        /// <summary>拖动结束后把可见顺序写进本地配置并立即落盘；不在可拖动状态时拒绝。</summary>
+        public bool CommitManualOrder()
+        {
+            if (!CanReorder || _settings == null || string.IsNullOrEmpty(_currentModuleName)) return false;
+
+            _settings.SetEntryOrder(_currentModuleName, Entries.Select(e => e.Title));
+            _virtualOrder = null;
+            _settings.Save();
+            return true;
+        }
+
         private void RefreshDisplay()
         {
             var filtered = _allEntries.AsEnumerable();
             if (_isFavoriteFilter)
                 filtered = filtered.Where(e => e.Favorite);
 
-            var sorted = _service.ApplySort(filtered.ToList(), _currentSort);
+            var list = filtered.ToList();
+            IReadOnlyList<PromptItem> sorted = _currentSort == SortMode.Custom
+                ? CustomOrderCodec.Apply(list, e => e.Title, ActiveOrder)
+                : _service.ApplySort(list, _currentSort);
 
             Entries.Clear();
             foreach (var entry in sorted)
                 Entries.Add(entry);
+
+            RaisePropertyChanged("CanReorder");
         }
 
         private void OnAddEntry()
@@ -193,7 +270,15 @@ namespace PromptFavorites.ViewModels
             newTitle = newTitle.Trim();
             if (item.Title == newTitle) return;
 
+            var oldTitle = item.Title;
             _service.RenameEntry(item, newTitle);
+
+            if (_settings != null && !string.IsNullOrEmpty(_currentModuleName))
+            {
+                _settings.RenameEntryInOrder(_currentModuleName, oldTitle, newTitle);
+                _settings.Save();
+            }
+
             RefreshCurrentModule();
         }
 

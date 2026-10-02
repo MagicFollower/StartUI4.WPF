@@ -60,7 +60,6 @@ namespace StartUI4Controls
             ResizeMode = ResizeMode.CanResize;
             WindowStartupLocation = WindowStartupLocation.CenterOwner;
             ShowInTaskbar = false;
-            FontFamily = new FontFamily("Segoe UI Variable Display, Segoe UI, sans-serif");
             Background = Brushes.Transparent;
             Foreground = UI4Theme.Current.TextForegroundBrush;
             UI4Theme.TrackControl(this);

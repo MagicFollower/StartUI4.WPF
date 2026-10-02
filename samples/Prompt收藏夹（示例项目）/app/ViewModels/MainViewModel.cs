@@ -53,8 +53,8 @@ namespace PromptFavorites.ViewModels
             _service = service;
             _settings = settings;
 
-            Modules = new ModuleListViewModel(service);
-            Entries = new EntryListViewModel(service);
+            Modules = new ModuleListViewModel(service, settings);
+            Entries = new EntryListViewModel(service, settings);
             Detail = new EntryDetailViewModel(service, settings);
 
             Modules.SelectedModuleChanged += OnModuleSelected;

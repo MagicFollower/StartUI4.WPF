@@ -278,6 +278,13 @@ namespace PromptFavorites.ViewModels
 
                 _service.SaveEntry(_currentItem, _originalTitle, _originalModule);
 
+                // 右栏改标题等价于重命名，顺序表里就地换名，位置不变
+                if (!string.Equals(title, _originalTitle, StringComparison.Ordinal))
+                {
+                    _settings.RenameEntryInOrder(_originalModule, _originalTitle, title);
+                    _settings.Save();
+                }
+
                 EditTitle = title;
                 EditModule = module;
                 _originalTitle = title;

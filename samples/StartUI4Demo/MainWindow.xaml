@@ -549,26 +549,21 @@
 
                         <TextBlock Text="UI4ThemeScope：一张卡片 = 一套主题" Style="{StaticResource SectionTitle}"/>
                         <TextBlock Style="{StaticResource SectionHint}"
-                                   Text="左卡片设置了 ui:UI4ThemeScope.Theme，整棵子树改用该主题；右卡片没有作用域，跟随全局主题。两边控件代码完全相同。"/>
+                                   Text="左卡片设置了 ui:UI4ThemeScope.Theme，整棵子树改用该主题；右卡片没有作用域，跟随全局主题。两边控件代码完全相同。选项显示为「中文名（亮/暗） · 英文键」，Tag 里始终是英文键。"/>
                         <TextBlock x:Name="ScopeStatus" Style="{StaticResource SectionHint}"/>
 
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
-                            <TextBlock Text="作用域键：" VerticalAlignment="Center"
+                        <WrapPanel Margin="0,0,0,14">
+                            <TextBlock Text="作用域键：" VerticalAlignment="Center" Margin="0,0,0,4"
                                        Foreground="{DynamicResource UI4.Brush.Text}"/>
-                            <ui:UI4ComboBox x:Name="ScopeKeyCombo" Width="150" Height="32" SelectedIndex="0"
-                                            SelectionChanged="ScopeKeyCombo_SelectionChanged">
-                                <ComboBoxItem Tag="dark">dark</ComboBoxItem>
-                                <ComboBoxItem Tag="light">light</ComboBoxItem>
-                                <ComboBoxItem Tag="highcontrast">highcontrast</ComboBoxItem>
-                                <ComboBoxItem Tag="">（撤销作用域）</ComboBoxItem>
-                            </ui:UI4ComboBox>
-                            <ui:UI4Button Content="打开异主题窗口" Width="140" Height="32" Margin="12,0,0,0"
+                            <ui:UI4ComboBox x:Name="ScopeKeyCombo" Width="300" Height="32" Margin="0,0,0,4"
+                                            SelectionChanged="ScopeKeyCombo_SelectionChanged"/>
+                            <ui:UI4Button Content="打开异主题窗口" Width="140" Height="32" Margin="12,0,0,4"
                                           Click="OpenScopeWindow_Click"/>
-                            <ui:UI4Button Content="全局高对比度" Width="120" Height="32" Margin="10,0,0,0"
+                            <ui:UI4Button Content="全局高对比度" Width="120" Height="32" Margin="10,0,0,4"
                                           Click="HighContrast_Click"/>
-                            <ui:UI4Button Content="全局跟随系统" Width="120" Height="32" Margin="10,0,0,0"
+                            <ui:UI4Button Content="全局跟随系统" Width="120" Height="32" Margin="10,0,0,4"
                                           Click="FollowSystem_Click"/>
-                        </StackPanel>
+                        </WrapPanel>
 
                         <UniformGrid Rows="1" Columns="2">
                             <Border x:Name="ScopeCard" ui:UI4ThemeScope.Theme="dark" Margin="0,0,8,0"
@@ -716,12 +711,12 @@
                         </WrapPanel>
                         <TextBlock x:Name="AccentEcho" Style="{StaticResource SectionHint}"/>
 
-                        <TextBlock Text="UI4Theme.Register(UI4ThemeDefinition)：自定义主题" Style="{StaticResource SectionTitle}"/>
+                        <TextBlock Text="全局主题下拉 + UI4Theme.Register(UI4ThemeDefinition)：自定义主题" Style="{StaticResource SectionTitle}"/>
                         <TextBlock Style="{StaticResource SectionHint}" TextWrapping="Wrap"
-                                   Text="克隆内置 light 后改 Key 与若干令牌，Register 再 Apply；右边下拉列出 ThemeKeys，可在全局之间切换。"/>
+                                   Text="下拉列出 UI4Theme.ThemeKeys（内置 light / dark / highcontrast，加上 UI4ThemePacks.RegisterAll() 注册的 8 套业务场景套装），显示为「中文名（亮/暗） · 英文键」——深浅标记只加在套装上，内置三套的中文名自带深浅义；ocean 是现场克隆 light 改 3 个令牌注册的例子，未登记中文名所以按原键回显。"/>
                         <StackPanel Orientation="Horizontal">
                             <ui:UI4Button Content="注册并应用 ocean" Width="160" Height="34" Margin="0,0,10,0" Click="RegisterOcean_Click"/>
-                            <ui:UI4ComboBox x:Name="ThemeKeyCombo" Width="200" Height="34" SelectionChanged="ThemeKeyCombo_SelectionChanged"/>
+                            <ui:UI4ComboBox x:Name="ThemeKeyCombo" Width="300" Height="34" SelectionChanged="ThemeKeyCombo_SelectionChanged"/>
                         </StackPanel>
                         <TextBlock x:Name="ThemeEcho" Style="{StaticResource SectionHint}" Margin="0,6,0,0"/>
 

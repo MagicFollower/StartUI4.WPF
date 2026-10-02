@@ -4,6 +4,9 @@ namespace PromptFavorites.Models
     public enum ModuleSortMode
     {
         CreatedAt,
-        Name
+        Name,
+
+        /// <summary>用户拖动出来的顺序，存在本地设置里；不跟随目录。</summary>
+        Custom
     }
 }
