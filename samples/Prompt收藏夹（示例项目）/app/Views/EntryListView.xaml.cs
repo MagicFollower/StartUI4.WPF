@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 using StartUI4Controls;
 using PromptFavorites.Helpers;
 using PromptFavorites.Models;
@@ -79,47 +80,32 @@ namespace PromptFavorites.Views
 
         private void UpdateFavoriteButton(bool active)
         {
-            var theme = UI4Theme.Current;
-
-            if (active)
-            {
-                FavoriteBtn.GradientStart = theme.ColorOf(UI4ThemeToken.Accent);
-                FavoriteBtn.GradientEnd = theme.ColorOf(UI4ThemeToken.Accent);
-                FavoriteBtn.Foreground = theme.BrushOf(UI4ThemeToken.OnAccent);
-            }
-            else
-            {
-                FavoriteBtn.GradientStart = theme.ColorOf(UI4ThemeToken.OffBackground);
-                FavoriteBtn.GradientEnd = theme.ColorOf(UI4ThemeToken.OffBackground);
-                FavoriteBtn.Foreground = theme.BrushOf(UI4ThemeToken.TextForeground);
-            }
+            PaintChip(FavoriteBtn, active);
         }
 
         private void UpdateSortButtons(SortMode mode)
         {
-            SetSortBtnStyle(SortUseCountBtn, mode == SortMode.UseCount);
-            SetSortBtnStyle(SortUpdatedAtBtn, mode == SortMode.UpdatedAt);
-            SetSortBtnStyle(SortCreatedAtBtn, mode == SortMode.CreatedAt);
-            SetSortBtnStyle(SortNameBtn, mode == SortMode.Name);
-            SetSortBtnStyle(SortCustomBtn, mode == SortMode.Custom);
+            PaintChip(SortUseCountBtn, mode == SortMode.UseCount);
+            PaintChip(SortUpdatedAtBtn, mode == SortMode.UpdatedAt);
+            PaintChip(SortCreatedAtBtn, mode == SortMode.CreatedAt);
+            PaintChip(SortNameBtn, mode == SortMode.Name);
+            PaintChip(SortCustomBtn, mode == SortMode.Custom);
         }
 
-        private static void SetSortBtnStyle(UI4Button btn, bool selected)
+        /// <summary>
+        /// 选中态的底色挂令牌资源引用（切档自动跟随），前景清掉本地值交还给库：
+        /// <c>UI4Button</c> 在 <c>OnAccent</c> 与正文色之间取与底色对比度更高者，
+        /// 而本地赋 <c>Brushes.White/Black</c> 占的就是本地值槽，会把这条自动判据顶掉
+        /// ——浅色档看不出问题，夜景档会变成白字压亮靛（实测 2.67:1）。
+        /// </summary>
+        private static void PaintChip(UI4Button btn, bool selected)
         {
             if (btn == null) return;
-            var theme = UI4Theme.Current;
-            if (selected)
-            {
-                btn.GradientStart = theme.ColorOf(UI4ThemeToken.Accent);
-                btn.GradientEnd = theme.ColorOf(UI4ThemeToken.Accent);
-                btn.Foreground = theme.BrushOf(UI4ThemeToken.OnAccent);
-            }
-            else
-            {
-                btn.GradientStart = theme.ColorOf(UI4ThemeToken.OffBackground);
-                btn.GradientEnd = theme.ColorOf(UI4ThemeToken.OffBackground);
-                btn.Foreground = theme.BrushOf(UI4ThemeToken.TextForeground);
-            }
+
+            string key = selected ? "UI4.Color.Accent" : "UI4.Color.OffBackground";
+            btn.SetResourceReference(UI4Button.GradientStartProperty, key);
+            btn.SetResourceReference(UI4Button.GradientEndProperty, key);
+            btn.ClearValue(Control.ForegroundProperty);
         }
 
         private void SortUseCount_Click(object sender, RoutedEventArgs e)

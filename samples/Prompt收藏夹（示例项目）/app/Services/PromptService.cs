@@ -83,8 +83,7 @@ namespace PromptFavorites.Services
                 CreatedAt = data.CreatedAt,
                 UpdatedAt = data.UpdatedAt,
                 LastUsedAt = data.LastUsedAt,
-                Body = body,
-                ExtraFields = data.ExtraFields ?? new Dictionary<string, string>()
+                Body = body
             };
         }
 
@@ -121,10 +120,6 @@ namespace PromptFavorites.Services
             };
         }
 
-        /// <summary>
-        /// 保存条目：写正文 → 改名 → 移动。三步非原子，单机场景下崩溃概率极低，
-        /// 且启动时有自愈逻辑（检测孤立文件）。若未来需要多进程并发访问再引入文件锁。
-        /// </summary>
         public void SaveEntry(PromptItem item, string originalTitle, string originalModule)
         {
             var now = DateTime.Now;
@@ -136,9 +131,14 @@ namespace PromptFavorites.Services
                 UseCount = item.UseCount,
                 CreatedAt = item.CreatedAt,
                 UpdatedAt = now,
-                LastUsedAt = item.LastUsedAt,
-                ExtraFields = item.ExtraFields ?? new Dictionary<string, string>()
+                LastUsedAt = item.LastUsedAt
             };
+
+            // 磁盘上那份可能有外部工具加的字段，本程序不认识也要带回去（未知键不能靠保存来"清洗"）
+            FrontmatterData onDisk;
+            string diskBody;
+            _repo.ReadEntry(item.FilePath, out onDisk, out diskBody);
+            data.AdoptUnknownFrom(onDisk);
 
             _repo.WriteEntry(item.FilePath, data, item.Body);
             item.UpdatedAt = now;

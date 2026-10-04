@@ -200,6 +200,8 @@ namespace PromptFavorites.ViewModels
 
             if (_service.ModuleExists(name)) return;
 
+            // 走服务而不是就地 new 一个仓储：根目录与仓库配置只有一个出处，
+            // 这里再 new 一份就等于允许两份根路径同时存在。
             var modulePath = _service.CreateModule(name);
 
             _allModules.Add(new PromptModule

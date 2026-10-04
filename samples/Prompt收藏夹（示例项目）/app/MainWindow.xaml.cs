@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
 using PromptFavorites.Services;
@@ -35,6 +36,32 @@ namespace PromptFavorites
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
             AttachVm(DataContext as ViewModels.MainViewModel);
+        }
+
+        /// <summary>设置浮层的开合只有这几个入口（齿轮 / 完成 / 遮罩 / Esc），
+        /// 状态存在 <c>MainViewModel.IsSettingsOpen</c> 一处，按钮上不另存。</summary>
+        private void SettingsBtn_Click(object sender, RoutedEventArgs e)
+        {
+            var vm = DataContext as ViewModels.MainViewModel;
+            if (vm != null) vm.IsSettingsOpen = true;
+        }
+
+        private void SettingsOverlay_BackgroundClick(object sender, MouseButtonEventArgs e)
+        {
+            var vm = DataContext as ViewModels.MainViewModel;
+            if (vm != null) vm.IsSettingsOpen = false;
+        }
+
+        private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key != Key.Escape) return;
+
+            var vm = DataContext as ViewModels.MainViewModel;
+            if (vm != null && vm.IsSettingsOpen)
+            {
+                vm.IsSettingsOpen = false;
+                e.Handled = true;
+            }
         }
 
         private void AttachVm(ViewModels.MainViewModel vm)
@@ -88,7 +115,7 @@ namespace PromptFavorites
 
         private void SearchBox_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
         {
-            // 防抖：每次按键重启计时器，300ms 无输入后才触发搜索
+            // 防抖：每次按键重启计时，停 300ms 才真的去全盘读文件（逐键搜索会把条目多时的耗时叠加成卡顿）
             _searchDebounceTimer.Stop();
             _searchDebounceTimer.Start();
         }
@@ -96,6 +123,7 @@ namespace PromptFavorites
         private void SearchDebounceTimer_Tick(object sender, EventArgs e)
         {
             _searchDebounceTimer.Stop();
+
             var vm = DataContext as ViewModels.MainViewModel;
             if (vm != null && vm.SearchText != SearchBox.Text)
                 vm.SearchText = SearchBox.Text;

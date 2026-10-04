@@ -100,8 +100,8 @@ namespace PromptFavorites.Services
                         }
                         break;
                     default:
-                        // 保留外部编辑器添加的自定义字段，避免保存时静默丢失
-                        data.ExtraFields[key] = value;
+                        // 本程序不认识的字段原样留着，写回时带回（值可能含冒号，只按第一个冒号切）
+                        data.Unknown.Add(new KeyValuePair<string, string>(key, value));
                         break;
                 }
             }
@@ -120,12 +120,9 @@ namespace PromptFavorites.Services
             sw.WriteLine("lastUsedAt: " + (data.LastUsedAt.HasValue
                 ? data.LastUsedAt.Value.ToString("o")
                 : "null"));
-            // 回写外部编辑器添加的自定义字段
-            if (data.ExtraFields != null)
-            {
-                foreach (var kv in data.ExtraFields)
-                    sw.WriteLine(kv.Key + ": " + kv.Value);
-            }
+            // 本程序不认识的字段跟在已知字段后面原样带回，不重排、不改值
+            foreach (var pair in data.Unknown)
+                sw.WriteLine(pair.Key + ": " + pair.Value);
             sw.Write(Separator);
             sw.Write("\r\n");
             sw.Write(body ?? string.Empty);

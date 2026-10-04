@@ -4,6 +4,7 @@ using System.Globalization;
 using System.IO;
 using System.Text;
 using System.Windows;
+using PromptFavorites.Helpers;
 using PromptFavorites.Models;
 
 namespace PromptFavorites.Services
@@ -27,8 +28,16 @@ namespace PromptFavorites.Services
         public WindowState WindowState { get; set; }
         public SortMode SortMode { get; set; }
         public ModuleSortMode ModuleSortMode { get; set; }
+        public AppThemeMode ThemeMode { get; set; }
         public bool FavoriteFilter { get; set; }
         public string RootPath { get; set; }
+
+        /// <summary>字体族名；空串表示用出厂族（<see cref="Typography.DefaultFontFamilySource"/>）。</summary>
+        public string FontFamilyName { get; set; }
+        /// <summary>正文基准字号，其余层级由 <see cref="Typography"/> 按差值派生。</summary>
+        public double BaseFontSize { get; set; }
+        /// <summary>全局缩放百分比，50–200。</summary>
+        public double ZoomPercent { get; set; }
 
         /// <summary>左栏拖动顺序；null 表示从没拖过，此时以视图当前顺序为起点且不写配置。</summary>
         public IList<string> ModuleOrder { get { return _moduleOrder; } }
@@ -146,34 +155,6 @@ namespace PromptFavorites.Services
                 if (!_loadedLegacyFormat)
                     _lastWrittenText = SettingsCodec.Serialize(ToMap());
             }
-            catch (IOException ioEx)
-            {
-                // 瞬时 IO 错误（如 AV 锁文件）不判损坏，重试 3 次后保留原文件、用默认值
-                bool recovered = false;
-                int[] delays = { 50, 100, 200 };
-                foreach (var delay in delays)
-                {
-                    try
-                    {
-                        System.Threading.Thread.Sleep(delay);
-                        var text = File.ReadAllText(SettingsFile, Utf8NoBom);
-                        var map = SettingsCodec.LooksLikeLegacyJson(text)
-                            ? SettingsCodec.ParseLegacyJson(text)
-                            : SettingsCodec.Parse(text);
-                        ApplyMap(map);
-                        recovered = true;
-                        break;
-                    }
-                    catch
-                    {
-                    }
-                }
-                if (!recovered)
-                {
-                    TryAppendDiagnostics("io-retry-failed", ioEx);
-                    ApplyDefaults();
-                }
-            }
             catch (Exception ex)
             {
                 Quarantine("parse failed: " + ex.GetType().Name + " " + ex.Message);
@@ -239,8 +220,12 @@ namespace PromptFavorites.Services
             entries.Add(Pair("windowState", WindowState.ToString()));
             entries.Add(Pair("sortMode", SortMode.ToString()));
             entries.Add(Pair("moduleSortMode", ModuleSortMode.ToString()));
+            entries.Add(Pair("themeMode", ThemeMode.ToString()));
             entries.Add(Pair("favoriteFilter", Text(FavoriteFilter)));
             entries.Add(Pair("rootPath", RootPath));
+            entries.Add(Pair("fontFamilyName", FontFamilyName));
+            entries.Add(Pair("baseFontSize", BaseFontSize.ToString(ci)));
+            entries.Add(Pair("zoomPercent", ZoomPercent.ToString(ci)));
 
             var moduleOrderText = CustomOrderCodec.EncodeNames(_moduleOrder);
             var entryOrderText = CustomOrderCodec.EncodeScopes(_entryOrders);
@@ -281,17 +266,37 @@ namespace PromptFavorites.Services
             if (map.TryGetValue("windowLeft", out value) && TryOffset(value, ci, out number)) WindowLeft = number;
             if (map.TryGetValue("windowTop", out value) && TryOffset(value, ci, out number)) WindowTop = number;
 
+            // 枚举一律按**名**解析：Enum.TryParse 默许数字串（"1" 会静默变成第一个枚举值之后的
+            // 某档），而设置文件是用户可以拿编辑器打开改的，数字串必须判非法而不是猜一个档。
             SortMode sortMode;
-            if (map.TryGetValue("sortMode", out value) && Enum.TryParse(value, out sortMode))
+            if (map.TryGetValue("sortMode", out value) && TryParseName<SortMode>(value, out sortMode))
                 SortMode = sortMode;
 
             ModuleSortMode moduleSortMode;
-            if (map.TryGetValue("moduleSortMode", out value) && Enum.TryParse(value, out moduleSortMode))
+            if (map.TryGetValue("moduleSortMode", out value) && TryParseName<ModuleSortMode>(value, out moduleSortMode))
                 ModuleSortMode = moduleSortMode;
 
             WindowState windowState;
-            if (map.TryGetValue("windowState", out value) && Enum.TryParse(value, out windowState))
+            if (map.TryGetValue("windowState", out value) && TryParseName<WindowState>(value, out windowState))
                 WindowState = windowState;
+
+            AppThemeMode themeMode;
+            if (map.TryGetValue("themeMode", out value) && TryParseName<AppThemeMode>(value, out themeMode))
+                ThemeMode = themeMode;
+
+            // 字体族名原样存、原样取（值里不含 CR/LF，kv1 的不变量成立）；字号与缩放一律钳回区间——
+            // 设置文件是用户能自己用编辑器改的，500% 或 4px 这种值不能让界面直接吃下去。
+            if (map.TryGetValue("fontFamilyName", out value)) FontFamilyName = value;
+
+            double baseSize;
+            if (map.TryGetValue("baseFontSize", out value)
+                && double.TryParse(value, NumberStyles.Float, ci, out baseSize))
+                BaseFontSize = Typography.ClampBase(baseSize);
+
+            double zoom;
+            if (map.TryGetValue("zoomPercent", out value)
+                && double.TryParse(value, NumberStyles.Float, ci, out zoom))
+                ZoomPercent = Typography.ClampZoom(zoom);
 
             if (map.TryGetValue("moduleCustomOrder", out value))
             {
@@ -314,6 +319,29 @@ namespace PromptFavorites.Services
         private static string Text(bool value)
         {
             return value ? "true" : "false";
+        }
+
+        /// <summary>
+        /// 按枚举<b>名</b>解析，拒绝空值与含数字的串。<see cref="Enum.TryParse{TEnum}(string,out TEnum)"/>
+        /// 会把 "1" 静默解析成第 2 个枚举成员，而设置文件是用户能自己用编辑器改的，
+        /// 那种值应当判非法保留原档，而不是猜一档。
+        /// </summary>
+        private static bool TryParseName<TEnum>(string value, out TEnum result) where TEnum : struct
+        {
+            result = default(TEnum);
+            if (string.IsNullOrWhiteSpace(value)) return false;
+
+            var text = value.Trim();
+            for (int i = 0; i < text.Length; i++)
+            {
+                char c = text[i];
+                if (c >= '0' && c <= '9') return false;
+            }
+
+            TEnum parsed;
+            if (!Enum.TryParse(text, false, out parsed)) return false;
+            result = parsed;
+            return true;
         }
 
         private static bool TrySize(string value, CultureInfo ci, out double result)
@@ -340,6 +368,10 @@ namespace PromptFavorites.Services
             WindowState = WindowState.Normal;
             SortMode = SortMode.UseCount;
             ModuleSortMode = ModuleSortMode.CreatedAt;
+            ThemeMode = AppThemeMode.Light;
+            FontFamilyName = string.Empty;
+            BaseFontSize = Typography.DefaultBaseSize;
+            ZoomPercent = Typography.DefaultZoomPercent;
             FavoriteFilter = false;
             _moduleOrder = null;
             _entryOrders.Clear();

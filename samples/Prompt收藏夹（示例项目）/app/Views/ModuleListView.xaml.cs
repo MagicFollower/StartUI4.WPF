@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 using StartUI4Controls;
 using PromptFavorites.Helpers;
 using PromptFavorites.Models;
@@ -160,27 +161,20 @@ namespace PromptFavorites.Views
 
         private void UpdateSortButtons(ModuleSortMode mode)
         {
-            SetSortBtnStyle(SortCreatedAtBtn, mode == ModuleSortMode.CreatedAt);
-            SetSortBtnStyle(SortNameBtn, mode == ModuleSortMode.Name);
-            SetSortBtnStyle(SortCustomBtn, mode == ModuleSortMode.Custom);
+            PaintChip(SortCreatedAtBtn, mode == ModuleSortMode.CreatedAt);
+            PaintChip(SortNameBtn, mode == ModuleSortMode.Name);
+            PaintChip(SortCustomBtn, mode == ModuleSortMode.Custom);
         }
 
-        private static void SetSortBtnStyle(UI4Button btn, bool selected)
+        /// <summary>底色挂令牌资源引用、前景交还给库，口径与中栏排序胶囊一致（见 EntryListView.PaintChip）。</summary>
+        private static void PaintChip(UI4Button btn, bool selected)
         {
             if (btn == null) return;
-            var theme = UI4Theme.Current;
-            if (selected)
-            {
-                btn.GradientStart = theme.ColorOf(UI4ThemeToken.Accent);
-                btn.GradientEnd = theme.ColorOf(UI4ThemeToken.Accent);
-                btn.Foreground = theme.BrushOf(UI4ThemeToken.OnAccent);
-            }
-            else
-            {
-                btn.GradientStart = theme.ColorOf(UI4ThemeToken.OffBackground);
-                btn.GradientEnd = theme.ColorOf(UI4ThemeToken.OffBackground);
-                btn.Foreground = theme.BrushOf(UI4ThemeToken.TextForeground);
-            }
+
+            string key = selected ? "UI4.Color.Accent" : "UI4.Color.OffBackground";
+            btn.SetResourceReference(UI4Button.GradientStartProperty, key);
+            btn.SetResourceReference(UI4Button.GradientEndProperty, key);
+            btn.ClearValue(Control.ForegroundProperty);
         }
     }
 }
