@@ -83,7 +83,8 @@ namespace PromptFavorites.Services
                 CreatedAt = data.CreatedAt,
                 UpdatedAt = data.UpdatedAt,
                 LastUsedAt = data.LastUsedAt,
-                Body = body
+                Body = body,
+                ExtraFields = data.ExtraFields ?? new Dictionary<string, string>()
             };
         }
 
@@ -120,6 +121,10 @@ namespace PromptFavorites.Services
             };
         }
 
+        /// <summary>
+        /// 保存条目：写正文 → 改名 → 移动。三步非原子，单机场景下崩溃概率极低，
+        /// 且启动时有自愈逻辑（检测孤立文件）。若未来需要多进程并发访问再引入文件锁。
+        /// </summary>
         public void SaveEntry(PromptItem item, string originalTitle, string originalModule)
         {
             var now = DateTime.Now;
@@ -131,7 +136,8 @@ namespace PromptFavorites.Services
                 UseCount = item.UseCount,
                 CreatedAt = item.CreatedAt,
                 UpdatedAt = now,
-                LastUsedAt = item.LastUsedAt
+                LastUsedAt = item.LastUsedAt,
+                ExtraFields = item.ExtraFields ?? new Dictionary<string, string>()
             };
 
             _repo.WriteEntry(item.FilePath, data, item.Body);
@@ -198,6 +204,11 @@ namespace PromptFavorites.Services
         {
             var path = Path.Combine(_repo.RootPath, name);
             _repo.DeleteModule(path);
+        }
+
+        public string CreateModule(string name)
+        {
+            return _repo.CreateModule(name);
         }
 
         public void RenameEntry(PromptItem item, string newTitle)

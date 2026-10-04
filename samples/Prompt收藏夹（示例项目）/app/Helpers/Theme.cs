@@ -4,7 +4,7 @@ namespace PromptFavorites.Helpers
 {
     /// <summary>
     /// 全局配色：单一定死的浅色方案（终端靛，源色取自 100-themes 的 terminal-blue/day 变体后按浅亮系重调）。
-    /// 这里放的是界面直接取用的几个色；完整的 30 个主题令牌由 App.RegisterAppTheme() 从这里派生。
+    /// 这里放的是界面直接取用的几个源色；完整的 38 个主题令牌由 App.RegisterAppTheme() 从这里派生。
     /// </summary>
     public static class Theme
     {

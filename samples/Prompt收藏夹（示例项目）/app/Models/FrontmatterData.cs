@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace PromptFavorites.Models
 {
@@ -11,6 +12,9 @@ namespace PromptFavorites.Models
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
         public DateTime? LastUsedAt { get; set; }
+
+        /// <summary>外部编辑器添加的自定义 frontmatter 字段，解析时保留、序列化时回写。</summary>
+        public Dictionary<string, string> ExtraFields { get; set; } = new Dictionary<string, string>();
 
         public static FrontmatterData WithDefaults(string fileName, string folderName, DateTime fileCreatedAt)
         {

@@ -64,7 +64,10 @@ namespace PromptFavorites.Services
         public void WriteEntry(string filePath, FrontmatterData data, string body)
         {
             var content = FrontmatterParser.Serialize(data, body);
-            File.WriteAllText(filePath, content, Utf8NoBom);
+            // 先写临时文件再原子替换，避免截断写导致数据损坏
+            var tmp = filePath + ".tmp";
+            File.WriteAllText(tmp, content, Utf8NoBom);
+            File.Replace(tmp, filePath, null);
         }
 
         public string CreateModule(string name)

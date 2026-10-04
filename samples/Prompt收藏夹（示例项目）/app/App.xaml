@@ -12,11 +12,7 @@
         <c:DateTimeFormatConverter x:Key="DateTimeFormat"/>
         <c:SortModeMatchConverter x:Key="SortModeMatch"/>
 
-        <!-- 配色取自 Helpers/Theme.cs（终端靛浅色方案）；FavoriteHover 是"收藏"语义色的 hover，不随界面配色走 -->
-        <SolidColorBrush x:Key="App.Brush.Accent" Color="#4F6BE8"/>
-        <SolidColorBrush x:Key="App.Brush.AccentHover" Color="#435AC5"/>
-        <SolidColorBrush x:Key="App.Brush.Neutral" Color="#D3DBE6"/>
-        <SolidColorBrush x:Key="App.Brush.NeutralHover" Color="#EFF2FE"/>
+        <!-- FavoriteHover 是“收藏”语义色的 hover，不属于 UI4 令牌体系，保留独立声明 -->
         <SolidColorBrush x:Key="App.Brush.FavoriteHover" Color="#E08A00"/>
     </Application.Resources>
 </Application>

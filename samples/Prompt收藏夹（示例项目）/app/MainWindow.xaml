@@ -3,7 +3,6 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ui="clr-namespace:StartUI4Controls;assembly=StartUI4Controls"
         xmlns:views="clr-namespace:PromptFavorites.Views"
-        xmlns:h="clr-namespace:PromptFavorites.Helpers"
         Title="收藏夹"
         Icon="AppIcon.ico"
         Width="1200" Height="750"
@@ -31,9 +30,7 @@
                               CornerRadius="6"
                               FontSize="16"
                               Margin="0,0,8,0"
-                              GradientStart="{x:Static h:Theme.Accent}"
-                              GradientEnd="{x:Static h:Theme.Accent}"
-                              HoverBackground="{DynamicResource App.Brush.AccentHover}"
+                              HoverBackground="{DynamicResource UI4.Brush.AccentDark}"
                               ToolTip="打开/切换根目录"
                               Click="FolderBtn_Click"/>
                 <ui:UI4TextBox x:Name="SearchBox"
@@ -58,14 +55,14 @@
             <views:ModuleListView Grid.Column="0"
                                   DataContext="{Binding Modules}"/>
 
-            <GridSplitter Grid.Column="1" Width="4"
+            <GridSplitter Grid.Column="1" Width="6"
                           HorizontalAlignment="Stretch"
                           Background="{DynamicResource UI4.Brush.BorderNormal}"/>
 
             <views:EntryListView Grid.Column="2"
                                  DataContext="{Binding Entries}"/>
 
-            <GridSplitter Grid.Column="3" Width="4"
+            <GridSplitter Grid.Column="3" Width="6"
                           HorizontalAlignment="Stretch"
                           Background="{DynamicResource UI4.Brush.BorderNormal}"/>
 

@@ -2,7 +2,6 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:ui="clr-namespace:StartUI4Controls;assembly=StartUI4Controls"
-             xmlns:h="clr-namespace:PromptFavorites.Helpers"
              Background="{DynamicResource UI4.Brush.Background}">
     <UserControl.InputBindings>
         <KeyBinding Modifiers="Control" Key="S" Command="{Binding SaveCommand}"/>
@@ -39,9 +38,9 @@
                                    VerticalAlignment="Center"/>
                         <ui:UI4Button DockPanel.Dock="Right" Content="[收起]"
                                       Height="24" Padding="6,0" CornerRadius="12" FontSize="11"
-                                      GradientStart="{x:Static h:Theme.Neutral}"
-                                      GradientEnd="{x:Static h:Theme.Neutral}"
-                                      HoverBackground="{DynamicResource App.Brush.AccentHover}"
+                                      GradientStart="{DynamicResource UI4.Color.OffBackground}"
+                                      GradientEnd="{DynamicResource UI4.Color.OffBackground}"
+                                      HoverBackground="{DynamicResource UI4.Brush.AccentDark}"
                                       Click="ToggleMetadata_Click"/>
                         <ui:UI4TextBox x:Name="TitleEdit" Height="30"
                                        Text="{Binding EditTitle, UpdateSourceTrigger=PropertyChanged}"/>
@@ -110,15 +109,11 @@
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                 <ui:UI4Button x:Name="CopyBtn" Content="复制"
                               Width="80" Height="34" Margin="0,0,8,0"
-                              GradientStart="{x:Static h:Theme.Accent}"
-                              GradientEnd="{x:Static h:Theme.Accent}"
-                              HoverBackground="{DynamicResource App.Brush.AccentHover}"
+                              HoverBackground="{DynamicResource UI4.Brush.AccentDark}"
                               Command="{Binding CopyCommand}"/>
                 <ui:UI4Button x:Name="SaveBtn" Content="保存"
                               Width="80" Height="34"
-                              GradientStart="{x:Static h:Theme.Accent}"
-                              GradientEnd="{x:Static h:Theme.Accent}"
-                              HoverBackground="{DynamicResource App.Brush.AccentHover}"
+                              HoverBackground="{DynamicResource UI4.Brush.AccentDark}"
                               Command="{Binding SaveCommand}"/>
             </StackPanel>
         </Border>

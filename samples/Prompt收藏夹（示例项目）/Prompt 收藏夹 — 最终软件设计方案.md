@@ -667,10 +667,10 @@ entryCustomOrder=模块A:标题1|标题2>模块B:标题3
 
 ## 21. 剪贴板实现说明（技术决策）
 
-结论摘要（完整的问题报告：根因分层、方案取舍、两次误判、改动原理与实测数据见 [`剪贴板卡顿问题报告.md`](剪贴板卡顿问题报告.md)）：
+结论摘要（完整的问题报告：根因分层、方案取舍、两次误判、改动原理与实测数据见《剪贴板卡顿问题报告》（文件待补充））：
 
 1. 缺陷在组件库不在本应用：库内所有可编辑控件的复制/剪切/粘贴最终落到 WPF 的 `System.Windows.Clipboard`（OLE 通道，抢锁失败在调用线程重试），故"凡是可编辑文本组件，Ctrl+X 都卡约 2 秒"。
-2. 修复落在库内：`UI4Clipboard`（原生 Win32 读写，写/读在后台线程重试后回投 UI 线程；`ContainsText()` 用 `IsClipboardFormatAvailable` 不参与抢锁）+ `Internal/ClipboardCommandTakeover`（`PreviewKeyDown` 隧道接管 Ctrl+C/X/V，装到 `UI4TextBox`/`UI4PasswordBox`/`UI4CodeEditor`/`UI4TextBlock`/`UI4DataGrid`）。
+2. 修复落在库内：`UI4Clipboard`（原生 Win32 读写，写/读在后台线程重试后回投 UI 线程；`ContainsText()` 用 `IsClipboardFormatAvailable` 不参与抢锁）+ `Internal/ClipboardCommandTakeover`（`PreviewKeyDown` 隧道接管 Ctrl+C/X/V，装到 `UI4TextBox`/`UI4PasswordBox`/`UI4CodeEditor`/`UI4TextBlock`/`UI4GridView`）。
 3. 只接在 `CommandBinding.PreviewExecuted` **拦不住真实按键**（实测仍阻塞约 2 秒），必须接按键隧道。
 4. Notepad 式"所有权 + 延迟渲染"在本机不可用（延迟渲染声明固定失败），不采用。
 5. 应用侧不保留任何剪贴板实现，复制按钮直接调 `UI4Clipboard.TrySetTextAsync`（`ViewModels/MainViewModel.cs:179`），失败提示留在应用层。

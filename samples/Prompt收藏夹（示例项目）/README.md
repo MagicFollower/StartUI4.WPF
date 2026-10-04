@@ -1,4 +1,4 @@
-![](.\PixPin_2026-10-01_13-11-28.png)
+# Prompt 收藏夹
 
 ## 构建与打包
 
@@ -48,11 +48,11 @@ publish_no_runtime\PromptFavorites_no_runtime.exe --selftest
 echo $LASTEXITCODE      # 失败断言数，0 = 全通过
 ```
 
-两个产物实测都是退出码 0。退出码即结论（`SettingsSelfTest`，23 组断言，含"连续 5 轮序列化文本长度不增"这条防路径指数膨胀）。报告同时写 `%APPDATA%\PromptFavorites\selftest.txt`——刻意不写 exe 旁边，因为单文件下 `AppDomain.CurrentDomain.BaseDirectory` 可能指向会被清理的临时解包目录。
+两个产物实测都是退出码 0。退出码即结论（`SettingsSelfTest`，29 组断言，含“连续 5 轮序列化文本长度不增”这条防路径指数膨胀）。报告同时写 `%APPDATA%\PromptFavorites\selftest.txt`——刻意不写 exe 旁边，因为单文件下 `AppDomain.CurrentDomain.BaseDirectory` 可能指向会被清理的临时解包目录。
 
 ### 标题与图标
 
-窗口标题在 `MainWindow.xaml` 的 `Title`（当前为「收藏夹」）；应用图标是 `tools\make-icon.ps1` 手绘生成的 `app\AppIcon.ico`（7 挡尺寸）。改法、exe 图标与窗口图标两条链路的区别、以及运行时怎么验，见 [标题与图标设置教程.md](标题与图标设置教程.md)。
+窗口标题在 `MainWindow.xaml` 的 `Title`（当前为「收藏夹」）；应用图标是 `app\AppIcon.ico`（7 挡尺寸）。改法、exe 图标与窗口图标两条链路的区别、以及运行时怎么验，见 [标题与图标设置教程.md](标题与图标设置教程.md)。
 
 ### 配色
 
@@ -66,7 +66,7 @@ echo $LASTEXITCODE      # 失败断言数，0 = 全通过
 | 正文 / 中性按钮底 | 10.81:1 |
 | 正文 / 选中行 | 12.09:1 |
 
-改配色只动一处：`Helpers/Theme.cs` 的源色常量。`App.RegisterAppTheme()` 据此派生全部 30 个 `UI4ThemeToken`（面板=背景向白提亮 85%、中性按钮底=背景混边框色 62%、行悬浮=背景混主色 6%、次级文本向正文混 18% 以过 AA），覆盖 `light` 键后由 `UI4Theme.SetTheme(Light)` 生效，`lib/` 一行未改。三条约束：
+改配色只动一处：`Helpers/Theme.cs` 的源色常量。`App.RegisterAppTheme()` 据此派生全部 38 个 `UI4ThemeToken`（面板=背景向白提亮 85%、中性按钮底=背景混边框色 62%、行浮=背景混主色 6%、次级文本向正文混 18% 以过 AA），覆盖 `light` 键后由 `UI4Theme.SetTheme(Light)` 生效，`lib/` 一行未改。三条约束：
 
 - **主色不能再往淡走**：`UI4Button` 按底色亮度自动挑字色（`Luminance < 0.45` 给白字），而白字要 ≥4.5:1 就得主色亮度 ≤0.183——再淡就掉进"白字配中底"的不可读区。要浅就浅底、线、选中块。
 - **中性按钮（收藏/复制/保存/取消）的底必须是浅的**（现在 L≈0.70）。踩过的坑：把它映射成中灰 `muted`（L≈0.37）时库自动配白字，实测只有 2.46:1，几乎读不出字。

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using PromptFavorites.ViewModels;
 
 namespace PromptFavorites.Models
@@ -62,5 +63,8 @@ namespace PromptFavorites.Models
             get { return _body; }
             set { SetProperty(ref _body, value); }
         }
+
+        /// <summary>外部编辑器添加的自定义 frontmatter 字段，加载时保留、保存时回写。</summary>
+        public Dictionary<string, string> ExtraFields { get; set; } = new Dictionary<string, string>();
     }
 }

@@ -99,6 +99,10 @@ namespace PromptFavorites.Services
                                 data.LastUsedAt = ldt;
                         }
                         break;
+                    default:
+                        // 保留外部编辑器添加的自定义字段，避免保存时静默丢失
+                        data.ExtraFields[key] = value;
+                        break;
                 }
             }
         }
@@ -116,6 +120,12 @@ namespace PromptFavorites.Services
             sw.WriteLine("lastUsedAt: " + (data.LastUsedAt.HasValue
                 ? data.LastUsedAt.Value.ToString("o")
                 : "null"));
+            // 回写外部编辑器添加的自定义字段
+            if (data.ExtraFields != null)
+            {
+                foreach (var kv in data.ExtraFields)
+                    sw.WriteLine(kv.Key + ": " + kv.Value);
+            }
             sw.Write(Separator);
             sw.Write("\r\n");
             sw.Write(body ?? string.Empty);

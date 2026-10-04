@@ -1,6 +1,5 @@
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Media;
 using StartUI4Controls;
 using PromptFavorites.Helpers;
 using PromptFavorites.Models;
@@ -169,18 +168,18 @@ namespace PromptFavorites.Views
         private static void SetSortBtnStyle(UI4Button btn, bool selected)
         {
             if (btn == null) return;
-
+            var theme = UI4Theme.Current;
             if (selected)
             {
-                btn.GradientStart = Theme.Accent;
-                btn.GradientEnd = Theme.Accent;
-                btn.Foreground = Brushes.White;
+                btn.GradientStart = theme.ColorOf(UI4ThemeToken.Accent);
+                btn.GradientEnd = theme.ColorOf(UI4ThemeToken.Accent);
+                btn.Foreground = theme.BrushOf(UI4ThemeToken.OnAccent);
             }
             else
             {
-                btn.GradientStart = Theme.Neutral;
-                btn.GradientEnd = Theme.Neutral;
-                btn.Foreground = Brushes.Black;
+                btn.GradientStart = theme.ColorOf(UI4ThemeToken.OffBackground);
+                btn.GradientEnd = theme.ColorOf(UI4ThemeToken.OffBackground);
+                btn.Foreground = theme.BrushOf(UI4ThemeToken.TextForeground);
             }
         }
     }

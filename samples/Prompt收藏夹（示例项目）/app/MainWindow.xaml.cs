@@ -15,6 +15,7 @@ namespace PromptFavorites
     {
         private ViewModels.MainViewModel _vm;
         private readonly DispatcherTimer _toastTimer;
+        private readonly DispatcherTimer _searchDebounceTimer;
 
         public MainWindow()
         {
@@ -25,6 +26,10 @@ namespace PromptFavorites
             _toastTimer = new DispatcherTimer();
             _toastTimer.Interval = TimeSpan.FromSeconds(1.6);
             _toastTimer.Tick += ToastTimer_Tick;
+
+            _searchDebounceTimer = new DispatcherTimer();
+            _searchDebounceTimer.Interval = TimeSpan.FromMilliseconds(300);
+            _searchDebounceTimer.Tick += SearchDebounceTimer_Tick;
         }
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
@@ -83,6 +88,14 @@ namespace PromptFavorites
 
         private void SearchBox_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
         {
+            // 防抖：每次按键重启计时器，300ms 无输入后才触发搜索
+            _searchDebounceTimer.Stop();
+            _searchDebounceTimer.Start();
+        }
+
+        private void SearchDebounceTimer_Tick(object sender, EventArgs e)
+        {
+            _searchDebounceTimer.Stop();
             var vm = DataContext as ViewModels.MainViewModel;
             if (vm != null && vm.SearchText != SearchBox.Text)
                 vm.SearchText = SearchBox.Text;

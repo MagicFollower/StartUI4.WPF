@@ -1,6 +1,5 @@
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Media;
 using StartUI4Controls;
 using PromptFavorites.Helpers;
 using PromptFavorites.Models;
@@ -80,49 +79,46 @@ namespace PromptFavorites.Views
 
         private void UpdateFavoriteButton(bool active)
         {
-            var accent = Theme.Accent;
-            var neutral = Theme.Neutral;
+            var theme = UI4Theme.Current;
 
             if (active)
             {
-                FavoriteBtn.GradientStart = accent;
-                FavoriteBtn.GradientEnd = accent;
-                FavoriteBtn.Foreground = Brushes.White;
+                FavoriteBtn.GradientStart = theme.ColorOf(UI4ThemeToken.Accent);
+                FavoriteBtn.GradientEnd = theme.ColorOf(UI4ThemeToken.Accent);
+                FavoriteBtn.Foreground = theme.BrushOf(UI4ThemeToken.OnAccent);
             }
             else
             {
-                FavoriteBtn.GradientStart = neutral;
-                FavoriteBtn.GradientEnd = neutral;
-                FavoriteBtn.Foreground = Brushes.Black;
+                FavoriteBtn.GradientStart = theme.ColorOf(UI4ThemeToken.OffBackground);
+                FavoriteBtn.GradientEnd = theme.ColorOf(UI4ThemeToken.OffBackground);
+                FavoriteBtn.Foreground = theme.BrushOf(UI4ThemeToken.TextForeground);
             }
         }
 
         private void UpdateSortButtons(SortMode mode)
         {
-            var accent = Theme.Accent;
-            var neutral = Theme.Neutral;
-
-            SetSortBtnStyle(SortUseCountBtn, mode == SortMode.UseCount, accent, neutral);
-            SetSortBtnStyle(SortUpdatedAtBtn, mode == SortMode.UpdatedAt, accent, neutral);
-            SetSortBtnStyle(SortCreatedAtBtn, mode == SortMode.CreatedAt, accent, neutral);
-            SetSortBtnStyle(SortNameBtn, mode == SortMode.Name, accent, neutral);
-            SetSortBtnStyle(SortCustomBtn, mode == SortMode.Custom, accent, neutral);
+            SetSortBtnStyle(SortUseCountBtn, mode == SortMode.UseCount);
+            SetSortBtnStyle(SortUpdatedAtBtn, mode == SortMode.UpdatedAt);
+            SetSortBtnStyle(SortCreatedAtBtn, mode == SortMode.CreatedAt);
+            SetSortBtnStyle(SortNameBtn, mode == SortMode.Name);
+            SetSortBtnStyle(SortCustomBtn, mode == SortMode.Custom);
         }
 
-        private static void SetSortBtnStyle(UI4Button btn, bool selected, Color accent, Color neutral)
+        private static void SetSortBtnStyle(UI4Button btn, bool selected)
         {
             if (btn == null) return;
+            var theme = UI4Theme.Current;
             if (selected)
             {
-                btn.GradientStart = accent;
-                btn.GradientEnd = accent;
-                btn.Foreground = Brushes.White;
+                btn.GradientStart = theme.ColorOf(UI4ThemeToken.Accent);
+                btn.GradientEnd = theme.ColorOf(UI4ThemeToken.Accent);
+                btn.Foreground = theme.BrushOf(UI4ThemeToken.OnAccent);
             }
             else
             {
-                btn.GradientStart = neutral;
-                btn.GradientEnd = neutral;
-                btn.Foreground = Brushes.Black;
+                btn.GradientStart = theme.ColorOf(UI4ThemeToken.OffBackground);
+                btn.GradientEnd = theme.ColorOf(UI4ThemeToken.OffBackground);
+                btn.Foreground = theme.BrushOf(UI4ThemeToken.TextForeground);
             }
         }
 

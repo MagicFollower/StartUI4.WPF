@@ -77,7 +77,7 @@ namespace PromptFavorites
         }
 
         /// <summary>
-        /// 应用配色：单一定死的浅色方案（终端靛），在内置 Light 上覆盖全部语义令牌后接管 "light" 键。
+        /// 应用配色：单一定死的浅色方案（终端靛），在内置 Light 上覆盖全部 38 个语义令牌后接管 "light" 键。
         /// 中性按钮的底必须是浅的——UI4Button 按底色亮度自动挑字色（L&lt;0.45 给白字），
         /// 中灰底配白字只有 2.4:1；浅中性会让它自动换成正文色（实测 10.8:1）。
         /// </summary>
@@ -118,7 +118,19 @@ namespace PromptFavorites
                .With(UI4ThemeToken.GridLine, Mix(Theme.Background, Theme.Muted, 0.45f))
                .With(UI4ThemeToken.ProgressStart, accent)
                .With(UI4ThemeToken.CheckBoxUnchecked, Mix(Theme.Muted, Theme.Background, 0.3f))
-               .With(UI4ThemeToken.HoverBorderColorLight, Mix(Theme.Muted, accent, 0.35f));
+               .With(UI4ThemeToken.HoverBorderColorLight, Mix(Theme.Muted, accent, 0.35f))
+               // ── 第二轮补齐（2026-10-02 新增的 11 个令牌） ──
+               .With(UI4ThemeToken.OnAccent, Colors.White)
+               .With(UI4ThemeToken.TextMuted, Color.FromArgb(0xC8, Theme.Muted.R, Theme.Muted.G, Theme.Muted.B))
+               .With(UI4ThemeToken.BorderWeak, Color.FromArgb(0x1A, accent.R, accent.G, accent.B))
+               .With(UI4ThemeToken.Separator, Color.FromArgb(0x30, Theme.Muted.R, Theme.Muted.G, Theme.Muted.B))
+               .With(UI4ThemeToken.HoverOverlay, Color.FromArgb(15, accent.R, accent.G, accent.B))
+               .With(UI4ThemeToken.SelectedOverlay, Color.FromArgb(10, accent.R, accent.G, accent.B))
+               .With(UI4ThemeToken.TrackBackground, Color.FromArgb(10, 0, 0, 0))
+               .With(UI4ThemeToken.ScrollBarThumb, Color.FromArgb(0x50, Theme.Foreground.R, Theme.Foreground.G, Theme.Foreground.B))
+               .With(UI4ThemeToken.Shadow, Colors.Black)
+               .With(UI4ThemeToken.BackgroundGradientStart, Mix(Theme.Background, accent, 0.03f))
+               .With(UI4ThemeToken.BackgroundGradientEnd, Theme.Background);
             UI4Theme.Register(def);
         }
 

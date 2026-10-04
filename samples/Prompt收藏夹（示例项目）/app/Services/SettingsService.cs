@@ -146,6 +146,34 @@ namespace PromptFavorites.Services
                 if (!_loadedLegacyFormat)
                     _lastWrittenText = SettingsCodec.Serialize(ToMap());
             }
+            catch (IOException ioEx)
+            {
+                // 瞬时 IO 错误（如 AV 锁文件）不判损坏，重试 3 次后保留原文件、用默认值
+                bool recovered = false;
+                int[] delays = { 50, 100, 200 };
+                foreach (var delay in delays)
+                {
+                    try
+                    {
+                        System.Threading.Thread.Sleep(delay);
+                        var text = File.ReadAllText(SettingsFile, Utf8NoBom);
+                        var map = SettingsCodec.LooksLikeLegacyJson(text)
+                            ? SettingsCodec.ParseLegacyJson(text)
+                            : SettingsCodec.Parse(text);
+                        ApplyMap(map);
+                        recovered = true;
+                        break;
+                    }
+                    catch
+                    {
+                    }
+                }
+                if (!recovered)
+                {
+                    TryAppendDiagnostics("io-retry-failed", ioEx);
+                    ApplyDefaults();
+                }
+            }
             catch (Exception ex)
             {
                 Quarantine("parse failed: " + ex.GetType().Name + " " + ex.Message);

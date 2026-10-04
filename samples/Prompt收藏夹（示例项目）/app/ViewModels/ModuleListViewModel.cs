@@ -189,7 +189,7 @@ namespace PromptFavorites.ViewModels
             if (string.IsNullOrWhiteSpace(name)) return;
             name = name.Trim();
 
-            var rootPath = ((PromptService)_service).RootPath;
+            var rootPath = _service.RootPath;
             if (string.IsNullOrWhiteSpace(rootPath))
             {
                 UI4MessageBox.Show(
@@ -200,8 +200,7 @@ namespace PromptFavorites.ViewModels
 
             if (_service.ModuleExists(name)) return;
 
-            var modulePath = new FileSystemRepository(rootPath)
-                .CreateModule(name);
+            var modulePath = _service.CreateModule(name);
 
             _allModules.Add(new PromptModule
             {
